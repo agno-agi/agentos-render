@@ -1,0 +1,56 @@
+services:
+  agentos-db:
+    image: agnohq/pgvector:18
+    container_name: agentos-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: ${DB_USER:-ai}
+      POSTGRES_PASSWORD: ${DB_PASS:-ai}
+      POSTGRES_DB: ${DB_DATABASE:-ai}
+    networks:
+      - agentos
+
+  agentos-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentos-api
+    image: ${IMAGE_NAME:-agentos}:${IMAGE_TAG:-latest}
+    # --reload-dir limits the watcher to dirs that contain runtime code.
+    command: >
+      uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      --reload-dir agents --reload-dir app --reload-dir db --reload-dir evals --reload-dir workflows
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      RUNTIME_ENV: dev
+      AGNO_DEBUG: "True"
+      WAIT_FOR_DB: "True"
+      AGENTOS_URL: http://127.0.0.1:8000
+      DB_HOST: agentos-db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-ai}
+      DB_PASS: ${DB_PASS:-ai}
+      DB_DATABASE: ${DB_DATABASE:-ai}
+    depends_on:
+      - agentos-db
+    networks:
+      - agentos
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  agentos:
+
+volumes:
+  pgdata:

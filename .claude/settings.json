@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./scripts/format.sh:*)",
+      "Bash(./scripts/validate.sh:*)",
+      "Bash(./scripts/venv_setup.sh:*)",
+      "Bash(./scripts/generate_requirements.sh:*)",
+      "Bash(source .venv/bin/activate:*)",
+      "Bash(python -m evals:*)",
+      "Bash(docker compose up:*)",
+      "Bash(docker compose restart:*)",
+      "Bash(docker compose down:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker inspect:*)",
+      "Bash(curl -sSf http://localhost:8000/:*)",
+      "Bash(curl -sS -X POST http://localhost:8000/:*)",
+      "Bash(curl -s http://localhost:8000/:*)",
+      "Bash(nc -z localhost:*)",
+      "Bash(jq:*)",
+      "WebFetch(domain:docs.agno.com)"
+    ]
+  }
+}

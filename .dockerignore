@@ -1,0 +1,31 @@
+.DS_Store
+
+.git
+
+# Cache
+.mypy_cache
+.ruff_cache
+.pytest_cache
+*__pycache__*
+*.egg-info
+*.pyc
+
+# Machine specific
+.idea
+.vscode
+
+# Ignore .env files
+.env
+.env.production
+.envrc
+
+# ignore virtualenvs
+.venv
+venv*
+aienv*
+
+.ipynb_checkpoints
+
+# Project-specific
+tmp/
+.claude/

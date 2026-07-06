@@ -1,0 +1,14 @@
+chat:
+  quick_prompts:
+    agent-builder:
+      - "Build an agent that tracks AI news and writes a daily brief"
+      - "Build a multi-agent team with web search and platform manager agents"
+      - "Build a workflow that researches a topic, drafts a report, and works with me on improving it"
+    platform-manager:
+      - "Describe this platform: agents, workflows, and schedules"
+      - "How healthy is the platform? Check the latest deployment check and eval history"
+      - "Teach me how to use this AgentOS"
+    web-search:
+      - "Tell me about Agno's AgentOS"
+      - "What's the latest research from Anthropic?"
+      - "Search for OpenAI's latest model release"
