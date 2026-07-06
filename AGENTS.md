@@ -1,10 +1,10 @@
-# AgentOS — Railway template
+# AgentOS — Render template
 
 This file is the source of truth for any agent (Claude Code, Codex, others) working in this repo. `CLAUDE.md` is a symlink to this file — edit one, both update.
 
 ## Project Overview
 
-**AgentOS — the agent backend for every frontend.** An agent server built on [Agno](https://docs.agno.com) that attaches to any client: **REST** for programmatic use, **chat interfaces** for humans (Slack is wired in; WhatsApp/Telegram/Discord mirror the same pattern), and **MCP** at `/mcp` for AI apps (claude.ai, ChatGPT, Cursor, Claude Code) — which work *through* the platform, not just on it. The repo itself is designed for coding agents to build and extend. Two flagship agents — Agent Builder (creates agents, teams, and workflows) and Platform Manager (understands, monitors, and explains the platform) — plus WebSearch as the simplest sample agent to copy. Postgres (pgvector) handles persistence for sessions, memory, and knowledge. Runs locally via Docker; this template deploys to Railway with a single script and is the reference sibling of the `agentos-*` deployment family — see [Portable core vs. deploy layer](#portable-core-vs-deploy-layer).
+**AgentOS — the agent backend for every frontend.** An agent server built on [Agno](https://docs.agno.com) that attaches to any client: **REST** for programmatic use, **chat interfaces** for humans (Slack is wired in; WhatsApp/Telegram/Discord mirror the same pattern), and **MCP** at `/mcp` for AI apps (claude.ai, ChatGPT, Cursor, Claude Code) — which work *through* the platform, not just on it. The repo itself is designed for coding agents to build and extend. Two flagship agents — Agent Builder (creates agents, teams, and workflows) and Platform Manager (understands, monitors, and explains the platform) — plus WebSearch as the simplest sample agent to copy. Postgres (pgvector) handles persistence for sessions, memory, and knowledge. Runs locally via Docker; this template deploys to Render via the Blueprint in [`render.yaml`](render.yaml) plus a wiring script and is the Render sibling of the `agentos-*` deployment family — see [Portable core vs. deploy layer](#portable-core-vs-deploy-layer).
 
 ## Architecture
 
@@ -47,7 +47,8 @@ Shared:
 | [`.agents/skills/`](.agents/skills/) | Dev-time **coding-agent workflows** (`create-new-agent`, `extend-agent`, `improve-agent`, `eval-and-improve`, `review-and-improve`) — slash commands coding agents run *on this repo*. `.claude/skills` is a committed symlink into it — see [Working with coding agents](#working-with-coding-agents). |
 | [`README.md`](README.md) | Public entry point — leads with the copy-paste setup prompt that takes a coding agent from clone to connected. |
 | [`compose.yaml`](compose.yaml) | Docker Compose for local development. |
-| [`railway.json`](railway.json) | Railway deploy config (Docker + 1 replica + 4Gi/2vCPU). |
+| [`render.yaml`](render.yaml) | Render Blueprint — starter (non-sleeping) single-instance web service built from the Dockerfile, basic-256mb Postgres 17 with discrete DB_* wired via fromDatabase. |
+| [`scripts/render/`](scripts/render/) | Render deploy layer — up.sh waits for the Blueprint launch, pins AGENTOS_URL, pauses for JWT; env-sync/redeploy/down drive the Render API. |
 
 ## Development Setup
 
@@ -187,10 +188,10 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `OPENAI_API_KEY` | yes | — | OpenAI key for models + embeddings. |
-| `RUNTIME_ENV` | no | `prd` | `dev` disables JWT. Compose sets this to `dev` for local — never put it in an env file that syncs to Railway, or production deploys unauthenticated. |
+| `RUNTIME_ENV` | no | `prd` | `dev` disables JWT. Compose sets this to `dev` for local — never put `dev` in an env file that env-sync.sh pushes to Render, or production serves unauthenticated. |
 | `JWT_VERIFICATION_KEY` | prd | — | Public key from os.agno.com. Required when `RUNTIME_ENV=prd` and `authorization=True`, unless `JWT_JWKS_FILE` is set. |
 | `JWT_JWKS_FILE` | prd | — | Path to a JWKS file; alternative to `JWT_VERIFICATION_KEY` for production JWT verification. |
-| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. `scripts/railway/up.sh` auto-sets it to the created Railway domain (and writes it back into your env file); only set it by hand for custom domains or tunnels. Left at the localhost default in prod, scheduled jobs silently never fire. |
+| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. `scripts/render/up.sh` pins it to the onrender.com service URL after the first deploy (render.yaml can't reference its own URL) and writes it back into your env file; only set it by hand for custom domains. Left at the localhost default in prod, scheduled jobs silently never fire. |
 | `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron (`app/schedules.py`) runs daily by default. Set `False` to disable; the workflow stays runnable on demand regardless. |
 | `ENABLE_SCHEDULED_EVALS` | no | `False` | If `True`, schedules the run-evals workflow daily. Off by default because it uses model calls. |
 | `EVALS_TAG` | no | `smoke` | Eval tag run by the run-evals workflow. |
@@ -245,30 +246,33 @@ For Discord, Telegram, WhatsApp, and custom UIs, mirror the Slack conditional pa
 
 ## Portable core vs. deploy layer
 
-This repo is the Railway sibling of the `agentos-*` deployment family (agentos-docker, agentos-aws, agentos-fly, agentos-gcp, agentos-azure, agentos-modal). Everything that defines the platform is **portable core — identical across the family**: `agents/`, `app/`, `db/`, `workflows/`, `evals/`, the MCP server wiring, the interfaces, and the coding-agent skills in `.agents/skills/`. `Dockerfile`, `compose.yaml`, and `scripts/entrypoint.sh` are shared local-dev/runtime infra, also not deployment-specific.
+This repo is the Render sibling of the `agentos-*` deployment family ([agentos-railway](https://github.com/agno-agi/agentos-railway) is the reference; agentos-docker is the self-hosted sibling; agentos-aws, agentos-fly, agentos-gcp, agentos-azure, agentos-helm cover the other targets). Everything that defines the platform is **portable core — identical across the family**: `agents/`, `app/`, `db/`, `workflows/`, `evals/`, the MCP server wiring, the interfaces, and the coding-agent skills in `.agents/skills/`. `Dockerfile`, `compose.yaml`, and `scripts/entrypoint.sh` are shared local-dev/runtime infra, also not deployment-specific.
 
-The **Railway-specific deploy layer** — what a sibling template swaps out — is exactly:
+The **Render-specific deploy layer** — what a sibling template swaps out — is exactly:
 
-- [`railway.json`](railway.json)
-- [`scripts/railway/`](scripts/railway/) (`up.sh`, `env-sync.sh`, `redeploy.sh`, `down.sh`)
-- the "Deploying to Railway" prose here and in the README
+- [`render.yaml`](render.yaml)
+- [`scripts/render/`](scripts/render/) (`up.sh`, `env-sync.sh`, `redeploy.sh`, `down.sh`)
+- the "Deploying to Render" prose here and in the README
 
-When editing, keep that boundary crisp: platform behavior belongs in the core, Railway mechanics belong in the deploy layer, and nothing in the core should import from or depend on it.
+When editing, keep that boundary crisp: platform behavior belongs in the core, Render mechanics belong in the deploy layer, and nothing in the core should import from or depend on it.
 
-## Deploying to Railway
+## Deploying to Render
 
 ```bash
-./scripts/railway/up.sh        # provision Postgres + agent-os service
-./scripts/railway/env-sync.sh  # sync .env.production (default) or .env
-./scripts/railway/redeploy.sh  # redeploy after code changes
-./scripts/railway/down.sh      # delete the Railway project (asks for confirmation; --yes to skip)
+# 1. Launch the Blueprint (dashboard → New + → Blueprint → this repo) — render.yaml drives it
+./scripts/render/up.sh        # then: wait for live, pin AGENTOS_URL, JWT pause, one deploy
+./scripts/render/env-sync.sh  # sync .env.production (default) or .env; per-key upserts + one deploy
+./scripts/render/redeploy.sh  # re-run a build without a new commit (pushes auto-deploy anyway)
+./scripts/render/down.sh      # delete service + Postgres (asks for confirmation; --yes to skip)
 ```
 
-`up.sh` creates the domain before deploying and sets `AGENTOS_URL` to it (on Railway and in your env file), so the scheduler is reachable in prod out of the box.
+Provisioning is Blueprint-first: Render reads [`render.yaml`](render.yaml) when you connect the repo, builds the Dockerfile on its own builders, prompts for `OPENAI_API_KEY` (`sync: false`), and creates a `basic-256mb` Postgres 17 whose discrete `DB_*` values feed the service via `fromDatabase` (the core never reads `DATABASE_URL`). Two render.yaml choices are load-bearing: the `starter` plan (cheapest that never sleeps — the in-process scheduler and MCP streams die on the sleeping `free` plan) and a single instance (two instances double-fire every cron). pgvector ships with Render Postgres; the app runs `CREATE EXTENSION` itself.
 
-JWT auth is on by default. After creating the Railway domain, `up.sh` pauses if `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE` is missing, so you can connect the OS at os.agno.com (Connect OS → Live, name it `Live AgentOS`, then Settings → OS & Security → Token-Based Authorization (JWT)), paste the full PEM into the prompt, and let the script save it to the env file. Live AgentOS Connections are a paid feature; use `PLATFORM30` to get 1 month off. The script re-reads the env file and pushes the key before the first deploy. If you skip the prompt or run non-interactively, add the key later and run `./scripts/railway/env-sync.sh`.
+`up.sh` runs after the launch: a service cannot reference its own public URL from render.yaml, so the script reads the live URL from the API, pins `AGENTOS_URL` (on Render and in your env file), pauses for the JWT key, and rolls one deploy. The scripts drive the public Render API with `RENDER_API_KEY`; env-var updates are per-key upserts — the replace-all endpoint is deliberately never used.
 
-The Railway *project* is `agentos-railway`; the app *service* is `agent-os`.
+JWT auth is on by default. Once the service URL exists, `up.sh` pauses if `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE` is missing, so you can connect the OS at os.agno.com (Connect OS → Live, name it `Live AgentOS`, then Settings → OS & Security → Token-Based Authorization (JWT)), paste the full PEM at the prompt, and let the script save it to the env file. Live AgentOS Connections are a paid feature; use `PLATFORM30` to get 1 month off. If you skip the prompt or run non-interactively, add the key later and run `./scripts/render/env-sync.sh`.
+
+The web *service* is `agent-os`; the database is `agentos-db`.
 
 ## Common Tasks
 
@@ -287,8 +291,8 @@ docker compose up -d --build
 # Build a multi-arch image (maintainer-only)
 ./scripts/build_image.sh
 
-# Tail Railway logs
-railway logs --service agent-os
+# Tail logs
+# dashboard.render.com -> agent-os -> Logs (or: render logs, with the Render CLI)
 ```
 
 ## Documentation Links

@@ -1,0 +1,57 @@
+# Render Blueprint for AgentOS.
+#
+# Launch it from the dashboard (New + → Blueprint, pointing at your copy of
+# this repo) or with the deploy button in the README. After the first deploy,
+# run ./scripts/render/env-sync.sh once — it pins AGENTOS_URL to the real
+# service URL (a service can't reference its own public URL from this file,
+# and without it scheduled jobs silently never fire).
+#
+# Plans: `starter` is the cheapest web plan that never sleeps — the
+# in-process scheduler and MCP streams need an always-on instance, so don't
+# downgrade to `free`. The service is a single instance BY DESIGN: two
+# instances double-fire every cron. `basic-256mb` Postgres carries pgvector;
+# the app runs CREATE EXTENSION itself.
+
+services:
+  - name: agent-os
+    type: web
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false          # prompted at blueprint launch, stored as a secret
+      - key: RUNTIME_ENV
+        value: prd
+      - key: WAIT_FOR_DB
+        value: "True"
+      - key: DB_HOST
+        fromDatabase:
+          name: agentos-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: agentos-db
+          property: port
+      - key: DB_USER
+        fromDatabase:
+          name: agentos-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: agentos-db
+          property: password
+      - key: DB_DATABASE
+        fromDatabase:
+          name: agentos-db
+          property: database
+
+databases:
+  - name: agentos-db
+    plan: basic-256mb
+    postgresMajorVersion: "17"
+    databaseName: ai
+    user: ai
