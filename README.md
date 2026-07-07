@@ -1,12 +1,12 @@
 # AgentOS: the agent backend for every frontend
 
-AgentOS is a secure, scalable service that connects your agents to any frontend. Build your agents and workflows once; use the same system across every surface:
+AgentOS is a secure, scalable backend for building agents once and making them available everywhere.
 
-1. **Your product.** Add agents to your own application: AgentOS serves a full REST API with 80+ endpoints — runs, sessions, memory, knowledge, and evals.
-2. **Chat interfaces.** Chat with your agents through Slack, WhatsApp, Telegram, Discord. Slack is set up; for the rest, see [interfaces](https://docs.agno.com/agent-os/interfaces/overview).
-3. **AI apps.** Let Claude, ChatGPT, Cursor, and Claude Code use your agents through the MCP server at `/mcp`.
-4. **Coding agents.** Claude Code, Codex, and Cursor run the full agent development lifecycle with the skills in [`.agents/skills/`](.agents/skills/).
-5. **AgentOS UI.** The control plane for your agent-platform at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-render&utm_content=agentos-render&utm_term=render). Chat with agents, inspect sessions, traces, memory, and evals.
+1. **AI apps.** Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
+2. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
+3. **Coding agents.** Let Claude Code and Codex run your platform using the skills in [`.agents/skills/`](.agents/skills/).
+4. **Your product.** Embed agents directly into your product with the AgentOS REST API: 80+ endpoints for runs, sessions, memory, knowledge, evals, and more.
+5. **AgentOS UI.** Chat with agents, inspect sessions, traces, memory, and evals from the control plane at [os.agno.com](https://os.agno.com?utm_source=github&utm_medium=example-repo&utm_campaign=agentos-render&utm_content=agentos-render&utm_term=render).
 
 <img width="3298" height="2412" alt="AgentOS" src="https://github.com/user-attachments/assets/40a53a42-d4d2-402b-8e92-742609207957" />
 
@@ -16,7 +16,7 @@ Built on [Agno](https://docs.agno.com). Everything runs in your cloud, your data
 
 This codebase comes with:
 
-- **Two platform agents** that help you build and run the platform from your favorite AI Apps like Claude and ChatGPT. **Agent Builder** creates agents, teams, and workflows using the AgentOS Studio. **Platform Manager** understands, monitors, and explains the platform: codebase questions, eval history, deployment checks, schedules.
+- **Two platform agents** that help you build and run the platform from your favorite AI apps like Claude and ChatGPT. **Agent Builder** creates agents, teams, and workflows using the AgentOS Studio. **Platform Manager** understands, monitors, and explains the platform: codebase questions, eval history, deployment checks, schedules.
 - **Coding-agent skills** let Claude Code, Codex, Cursor, and other coding agents build, test, and improve the platform automatically — see [Using the platform](#using-the-platform).
 
 Trace data, agent code, evals, and system logs are all available to coding agents, so the platform can inspect and improve itself end to end.
@@ -79,15 +79,19 @@ Click **Chat** under **Platform Manager** and ask: "How healthy is the platform?
 
 AgentOS comes with an MCP server at `/mcp` (enabled by setting `enable_mcp_server=True` in [`app/main.py`](app/main.py)), so any MCP client can call your agents, teams, and workflows through tools like `run_agent`, `run_team`, and `run_workflow`.
 
-**Coding agents.** Register the AgentOS with coding agents on your machine:
+Register your AgentOS with the MCP clients on your machine:
 
 ```sh
 uvx agno connect
 ```
 
-It auto-detects Claude Code, Claude Desktop, Codex, and Cursor, registers `http://localhost:8000/mcp`, and verifies the connection. Coding agents run on your machine, which is why `localhost` works for them. Hosted chat apps (like Claude and ChatGPT) need a deployed URL. The manual command for Claude Code is `claude mcp add --transport http agentos http://localhost:8000/mcp`; other MCP-capable tools use the same URL.
+It auto-detects Claude Code, Claude Desktop, Codex, and Cursor and registers `http://localhost:8000/mcp`. After a successful connection, open one of these apps and ask:
 
-**Chat apps.** The Claude and ChatGPT apps can't reach `localhost` because their sessions run in hosted environments, not on your machine. For them, we need to deploy first, then add our platform as a connector. In claude.ai: **Settings → Connectors → Add custom connector** → `https://<your-onrender-domain>/mcp`. Same URL in ChatGPT's connector settings. Follow the [Run in production](#run-in-production) section to get set up.
+```text
+can you access my agentos mcp?
+```
+
+**claude.ai and ChatGPT (web).** Hosted AI apps reach your platform over the internet and sign in with **OAuth**. Deploy to production (below) and add `https://<domain>/mcp` as a remote connector.
 
 ## Run in production
 
@@ -143,17 +147,27 @@ MIIBIjANBgkq...
 -----END PUBLIC KEY-----"
 ```
 
-The value is quoted so every parser — docker compose `env_file` included — reads the multi-line PEM as one variable.
-
 > **Heads up.** Live AgentOS Connections are a paid feature. Use `PLATFORM30` to get 1 month off. We are working on a free trial so you don't have to pay to try.
 
 If you run non-interactively or skip the prompt, you can sync environment variables later with `./scripts/render/env-sync.sh`.
 
-### 4. Verify
+### 4. Register your production AgentOS to MCP clients
+
+Re-run `uvx agno connect`, this time pointed at your deployed domain, to connect Claude Code, Claude Desktop, Codex, and Cursor to your production platform:
+
+```sh
+uvx agno connect --url https://<your-onrender-domain>
+```
+
+Production is JWT-gated, so this connection needs a token — `uvx agno connect` mints a service-account token (`agno_pat_…`) for it. The bare `uvx agno connect` (no `--url`) only re-registers `http://localhost:8000/mcp`.
+
+For **claude.ai and ChatGPT (web)**, follow the remote MCP server registration process for `https://<your-onrender-domain>/mcp` and authenticate using OAuth.
+
+### 5. Verify
 
 The script prints the service URL — open `/docs` on it. Logs live in the dashboard: your service → **Logs**.
 
-### 5. Redeploy after code changes
+### 6. Redeploy after code changes
 
 `autoDeploy: true` is on in render.yaml, so **pushing to your deploy branch redeploys automatically** — that's the normal flow. To re-run a build without a new commit:
 
@@ -163,7 +177,7 @@ The script prints the service URL — open `/docs` on it. Logs live in the dashb
 
 Render builds the pushed branch; local uncommitted changes never deploy.
 
-### 6. Sync environment variables
+### 7. Sync environment variables
 
 To re-sync environment variables, run the following command:
 
@@ -173,7 +187,7 @@ To re-sync environment variables, run the following command:
 
 Each key is upserted individually (never the destructive replace-all API call), then one deploy applies it all.
 
-### 7. Tear down
+### 8. Tear down
 
 ```sh
 ./scripts/render/down.sh
@@ -187,7 +201,7 @@ Set `authorization=False` in [`app/main.py`](app/main.py) and redeploy. Use this
 
 ## Using the platform
 
-This platform is designed so that coding agents can drive the entire **create → improve → evaluate → maintain** lifecycle.
+This platform is designed so that coding agents can drive the entire **create → improve → evaluate → maintain** lifecycle for you.
 
 ### Create
 
