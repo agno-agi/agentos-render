@@ -91,7 +91,7 @@ It auto-detects Claude Code, Claude Desktop, Codex, and Cursor, registers `http:
 
 ## Run in production
 
-You can run the platform anywhere that supports containerized images. This sibling deploys to [Render](https://render.com) via the Blueprint in [`render.yaml`](render.yaml) — Render builds the Dockerfile and provisions managed Postgres (pgvector included) in one launch.
+You can run the platform anywhere that supports containerized images. This template deploys to [Render](https://render.com) via the Blueprint in [`render.yaml`](render.yaml) — Render builds the Dockerfile and provisions managed Postgres (pgvector included) in one launch.
 
 > **Prerequisites:** a [Render](https://render.com) account with this repo (your copy of it) reachable from Render, and a `RENDER_API_KEY` (dashboard → Account Settings → API Keys) for the scripts.
 

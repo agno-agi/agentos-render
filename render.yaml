@@ -1,10 +1,10 @@
 # Render Blueprint for AgentOS.
 #
 # Launch it from the dashboard (New + → Blueprint, pointing at your copy of
-# this repo) or with the deploy button in the README. After the first deploy,
-# run ./scripts/render/env-sync.sh once — it pins AGENTOS_URL to the real
-# service URL (a service can't reference its own public URL from this file,
-# and without it scheduled jobs silently never fire).
+# this repo). After the first deploy, run ./scripts/render/up.sh once — it
+# pins AGENTOS_URL to the real service URL (a service can't reference its own
+# public URL from this file, and without it scheduled jobs silently never
+# fire) and pauses so you can mint the JWT verification key.
 #
 # Plans: `starter` is the cheapest web plan that never sleeps — the
 # in-process scheduler and MCP streams need an always-on instance, so don't
@@ -17,6 +17,7 @@ services:
     type: web
     runtime: docker
     plan: starter
+    numInstances: 1    # single instance by design — two instances double-fire every cron
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
