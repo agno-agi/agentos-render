@@ -195,6 +195,11 @@ Each key is upserted individually (never the destructive replace-all API call), 
 
 Deletes the agent-os service and the agentos-db Postgres, **including all data**, and verifies both are gone before declaring success.
 
+### Troubleshooting
+
+- **The first deploy fails before you add the JWT key, and that is expected.** In production (`RUNTIME_ENV=prd`) AgentOS refuses to start without a `JWT_VERIFICATION_KEY`, so the Blueprint's first deploy exits with a `ValueError` until `./scripts/render/up.sh` adds the key and redeploys. The service still gets its URL, which is why `up.sh` can proceed against a failed first deploy.
+- **os.agno.com's Live connection fails to connect instantly.** os.agno.com calls your AgentOS from the browser, so a browser adblocker or content blocker can block the cross-origin request to your `onrender.com` domain (that domain sits on several filter lists). If the connection fails immediately (not a timeout), disable the blocker for os.agno.com or allowlist your `https://<name>.onrender.com` URL.
+
 ### Opting out of JWT (not recommended)
 
 Set `authorization=False` in [`app/main.py`](app/main.py) and redeploy. Use this only inside a private VPC behind another auth layer. Without it, anyone who reaches your AgentOS URL can access your platform.
