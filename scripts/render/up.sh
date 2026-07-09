@@ -294,10 +294,13 @@ fi
 if [[ -n "$JWT_VERIFICATION_KEY" ]]; then
     set_service_env "$SERVICE_ID" JWT_VERIFICATION_KEY "$JWT_VERIFICATION_KEY"
     echo -e "${DIM}Set JWT_VERIFICATION_KEY${NC}"
+elif [[ -n "$JWT_JWKS_FILE" ]]; then
+    set_service_env "$SERVICE_ID" JWT_JWKS_FILE "$JWT_JWKS_FILE"
+    echo -e "${DIM}Set JWT_JWKS_FILE=${JWT_JWKS_FILE}${NC}"
 elif [[ -n "$AUTH_REQUIRES_JWT" ]]; then
     echo ""
     echo -e "${DIM}No JWT auth config — the app will refuse traffic until you add${NC}"
-    echo -e "${DIM}JWT_VERIFICATION_KEY to ${ENV_FILE:-.env.production} and run ./scripts/render/env-sync.sh.${NC}"
+    echo -e "${DIM}JWT_VERIFICATION_KEY or JWT_JWKS_FILE to ${ENV_FILE:-.env.production} and run ./scripts/render/env-sync.sh.${NC}"
 fi
 
 if [[ -n "$NEEDS_DEPLOY" ]]; then

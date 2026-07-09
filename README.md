@@ -120,7 +120,7 @@ Then wire the rest:
 ./scripts/render/up.sh
 ```
 
-It waits for the service to be live, pins `AGENTOS_URL` to the real service URL — `render.yaml` can't express "my own URL", and without it scheduled jobs silently never fire — generates `MCP_CONNECT_SECRET` (the chat-app OAuth consent secret, printed once in the closing summary), and pauses for a JWT verification key (see next section).
+It waits for the Blueprint service to appear, pins `AGENTOS_URL` to the real service URL — `render.yaml` can't express "my own URL", and without it scheduled jobs silently never fire — generates `MCP_CONNECT_SECRET` (the chat-app OAuth consent secret, printed once in the closing summary), and pauses for a JWT verification key (see next section).
 
 ### 3. Production Auth
 

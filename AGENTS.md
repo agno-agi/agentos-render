@@ -264,7 +264,7 @@ When editing, keep that boundary crisp: platform behavior belongs in the core, R
 
 ```bash
 # 1. Launch the Blueprint (dashboard → New + → Blueprint → this repo) — render.yaml drives it
-./scripts/render/up.sh        # then: wait for live, pin AGENTOS_URL, MCP secret, JWT pause, one deploy
+./scripts/render/up.sh        # then: wait for the service to appear, pin AGENTOS_URL, MCP secret, JWT pause, one deploy
 ./scripts/render/env-sync.sh  # sync .env.production (default) or .env; per-key upserts + one deploy
 ./scripts/render/redeploy.sh  # re-run a build without a new commit (pushes auto-deploy anyway)
 ./scripts/render/down.sh      # delete service + Postgres (asks for confirmation; --yes to skip)
