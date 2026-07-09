@@ -26,17 +26,17 @@ Trace data, agent code, evals, and system logs are all available to coding agent
 The fastest way to get started is using a coding agent. Copy the prompt below into Claude Code, Cursor or Codex and it'll take you from zero to a running platform.
 
 ```text
-Help me set up an AgentOS on this machine. Work step by step and verify each step before moving to the next. When a step needs me (an API key, a Docker install, a sign-in), stop, tell me exactly what to do, and wait for my input. Never read or print secrets.
+Help me set up AgentOS on this machine. Work step by step. When a step needs me (an API key, a Docker install, a sign-in), stop, tell me exactly what to do, and wait for my input. Never read or print secrets.
 
-1. Clone https://github.com/agno-agi/agentos-render.git and cd in. Then read AGENTS.md end to end — it is the source of truth for how this platform works and answers most questions you'll hit along the way.
+1. Clone https://github.com/agno-agi/agentos-render.git into a folder called agent-platform and cd in. Then read AGENTS.md end to end — it is the source of truth for how this platform works and answers most questions you'll hit along the way.
 2. Run `cp example.env .env`, open .env in my favorite editor, and ask me to set the OPENAI_API_KEY.
 3. Confirm docker is installed, running and `docker info` succeeds. If Docker is missing, ask me to install Docker Desktop and wait until it's running.
 4. Start the platform with `docker compose up -d --build`, then poll http://localhost:8000/docs until it returns 200 (first build takes a few minutes). If it never comes up, read `docker compose logs agentos-api` and fix what you find.
 5. Prove it end to end with ./scripts/mcp_check.sh — it should print "MCP OK" and a real agent answer. Show me that answer: it's my platform talking.
 6. Ask me which frontends I want connected, then set up the ones I pick:
-   - Coding agents (including you): run `uvx agno connect` — it registers http://localhost:8000/mcp in Claude Code, Claude Desktop, Codex, and Cursor, and verifies with a real handshake. Use the default user scope, not --project (that would write a token into the repo).
+   - Coding agents (including you): run `uvx agno connect` — it registers http://localhost:8000/mcp in Claude Code, Claude Desktop, Codex, and Cursor, and verifies with a real handshake.
    - The AgentOS web UI: walk me through os.agno.com → Connect OS → http://localhost:8000, named "Local AgentOS".
-   - Claude and ChatGPT apps (web or desktop): their sessions run in the cloud and can't reach localhost, so work with me on deploying to production first: I launch the Render Blueprint from the dashboard (render.yaml drives it), then run ./scripts/render/up.sh (needs RENDER_API_KEY; the script pins AGENTOS_URL, pauses while I mint a JWT key at os.agno.com, and generates MCP_CONNECT_SECRET — the OAuth consent secret — into .env.production). Then I add https://<onrender-domain>/mcp as a custom connector in the chat app's connector settings and approve the consent page with that secret.
+   - Claude and ChatGPT apps (web or desktop): their sessions run in the cloud and can't reach localhost, so work with me on deploying to production first: I launch the Render Blueprint from the dashboard (render.yaml drives it), then run ./scripts/render/up.sh (needs RENDER_API_KEY; the script pins AGENTOS_URL, pauses while I mint a JWT key at os.agno.com, and saves the MCP_CONNECT_SECRET — the OAuth consent secret — in .env.production). Then I add https://<onrender-domain>/mcp as a custom connector in the chat app's connector settings and approve the consent page with that secret.
 7. Finish with a short summary of what's running and where, plus a few first prompts to try — start with asking Agent Builder to "Build an agent that tracks AI news and writes a daily brief".
 ```
 
@@ -91,7 +91,7 @@ It auto-detects Claude Code, Claude Desktop, Codex, and Cursor and registers `ht
 can you access my agentos mcp?
 ```
 
-**claude.ai and ChatGPT (web).** Hosted AI apps reach your platform over the internet and sign in with **OAuth**: set `MCP_CONNECT_SECRET` and the platform becomes its own OAuth authorization server — no external accounts. Deploy to production (below), add `https://<domain>/mcp` as a remote connector, and approve the consent page with your connect secret.
+**claude.ai and ChatGPT (web).** Hosted AI apps reach your platform over the internet and need an OAuth login. Deploy to production (below), add `https://<domain>/mcp` as a remote connector, and approve the consent page with your connect secret.
 
 ## Run in production
 
@@ -159,9 +159,7 @@ Re-run `uvx agno connect`, this time pointed at your deployed domain, to connect
 uvx agno connect --url https://<your-onrender-domain>
 ```
 
-Production is JWT-gated, so this connection needs a token — `uvx agno connect` mints a service-account token (`agno_pat_…`) for it. `--url` pins the target; a bare `uvx agno connect` resolves it from where you run it — in this repo it discovers the deployed URL that `up.sh` saved to `.env.production`, elsewhere it falls back to `http://localhost:8000/mcp`.
-
-For **claude.ai and ChatGPT (web)**, the platform serves its own OAuth authorization server on `/mcp` — `up.sh` generated the login secret for it (`MCP_CONNECT_SECRET` in `.env.production`) during deploy. Add `https://<your-onrender-domain>/mcp` as a custom connector in the chat app's connector settings. **Leave the form's optional OAuth fields (client ID / client secret) empty** — the platform registers the app automatically. The connect secret is typed exactly once, on the consent page that opens after you click **Connect**.
+For **claude.ai and ChatGPT (web)**: add `https://<your-onrender-domain>/mcp` as a custom connector in the chat app's connector settings. Leave the form's optional OAuth fields (client ID / client secret) empty. Click **Connect** and, on the consent page, enter the `MCP_CONNECT_SECRET` that `up.sh` generated during deploy (saved in `.env.production`).
 
 ### 5. Verify
 
