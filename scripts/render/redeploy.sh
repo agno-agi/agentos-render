@@ -19,6 +19,7 @@
 set -e
 
 # Colors
+ORANGE='\033[38;5;208m'
 DIM='\033[2m'
 BOLD='\033[1m'
 NC='\033[0m'
@@ -61,7 +62,9 @@ if [[ -n "$(git status --porcelain 2> /dev/null)" ]]; then
 fi
 
 echo ""
-echo -e "${BOLD}Triggering deploy of ${SERVICE_NAME}...${NC}"
+echo -e "${ORANGE}▸${NC} ${BOLD}Redeploying ${SERVICE_NAME}${NC}"
+echo ""
+echo -e "${DIM}> POST /services/${SERVICE_ID}/deploys${NC}"
 curl -sf -X POST "${API}/services/${SERVICE_ID}/deploys" \
     -H "Authorization: Bearer ${RENDER_API_KEY}" \
     -H 'Content-Type: application/json' -d '{}' > /dev/null
