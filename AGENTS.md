@@ -23,14 +23,15 @@ Shared:
 - `app.registry.registry` exposes the safe Studio registry Agent Builder can use: Agno docs MCP, web search, reasoning tools, utility functions, the default model, the shared DB, and the reference agents (web-search, platform-manager).
 - Scheduler enabled by default (`scheduler=True`); `app/schedules.py` registers schedules from the lifespan. Deployment check runs daily **on** by default — set `ENABLE_DEPLOY_CHECK=False` to disable it. Scheduled evals are **off** by default — set `ENABLE_SCHEDULED_EVALS=True` to schedule the run-evals workflow.
 - Slack interface lights up automatically when both `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` are set.
-- MCP server on by default (`enable_mcp_server=True`) at `/mcp` — see [MCP interface](#mcp-interface).
+- MCP server on by default (`mcp_server=True`) at `/mcp` — see [MCP interface](#mcp-interface).
+- MCP OAuth lights up when `MCP_CONNECT_SECRET` is set (built-in authorization server) — how claude.ai and ChatGPT (web) connect; see [MCP interface](#mcp-interface).
 - JWT auth on whenever `RUNTIME_ENV` is anything but `dev` (so production deploys, which default to `prd`, are gated by default).
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| [`app/main.py`](app/main.py) | AgentOS entrypoint — lifespan hook, conditional Slack, JWT gate. |
+| [`app/main.py`](app/main.py) | AgentOS entrypoint — lifespan hook, conditional Slack, conditional MCP OAuth, JWT gate. |
 | [`app/settings.py`](app/settings.py) | `default_model()` factory. |
 | [`app/registry.py`](app/registry.py) | Safe Studio registry used by Agent Builder — docs MCP, web tools, utility functions, reference agents. |
 | [`app/config.yaml`](app/config.yaml) | Quick prompts per agent (keyed by agent `id`). |
@@ -48,7 +49,7 @@ Shared:
 | [`README.md`](README.md) | Public entry point — leads with the copy-paste setup prompt that takes a coding agent from clone to connected. |
 | [`compose.yaml`](compose.yaml) | Docker Compose for local development. |
 | [`render.yaml`](render.yaml) | Render Blueprint — starter (non-sleeping) single-instance web service built from the Dockerfile, basic-256mb Postgres 17 with discrete DB_* wired via fromDatabase. |
-| [`scripts/render/`](scripts/render/) | Render deploy layer — up.sh waits for the Blueprint launch, pins AGENTOS_URL, pauses for JWT; env-sync/redeploy/down drive the Render API. |
+| [`scripts/render/`](scripts/render/) | Render deploy layer — up.sh waits for the Blueprint launch, pins AGENTOS_URL, generates MCP_CONNECT_SECRET, pauses for JWT; env-sync/redeploy/down drive the Render API. |
 
 ## Development Setup
 
@@ -191,7 +192,9 @@ Invoke a skill by name (`/extend-agent`) or just describe the task — Claude Co
 | `RUNTIME_ENV` | no | `prd` | `dev` disables JWT. Compose sets this to `dev` for local — never put `dev` in an env file that env-sync.sh pushes to Render, or production serves unauthenticated. |
 | `JWT_VERIFICATION_KEY` | prd | — | Public key from os.agno.com. Required when `RUNTIME_ENV=prd` and `authorization=True`, unless `JWT_JWKS_FILE` is set. |
 | `JWT_JWKS_FILE` | prd | — | Path to a JWKS file; alternative to `JWT_VERIFICATION_KEY` for production JWT verification. |
-| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. `scripts/render/up.sh` pins it to the onrender.com service URL after the first deploy (render.yaml can't reference its own URL) and writes it back into your env file; only set it by hand for custom domains. Left at the localhost default in prod, scheduled jobs silently never fire. |
+| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL — cron triggers reach AgentOS over this. `scripts/render/up.sh` pins it to the onrender.com service URL after the first deploy (render.yaml can't reference its own URL) and writes it back into your env file; only set it by hand for custom domains. Left at the localhost default in prod, scheduled jobs silently never fire. Also the public origin OAuth metadata derives from when `MCP_CONNECT_SECRET` is set. |
+| `MCP_CONNECT_SECRET` | no | — | If set (≥16 chars, e.g. `openssl rand -base64 32`), `/mcp` becomes its own OAuth 2.1 authorization server (built-in tier) so claude.ai and ChatGPT (web) can connect; connecting asks for this secret on a consent page. Requires `AGENTOS_URL`. PAT and JWT bearers keep working alongside. `scripts/render/up.sh` auto-generates it into your env file on deploy. |
+| `AGENTOS_MCP_SIGNING_KEY` | no | — | Optional high-entropy signing-key material (≥32 chars) for OAuth tokens. Unset, a strong key is generated and persisted in the database. Rotating it invalidates outstanding tokens. |
 | `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron (`app/schedules.py`) runs daily by default. Set `False` to disable; the workflow stays runnable on demand regardless. |
 | `ENABLE_SCHEDULED_EVALS` | no | `False` | If `True`, schedules the run-evals workflow daily. Off by default because it uses model calls. |
 | `EVALS_TAG` | no | `smoke` | Eval tag run by the run-evals workflow. |
@@ -230,13 +233,14 @@ Keep it read-only. Least privilege is the point: an ops surface that only reads 
 
 ## MCP interface
 
-`enable_mcp_server=True` in [`app/main.py`](app/main.py) mounts an MCP server (streamable HTTP) at `/mcp`, on the same port as the REST API. This is the platform's second interface: chat apps (claude.ai and ChatGPT connectors) and coding agents (Claude Code, Cursor) drive the agents, teams, and workflows through it. The setup prompt in the [README](README.md) takes a fresh machine from clone to connected.
+`mcp_server=True` in [`app/main.py`](app/main.py) mounts an MCP server (streamable HTTP) at `/mcp`, on the same port as the REST API. This is the platform's second interface: chat apps (claude.ai and ChatGPT connectors) and coding agents (Claude Code, Cursor) drive the agents, teams, and workflows through it. The setup prompt in the [README](README.md) takes a fresh machine from clone to connected.
 
 - **Tools are generic, not per-agent — eight of them.** `get_agentos_config` (how clients discover valid ids), `run_agent(agent_id, message, session_id)`, `run_team`, `run_workflow`, `continue_run`, `cancel_run`, `get_sessions`, and `get_session_runs`. Sessions are read-only over MCP and there is no memory CRUD. `run_agent` returns a trimmed ToolResult: `content[0].text` is the plain answer, and `structuredContent` carries `{run_id, session_id, status}`. The server needs the `fastmcp` package, which ships with the pinned `agno` dependency.
-- **Auth mirrors the REST API, with first-class service accounts.** Dev (`RUNTIME_ENV=dev`) is open. In prd the same middleware protects `/mcp`; clients send `Authorization: Bearer <token>`. Two token types work side by side: JWTs minted at os.agno.com, and opaque service-account PATs (`agno_pat_…`) minted via `POST /service-accounts` (the route auto-enables once a db is set). A PAT's default scopes — `agents:run`, `teams:run`, `workflows:run`, `sessions:read`, `config:read` — cover all eight tools, and it attributes as `sa:<name>`. The verified token subject overrides any caller-supplied `user_id`, so identity cannot be spoofed. `uvx agno connect` mints a PAT and registers `/mcp` in Claude Code / Claude Desktop / Codex / Cursor.
+- **Auth mirrors the REST API, with first-class service accounts.** Dev (`RUNTIME_ENV=dev`) is open (unless MCP OAuth is on — next bullet). In prd the same middleware protects `/mcp`; clients send `Authorization: Bearer <token>`. Two token types work side by side: JWTs minted at os.agno.com, and opaque service-account PATs (`agno_pat_…`) minted via `POST /service-accounts` (the route auto-enables once a db is set). A PAT's default scopes — `agents:run`, `teams:run`, `workflows:run`, `sessions:read`, `config:read` — cover all eight tools, and it attributes as `sa:<name>`. The verified token subject overrides any caller-supplied `user_id`, so identity cannot be spoofed. `uvx agno connect` mints a PAT and registers `/mcp` in Claude Code / Claude Desktop / Codex / Cursor.
+- **OAuth for the web chat apps — set `MCP_CONNECT_SECRET` and `/mcp` becomes its own OAuth 2.1 authorization server.** claude.ai and ChatGPT (web) connectors authenticate over OAuth only, so this is what lets them connect to a secured platform: paste `https://<domain>/mcp` as a custom connector (the form's optional client ID/secret fields stay empty — DCR registers the app), then approve the consent page with the connect secret. The built-in server (`AgentOSBuiltinAuth(url=agentos_url, secret=MCP_CONNECT_SECRET)` in [`app/main.py`](app/main.py), mirroring the Slack conditional) stores clients, single-use codes, and rotating refresh tokens hashed in Postgres; DCR is public-client + PKCE only; tokenless calls get the `401` + `WWW-Authenticate` challenge connectors use for discovery, and `/info`'s `mcp.oauth` block carries the OAuth discovery details (`auth_mode` keeps describing the REST plane). Existing PAT/JWT bearers keep working on the same endpoint (`MultiAuth`), so enabling OAuth never breaks `agno connect` clients. Gates `/mcp` in dev too — the OAuth flow needs a stable public origin (`AGENTOS_URL`).
 - **HITL pauses resume over MCP via `continue_run`.** A paused `run_agent` returns immediately with `status=PAUSED` and unresolved `requirements` dicts in `structuredContent`; the client sets the resolution field (e.g. `confirmation: true`) and passes them back through `continue_run(run_id, agent_id, session_id, requirements)`. So a confirmation gate is no longer a dead end from chat frontends — this is what lets Agent Builder keep the delete gate usable over MCP.
 
-Local smoke check: `./scripts/mcp_check.sh` — handshake, tool count, and one quick tool-free `run_agent` call through `/mcp` (finishes in seconds; pass your own question as an argument), executed inside the container. To register the endpoint, run `uvx agno connect` (auto-detects Claude Code / Claude Desktop / Codex / Cursor and verifies with a real handshake); the manual fallback for Claude Code is `claude mcp add --transport http agentos http://localhost:8000/mcp`.
+Local smoke check: `./scripts/mcp_check.sh` — handshake, tool count, and one quick tool-free `run_agent` call through `/mcp` (finishes in seconds; pass your own question as an argument), executed inside the container. When `/mcp` is auth-gated (OAuth on, or prd JWT), it retries with a short-lived probe service account that it mints and deletes itself. To register the endpoint, run `uvx agno connect` (auto-detects Claude Code / Claude Desktop / Codex / Cursor and verifies with a real handshake); the manual fallback for Claude Code is `claude mcp add --transport http agentos http://localhost:8000/mcp`.
 
 ## Slack
 
@@ -260,7 +264,7 @@ When editing, keep that boundary crisp: platform behavior belongs in the core, R
 
 ```bash
 # 1. Launch the Blueprint (dashboard → New + → Blueprint → this repo) — render.yaml drives it
-./scripts/render/up.sh        # then: wait for live, pin AGENTOS_URL, JWT pause, one deploy
+./scripts/render/up.sh        # then: wait for live, pin AGENTOS_URL, MCP secret, JWT pause, one deploy
 ./scripts/render/env-sync.sh  # sync .env.production (default) or .env; per-key upserts + one deploy
 ./scripts/render/redeploy.sh  # re-run a build without a new commit (pushes auto-deploy anyway)
 ./scripts/render/down.sh      # delete service + Postgres (asks for confirmation; --yes to skip)
@@ -268,7 +272,7 @@ When editing, keep that boundary crisp: platform behavior belongs in the core, R
 
 Provisioning is Blueprint-first: Render reads [`render.yaml`](render.yaml) when you connect the repo, builds the Dockerfile on its own builders, prompts for `OPENAI_API_KEY` (`sync: false`), and creates a `basic-256mb` Postgres 17 whose discrete `DB_*` values feed the service via `fromDatabase` (the core never reads `DATABASE_URL`). Two render.yaml choices are load-bearing: the `starter` plan (cheapest that never sleeps — the in-process scheduler and MCP streams die on the sleeping `free` plan) and a single instance (two instances double-fire every cron). pgvector ships with Render Postgres; the app runs `CREATE EXTENSION` itself.
 
-`up.sh` runs after the launch: a service cannot reference its own public URL from render.yaml, so the script reads the live URL from the API, pins `AGENTOS_URL` (on Render and in your env file), pauses for the JWT key, and rolls one deploy. The scripts drive the public Render API with `RENDER_API_KEY`; env-var updates are per-key upserts — the replace-all endpoint is deliberately never used.
+`up.sh` runs after the launch: a service cannot reference its own public URL from render.yaml, so the script reads the live URL from the API, pins `AGENTOS_URL` (on Render and in your env file), pauses for the JWT key, and rolls one deploy. It also generates `MCP_CONNECT_SECRET` into the env file when missing and prints it in the closing summary, so chat apps can connect over OAuth from the first deploy — see [MCP interface](#mcp-interface). The scripts drive the public Render API with `RENDER_API_KEY`; env-var updates are per-key upserts — the replace-all endpoint is deliberately never used.
 
 JWT auth is on by default. Once the service URL exists, `up.sh` pauses if `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE` is missing, so you can connect the OS at os.agno.com (Connect OS → Live, name it `Live AgentOS`, then Settings → OS & Security → Token-Based Authorization (JWT)), paste the full PEM at the prompt, and let the script save it to the env file. Live AgentOS Connections are a paid feature; use `PLATFORM30` to get 1 month off. If you skip the prompt or run non-interactively, add the key later and run `./scripts/render/env-sync.sh`.
 

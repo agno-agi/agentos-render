@@ -19,6 +19,7 @@
 set -e
 
 # Colors
+ORANGE='\033[38;5;208m'
 DIM='\033[2m'
 BOLD='\033[1m'
 RED='\033[31m'
@@ -71,7 +72,9 @@ if [[ -z "$SERVICE_ID" && -z "$DB_ID" ]]; then
 fi
 
 echo ""
-echo -e "${BOLD}This deletes:${NC}"
+echo -e "${ORANGE}▸${NC} ${BOLD}Render Teardown${NC}"
+echo ""
+echo -e "This deletes:"
 [[ -n "$SERVICE_ID" ]] && echo -e "  - service   ${SERVICE_NAME}  ${DIM}(${SERVICE_ID})${NC}"
 [[ -n "$DB_ID" ]] && echo -e "  - postgres  ${DB_NAME}  ${DIM}(${DB_ID})${NC}  ${RED}(all data deleted)${NC}"
 echo ""
@@ -87,13 +90,13 @@ fi
 
 if [[ -n "$SERVICE_ID" ]]; then
     echo ""
-    echo -e "${BOLD}Deleting service...${NC}"
+    echo -e "${DIM}> DELETE /services/${SERVICE_ID}${NC}"
     api DELETE "/services/${SERVICE_ID}" > /dev/null \
         || echo -e "${DIM}Delete returned non-zero — verifying below${NC}"
 fi
 if [[ -n "$DB_ID" ]]; then
     echo ""
-    echo -e "${BOLD}Deleting Postgres...${NC}"
+    echo -e "${DIM}> DELETE /postgres/${DB_ID}${NC}"
     api DELETE "/postgres/${DB_ID}" > /dev/null \
         || echo -e "${DIM}Delete returned non-zero — verifying below${NC}"
 fi
@@ -104,7 +107,7 @@ LEFT_SERVICE="$(api GET "/services?name=${SERVICE_NAME}&limit=20" | first_id_by_
 LEFT_DB="$(api GET "/postgres?name=${DB_NAME}&limit=20" | first_id_by_name postgres "$DB_NAME")"
 if [[ -n "$LEFT_SERVICE" || -n "$LEFT_DB" ]]; then
     echo ""
-    echo -e "${BOLD}Teardown incomplete${NC} — still listed:"
+    echo -e "${RED}${BOLD}Teardown incomplete${NC} — still listed:"
     [[ -n "$LEFT_SERVICE" ]] && echo "  service ${LEFT_SERVICE}"
     [[ -n "$LEFT_DB" ]] && echo "  postgres ${LEFT_DB}"
     exit 1

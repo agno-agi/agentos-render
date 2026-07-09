@@ -1,6 +1,6 @@
 # AgentOS: the agent backend for every frontend
 
-AgentOS is a secure, scalable backend for building agents once and making them available everywhere.
+AgentOS is a secure, scalable backend for running agents. Build agents once and make them available everywhere:
 
 1. **AI apps.** Claude and ChatGPT can use your agents through the MCP server at `/mcp`.
 2. **Chat interfaces.** Chat with your agents from Slack, WhatsApp, Telegram, and Discord.
@@ -36,7 +36,7 @@ Help me set up an AgentOS on this machine. Work step by step and verify each ste
 6. Ask me which frontends I want connected, then set up the ones I pick:
    - Coding agents (including you): run `uvx agno connect` — it registers http://localhost:8000/mcp in Claude Code, Claude Desktop, Codex, and Cursor, and verifies with a real handshake. Use the default user scope, not --project (that would write a token into the repo).
    - The AgentOS web UI: walk me through os.agno.com → Connect OS → http://localhost:8000, named "Local AgentOS".
-   - Claude and ChatGPT apps (web or desktop): their sessions run in the cloud and can't reach localhost, so work with me on deploying to production first: I launch the Render Blueprint from the dashboard (render.yaml drives it), then run ./scripts/render/up.sh (needs RENDER_API_KEY; the script pins AGENTOS_URL and pauses while I mint a JWT key at os.agno.com). Then I add https://<onrender-domain>/mcp as a custom connector in the chat app's connector settings.
+   - Claude and ChatGPT apps (web or desktop): their sessions run in the cloud and can't reach localhost, so work with me on deploying to production first: I launch the Render Blueprint from the dashboard (render.yaml drives it), then run ./scripts/render/up.sh (needs RENDER_API_KEY; the script pins AGENTOS_URL, pauses while I mint a JWT key at os.agno.com, and generates MCP_CONNECT_SECRET — the OAuth consent secret — into .env.production). Then I add https://<onrender-domain>/mcp as a custom connector in the chat app's connector settings and approve the consent page with that secret.
 7. Finish with a short summary of what's running and where, plus a few first prompts to try — start with asking Agent Builder to "Build an agent that tracks AI news and writes a daily brief".
 ```
 
@@ -77,7 +77,7 @@ Click **Chat** under **Platform Manager** and ask: "How healthy is the platform?
 
 ## Use your platform from Claude Code and chat apps
 
-AgentOS comes with an MCP server at `/mcp` (enabled by setting `enable_mcp_server=True` in [`app/main.py`](app/main.py)), so any MCP client can call your agents, teams, and workflows through tools like `run_agent`, `run_team`, and `run_workflow`.
+AgentOS comes with an MCP server at `/mcp` (enabled by setting `mcp_server=True` in [`app/main.py`](app/main.py)), so any MCP client can call your agents, teams, and workflows through tools like `run_agent`, `run_team`, and `run_workflow`.
 
 Register your AgentOS with the MCP clients on your machine:
 
@@ -91,7 +91,7 @@ It auto-detects Claude Code, Claude Desktop, Codex, and Cursor and registers `ht
 can you access my agentos mcp?
 ```
 
-**claude.ai and ChatGPT (web).** Hosted AI apps reach your platform over the internet and sign in with **OAuth**. Deploy to production (below) and add `https://<domain>/mcp` as a remote connector.
+**claude.ai and ChatGPT (web).** Hosted AI apps reach your platform over the internet and sign in with **OAuth**: set `MCP_CONNECT_SECRET` and the platform becomes its own OAuth authorization server — no external accounts. Deploy to production (below), add `https://<domain>/mcp` as a remote connector, and approve the consent page with your connect secret.
 
 ## Run in production
 
@@ -120,7 +120,7 @@ Then wire the rest:
 ./scripts/render/up.sh
 ```
 
-It waits for the service to be live, pins `AGENTOS_URL` to the real service URL — `render.yaml` can't express "my own URL", and without it scheduled jobs silently never fire — and pauses for a JWT verification key (see next section).
+It waits for the service to be live, pins `AGENTOS_URL` to the real service URL — `render.yaml` can't express "my own URL", and without it scheduled jobs silently never fire — generates `MCP_CONNECT_SECRET` (the chat-app OAuth consent secret, printed once in the closing summary), and pauses for a JWT verification key (see next section).
 
 ### 3. Production Auth
 
@@ -159,9 +159,9 @@ Re-run `uvx agno connect`, this time pointed at your deployed domain, to connect
 uvx agno connect --url https://<your-onrender-domain>
 ```
 
-Production is JWT-gated, so this connection needs a token — `uvx agno connect` mints a service-account token (`agno_pat_…`) for it. The bare `uvx agno connect` (no `--url`) only re-registers `http://localhost:8000/mcp`.
+Production is JWT-gated, so this connection needs a token — `uvx agno connect` mints a service-account token (`agno_pat_…`) for it. `--url` pins the target; a bare `uvx agno connect` resolves it from where you run it — in this repo it discovers the deployed URL that `up.sh` saved to `.env.production`, elsewhere it falls back to `http://localhost:8000/mcp`.
 
-For **claude.ai and ChatGPT (web)**, follow the remote MCP server registration process for `https://<your-onrender-domain>/mcp` and authenticate using OAuth.
+For **claude.ai and ChatGPT (web)**, the platform serves its own OAuth authorization server on `/mcp` — `up.sh` generated the login secret for it (`MCP_CONNECT_SECRET` in `.env.production`) during deploy. Add `https://<your-onrender-domain>/mcp` as a custom connector in the chat app's connector settings. **Leave the form's optional OAuth fields (client ID / client secret) empty** — the platform registers the app automatically. The connect secret is typed exactly once, on the consent page that opens after you click **Connect**.
 
 ### 5. Verify
 
@@ -247,7 +247,9 @@ Because the repo is managed by coding agents, it moves fast. Run `/review-and-im
 | `RUNTIME_ENV` | no | `prd` | `dev` disables JWT. Compose sets this to `dev` for local — never put `dev` in an env file that env-sync.sh pushes to Render, or production serves unauthenticated. |
 | `JWT_VERIFICATION_KEY` | prd | none | Public key from os.agno.com. Required when `RUNTIME_ENV=prd`, unless `JWT_JWKS_FILE` is set. |
 | `JWT_JWKS_FILE` | prd | none | Path to a JWKS file; alternative to `JWT_VERIFICATION_KEY` for production JWT verification. |
-| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. `scripts/render/up.sh` pins it to the onrender.com service URL after the first deploy (render.yaml can't reference its own URL) and writes it back into your env file. |
+| `AGENTOS_URL` | no | `http://127.0.0.1:8000` | Scheduler base URL. `scripts/render/up.sh` pins it to the onrender.com service URL after the first deploy (render.yaml can't reference its own URL) and writes it back into your env file. Also the public origin OAuth metadata derives from when `MCP_CONNECT_SECRET` is set. |
+| `MCP_CONNECT_SECRET` | no | none | If set (≥16 chars, e.g. `openssl rand -base64 32`), `/mcp` becomes its own OAuth 2.1 authorization server so claude.ai and ChatGPT (web) can connect; connecting asks for this secret on a consent page. Requires `AGENTOS_URL`. `scripts/render/up.sh` auto-generates it on deploy. PAT and JWT bearers keep working alongside. |
+| `AGENTOS_MCP_SIGNING_KEY` | no | none | Optional high-entropy signing-key material (≥32 chars) for OAuth tokens. Unset, a strong key is generated and persisted in the database. Rotating it invalidates outstanding tokens. |
 | `ENABLE_DEPLOY_CHECK` | no | `True` | The reference deployment-check cron runs daily by default. Set `False` to disable; the workflow is runnable on demand regardless. |
 | `ENABLE_SCHEDULED_EVALS` | no | `False` | If `True`, schedules the run-evals workflow daily. Off by default because it uses model calls. |
 | `EVALS_TAG` | no | `smoke` | Eval tag run by the run-evals workflow. |

@@ -22,6 +22,7 @@
 set -e
 
 # Colors
+ORANGE='\033[38;5;208m'
 DIM='\033[2m'
 BOLD='\033[1m'
 NC='\033[0m'
@@ -82,7 +83,9 @@ set_service_env() {
 }
 
 echo ""
-echo -e "${BOLD}Syncing env vars from ${ENV_FILE} to ${SERVICE_NAME}...${NC}"
+echo -e "${ORANGE}▸${NC} ${BOLD}Syncing env vars${NC}"
+echo ""
+echo -e "${DIM}> ${ENV_FILE} -> Render service ${SERVICE_NAME}${NC}"
 echo ""
 
 count=0
