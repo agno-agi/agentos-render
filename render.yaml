@@ -16,7 +16,7 @@ services:
   - name: agent-os
     type: web
     runtime: docker
-    plan: starter
+    plan: free    # TEST ONLY — template default is `starter` (never sleeps). free sleeps and the scheduler won't reliably fire.
     numInstances: 1    # single instance by design — two instances double-fire every cron
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -52,7 +52,7 @@ services:
 
 databases:
   - name: agentos-db
-    plan: basic-256mb
+    plan: free    # TEST ONLY — template default is `basic-256mb`. free Postgres expires ~30 days.
     postgresMajorVersion: "17"
     databaseName: ai
     user: ai
