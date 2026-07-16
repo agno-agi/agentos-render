@@ -46,7 +46,7 @@ Shared:
 | [`evals/cases.py`](evals/cases.py) | Eval cases (each is a `Case` with optional judge + reliability checks). |
 | [`evals/__main__.py`](evals/__main__.py) | `python -m evals` — thin entrypoint over agno's eval suite runner (`agno.eval.cli`). |
 | [`.agents/skills/`](.agents/skills/) | Dev-time **coding-agent workflows** (`setup-platform`, `create-new-agent`, `extend-agent`, `improve-agent`, `eval-and-improve`, `review-and-improve`) — slash commands coding agents run *on this repo*. `.claude/skills` is a committed symlink into it — see [Working with coding agents](#working-with-coding-agents). |
-| [`README.md`](README.md) | Public entry point — leads with a four-line prompt that hands a coding agent to the `setup-platform` skill (clone to first agent). |
+| [`README.md`](README.md) | Public entry point — its Get Started prompt hands a coding agent to the `setup-platform` skill (clone to first agent). |
 | [`compose.yaml`](compose.yaml) | Docker Compose for local development. |
 | [`render.yaml`](render.yaml) | Render Blueprint — starter (non-sleeping) single-instance web service built from the Dockerfile, basic-256mb Postgres 17 with discrete DB_* wired via fromDatabase. |
 | [`scripts/render/`](scripts/render/) | Render deploy layer — up.sh waits for the Blueprint launch, pins AGENTOS_URL, generates MCP_CONNECT_SECRET, pauses for JWT; env-sync/redeploy/down drive the Render API. |
