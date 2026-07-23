@@ -45,7 +45,7 @@ Shared:
 | [`db/url.py`](db/url.py) | Builds the database URL from env. |
 | [`evals/cases.py`](evals/cases.py) | Eval cases (each is a `Case` with optional judge + reliability checks). |
 | [`evals/__main__.py`](evals/__main__.py) | `python -m evals` — thin entrypoint over agno's eval suite runner (`agno.eval.cli`). |
-| [`.agents/skills/`](.agents/skills/) | Dev-time **coding-agent workflows** (`setup-platform`, `create-new-agent`, `extend-agent`, `improve-agent`, `create-evals`, `eval-and-improve`, `review-and-improve`, `deploy-platform`) — slash commands coding agents run *on this repo*. `.claude/skills` is a committed symlink into it — see [Working with coding agents](#working-with-coding-agents). |
+| [`.agents/skills/`](.agents/skills/) | Dev-time **coding-agent workflows** (`setup-platform`, `create-agent`, `extend-agent`, `improve-agent`, `create-evals`, `eval-and-improve`, `review-and-improve`, `deploy-platform`) — slash commands coding agents run *on this repo*. `.claude/skills` is a committed symlink into it — see [Working with coding agents](#working-with-coding-agents). |
 | [`README.md`](README.md) | Public entry point — its Get Started prompt hands a coding agent to the `setup-platform` skill (clone to first agent). |
 | [`compose.yaml`](compose.yaml) | Docker Compose for local development. |
 | [`render.yaml`](render.yaml) | Render Blueprint — starter (non-sleeping) single-instance web service built from the Dockerfile, basic-256mb Postgres 17 with discrete DB_* wired via fromDatabase. |
@@ -142,7 +142,7 @@ Knowledge bases use PgVector with `SearchType.hybrid` and `text-embedding-3-smal
 
 Two options:
 
-1. **Hand it to Claude Code** — run the `/create-new-agent` skill (or just ask to "create a new agent") in a Claude Code session pointed at this repo. Claude asks the user what the agent should do, generates the file, registers it, smoke-tests it. See [Working with coding agents](#working-with-coding-agents).
+1. **Hand it to Claude Code** — run the `/create-agent` skill (or just ask to "create a new agent") in a Claude Code session pointed at this repo. Claude asks the user what the agent should do, generates the file, registers it, smoke-tests it. See [Working with coding agents](#working-with-coding-agents).
 2. **Do it manually** — create `agents/<slug>.py`, register in `app/main.py`, add its manifest entry (description + quick prompts) to `app/config.yaml`. The scoped uvicorn reload picks the changes up automatically; restart `agentos-api` if you changed dependencies or env.
 
 ## Iterating on an agent
@@ -176,8 +176,8 @@ Dev-time **coding-agent workflows** live in [`.agents/skills/`](.agents/skills/)
 
 These workflows cover platform setup, the agent-development lifecycle, and the production deploy in this template:
 
-- **`/setup-platform`** — take a fresh clone to a running platform with a first agent live on it: Docker check, `.env`, boot, MCP proof, the AgentOS UI connect, then a `create-new-agent` handoff. The README's Get Started prompt and the os.agno.com onboarding prompt both drive it.
-- **`/create-new-agent`** — scaffold a new agent: guided discovery or from a concrete idea → generate `agents/<slug>.py`, register it, smoke-test it live.
+- **`/setup-platform`** — take a fresh clone to a running platform with a first agent live on it: Docker check, `.env`, boot, MCP proof, the AgentOS UI connect, then a `create-agent` handoff. The README's Get Started prompt and the os.agno.com onboarding prompt both drive it.
+- **`/create-agent`** — scaffold a new agent: guided discovery or from a concrete idea → generate `agents/<slug>.py`, register it, smoke-test it live.
 - **`/extend-agent`** — you drive. Add a tool/source, refine `INSTRUCTIONS`, fix a known bug. Uses the `agno-docs` MCP for grounded toolkit research.
 - **`/improve-agent`** — Claude drives. Derives probes from the agent's `INSTRUCTIONS`, judges, edits, re-runs. No user input needed.
 - **`/create-evals`** — author eval coverage for an agent: map its promises, mine real sessions from Postgres for scenarios, propose capabilities, write and audit `Case` entries. How a user's own agents join the suite.
