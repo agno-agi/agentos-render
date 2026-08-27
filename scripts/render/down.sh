@@ -12,6 +12,11 @@
 #    in the database is deleted. Verify afterwards in the dashboard or
 #    with the list calls this script runs for you.
 #
+#    Once both are confirmed gone, comments the two settings that died with
+#    them out of .env.production / .env — the Render-minted AGENTOS_URL and
+#    the JWT_VERIFICATION_KEY — so the next up.sh pins the fresh service URL
+#    and re-runs its guided key step.
+#
 #    Prerequisites: RENDER_API_KEY (env or env file), python3.
 #
 ############################################################################
@@ -24,6 +29,45 @@ DIM='\033[2m'
 BOLD='\033[1m'
 RED='\033[31m'
 NC='\033[0m'
+
+# Comment out a KEY= block, PEM continuation lines included, and stamp the
+# reason above it. Commenting only the first line of a multi-line value is worse
+# than leaving it: up.sh's env parser skips the commented `KEY="-----BEGIN...`
+# line and then reads the next base64 line as a key name of its own. Rewrites
+# through the original file (not `mv`) so it keeps its inode and permissions.
+# Returns 1 when there was no active block to comment.
+comment_out_env_block() {
+    local key="$1" file="$2" tmp line commenting=0 hit=0 value_part reason
+    shift 2
+    [[ -f "$file" ]] || return 1
+    grep -qE "^[[:space:]]*${key}=" "$file" || return 1
+
+    tmp="$(mktemp)"
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        if [[ "$commenting" == 1 ]]; then
+            printf '# %s\n' "$line" >> "$tmp"
+            [[ "$line" == *"-----END"* ]] && commenting=0
+            continue
+        fi
+        if [[ "$line" =~ ^[[:space:]]*${key}= ]]; then
+            hit=1
+            for reason in "$@"; do
+                printf '# %s\n' "$reason" >> "$tmp"
+            done
+            printf '# %s\n' "$line" >> "$tmp"
+            value_part="${line#*=}"
+            if [[ "$value_part" == *"-----BEGIN"* && "$value_part" != *"-----END"* ]]; then
+                commenting=1
+            fi
+            continue
+        fi
+        printf '%s\n' "$line" >> "$tmp"
+    done < "$file"
+
+    cat "$tmp" > "$file"
+    rm -f "$tmp"
+    [[ "$hit" == 1 ]]
+}
 
 API="https://api.render.com/v1"
 SERVICE_NAME="agent-os"
@@ -112,6 +156,33 @@ if [[ -n "$LEFT_SERVICE" || -n "$LEFT_DB" ]]; then
     [[ -n "$LEFT_DB" ]] && echo "  postgres ${LEFT_DB}"
     exit 1
 fi
+
+# An onrender.com URL dies with the service, and the next Blueprint launch mints
+# a new one. Comment the dead value out of the env file(s) so a future up.sh
+# pins the fresh URL instead of keeping the corpse: left in place it short-
+# circuits up.sh's pin step and makes env-sync.sh push the dead domain — the
+# unset-AGENTOS_URL failure mode where scheduled jobs silently never fire and
+# MCP OAuth advertises an origin nobody serves. Custom domains are left alone.
+#
+# JWT_VERIFICATION_KEY goes with it. It belongs to the os.agno.com OS connection
+# that pointed at the service just deleted, and up.sh's guided key step is gated
+# on the variable being absent — left in place it silently skips, and the next
+# deploy comes up verifying tokens against a connection nobody is minting them
+# from. Commenting it costs one paste; leaving it costs a platform that refuses
+# every request.
+for f in .env.production .env; do
+    [[ -f "$f" ]] || continue
+    if grep -qE '^AGENTOS_URL=.*\.onrender\.com/?$' "$f"; then
+        sed -i.bak -E 's|^(AGENTOS_URL=.*\.onrender\.com/?)$|# \1|' "$f" && rm -f "$f.bak"
+        echo -e "${DIM}Commented out the stale AGENTOS_URL in ${f}${NC}"
+    fi
+    if comment_out_env_block JWT_VERIFICATION_KEY "$f" \
+        "Commented out by scripts/render/down.sh — minted at os.agno.com for the" \
+        "deployment just deleted. up.sh will walk you through a fresh key; uncomment" \
+        "this instead if you point the same OS connection at the new service URL."; then
+        echo -e "${DIM}Commented out the stale JWT_VERIFICATION_KEY in ${f}${NC}"
+    fi
+done
 
 echo ""
 echo -e "${BOLD}Done.${NC} Service and database confirmed gone."

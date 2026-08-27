@@ -241,7 +241,15 @@ fi
 
 # The scheduler reaches AgentOS over its public URL; render.yaml can't
 # express "my own URL", so it gets pinned here.
-if [[ -z "$AGENTOS_URL" ]]; then
+#
+# Compared against the live URL rather than merely tested for emptiness: a torn
+# down and relaunched Blueprint mints a NEW onrender.com URL, and a stale value
+# left in the env file would otherwise short-circuit this block, leaving the new
+# service with no AGENTOS_URL at all. Trailing slashes are normalized so an
+# equivalent value doesn't churn a needless deploy, and the staleness test is
+# scoped to onrender.com hosts so a deliberate custom domain or tunnel survives.
+if [[ -z "$AGENTOS_URL" || ( "${AGENTOS_URL%/}" != "${APP_URL%/}" && "$AGENTOS_URL" == *.onrender.com* ) ]]; then
+    [[ -n "$AGENTOS_URL" ]] && echo -e "${DIM}AGENTOS_URL pointed at ${AGENTOS_URL} (stale) — re-pinning${NC}"
     AGENTOS_URL="$APP_URL"
     set_service_env "$SERVICE_ID" AGENTOS_URL "$AGENTOS_URL"
     ENV_FILE="${ENV_FILE:-.env.production}"
