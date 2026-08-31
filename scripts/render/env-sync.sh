@@ -12,8 +12,10 @@
 #    service (one PUT per key — never the destructive replace-all call),
 #    pins AGENTOS_URL to the live service URL if the file doesn't carry
 #    one, then rolls one deploy to apply. Multi-line values (PEM-formatted
-#    JWT_VERIFICATION_KEY) are handled correctly. RENDER_* keys are
-#    skipped (script config, not app env).
+#    JWT_VERIFICATION_KEY) are handled correctly. RENDER_* keys are skipped
+#    (script config, not app env) and so are DB_* keys (render.yaml wires
+#    those from the managed Postgres via fromDatabase — pushing the local
+#    values from an env file would aim the app at the wrong database).
 #
 #    Prerequisites: RENDER_API_KEY (env or env file), python3.
 #
@@ -118,6 +120,12 @@ ${line}"
     case "$current_key" in
         RENDER_*)
             # Script config, not app environment.
+            ;;
+        DB_HOST | DB_PORT | DB_USER | DB_PASS | DB_DATABASE | DB_DRIVER)
+            # render.yaml wires these from the managed Postgres (fromDatabase).
+            # A DB_* line in an env file is the local/compose value; pushing it
+            # would silently repoint production at a database that isn't there.
+            echo -e "${DIM}  Skipping ${current_key} (wired by render.yaml from agentos-db)${NC}"
             ;;
         *)
             [[ "$current_key" == "AGENTOS_URL" ]] && saw_agentos_url=1

@@ -170,7 +170,7 @@ To re-sync environment variables, run the following command:
 ./scripts/render/env-sync.sh
 ```
 
-Each key is upserted individually (never the destructive replace-all API call), then one deploy applies it all.
+Each key is upserted individually (never the destructive replace-all API call), then one deploy applies it all. `RENDER_*` keys are skipped as script config, and so are `DB_*` — `render.yaml` wires those from the managed Postgres, so pushing an env file's local values would aim production at the wrong database.
 
 ### 8. Tear down
 
@@ -178,7 +178,7 @@ Each key is upserted individually (never the destructive replace-all API call), 
 ./scripts/render/down.sh
 ```
 
-Deletes the agent-os service and the agentos-db Postgres, **including all data**, and verifies both are gone before declaring success.
+Deletes the agent-os service and the agentos-db Postgres, **including all data**, and verifies both are gone before declaring success. It then comments the Render-minted `AGENTOS_URL` and the `JWT_VERIFICATION_KEY` out of your env file, since both died with the service — a relaunched Blueprint mints a new `onrender.com` URL, so a future `up.sh` pins the fresh one and re-runs its guided key step. Custom domains are left alone.
 
 ### Troubleshooting
 

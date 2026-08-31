@@ -11,6 +11,11 @@
 # downgrade to `free`. The service is a single instance BY DESIGN: two
 # instances double-fire every cron. `basic-256mb` Postgres carries pgvector;
 # the app runs CREATE EXTENSION itself.
+#
+# PORT is pinned to 8000 because the Dockerfile's CMD hardcodes that port.
+# Render defaults PORT to 10000 and is only "usually" able to detect a server
+# bound elsewhere — a failed detection fails the deploy — so it is declared
+# rather than left to detection.
 
 services:
   - name: agent-os
@@ -25,6 +30,8 @@ services:
     envVars:
       - key: OPENAI_API_KEY
         sync: false          # prompted at blueprint launch, stored as a secret
+      - key: PORT
+        value: "8000"        # must match the Dockerfile CMD's --port
       - key: RUNTIME_ENV
         value: prd
       - key: WAIT_FOR_DB
