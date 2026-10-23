@@ -119,6 +119,31 @@ ${line}"
         RENDER_*)
             # Script config, not app environment.
             ;;
+        AWS_PROFILE)
+            # Names a profile on this machine; meaningless inside the container.
+            echo -e "${DIM}  Skipping AWS_PROFILE (host-only; give the service AWS credentials directly)${NC}"
+            ;;
+        OPENAI_API_KEY)
+            # The Blueprint prompt stored the real key; a copied example.env still
+            # carries the placeholder, and syncing it would overwrite the real one.
+            if [[ -z "$current_value" || "$current_value" == "sk-***" ]]; then
+                echo -e "${DIM}  Skipping OPENAI_API_KEY (placeholder; the dashboard value stays)${NC}"
+            else
+                echo -e "${DIM}  Setting ${current_key}${NC}"
+                set_service_env "$current_key" "$current_value"
+                count=$((count + 1))
+            fi
+            ;;
+        ANTHROPIC_API_KEY)
+            # example.env ships this as a placeholder; never deploy it as a value.
+            if [[ -z "$current_value" || "$current_value" == "sk-***" ]]; then
+                echo -e "${DIM}  Skipping ANTHROPIC_API_KEY (placeholder)${NC}"
+            else
+                echo -e "${DIM}  Setting ${current_key}${NC}"
+                set_service_env "$current_key" "$current_value"
+                count=$((count + 1))
+            fi
+            ;;
         *)
             [[ "$current_key" == "AGENTOS_URL" ]] && saw_agentos_url=1
             echo -e "${DIM}  Setting ${current_key}${NC}"
