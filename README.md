@@ -188,8 +188,10 @@ You'll need A Render account with access to your GitHub repository, a Render API
 [ -f .env.production ] || cp example.env .env.production
 ```
 
-Add `OPENAI_API_KEY` and any other model keys you use. Keep `RUNTIME_ENV=prd`
-or leave it unset. The scripts read `.env.production` before `.env`.
+Add `OPENAI_API_KEY` and any other model keys you use, such as `ANTHROPIC_API_KEY`
+or `CLAUDE_CODE_OAUTH_TOKEN` for Claude Engineer. Keep `RUNTIME_ENV=prd` or leave
+it unset. The scripts read `.env.production` before `.env`. The Blueprint prompts
+for `OPENAI_API_KEY` only; the setup script uploads every other key from this file.
 
 Set `RENDER_API_KEY` in `.env.production`. Keep the web service on an always-on plan with one instance. The setup script records the public URL and prompts for authentication after the Blueprint has created the service.
 
@@ -245,10 +247,11 @@ Deletes the web service and managed database. Database contents are lost. Review
 ### Sandbox storage
 
 Local Docker sandbox instructions are in the [sandbox guide](docs/sandboxes.md).
-The production deployment does not provision sandbox checkpoint storage.
-Before enabling AWS AgentCore, configure persistent storage mounted at `/data`
-on the API service and give it AWS access. If your deployment cannot provide
-that mount, leave AgentCore disabled. Keep one API instance.
+The production deployment does not attach sandbox checkpoint storage by default.
+Before enabling AWS AgentCore, uncomment the `disk` block in [render.yaml](render.yaml)
+to mount a persistent disk at `/data` on the API service, apply the Blueprint
+again, and give the service AWS access. A service with a disk cannot scale,
+which matches the one-instance design. If you skip the disk, leave AgentCore disabled.
 
 ## Verify and develop
 

@@ -22,9 +22,21 @@ services:
     dockerContext: .
     healthCheckPath: /health
     autoDeploy: true
+    # AgentCore checkpoints need a persistent volume at /data (docs/sandboxes.md).
+    # Uncomment to attach one before enabling agentcore_sandbox() in app/sandbox.py.
+    # A service with a disk cannot scale past one instance, which this one never does.
+    # disk:
+    #   name: agentos-data
+    #   mountPath: /data
+    #   sizeGB: 10
     envVars:
       - key: OPENAI_API_KEY
         sync: false          # prompted at blueprint launch, stored as a secret
+      # Optional keys are not blueprint prompts: Render asks for sync: false
+      # values only on first creation, and both Claude Engineer credentials
+      # (ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN) are optional. Put them in
+      # .env.production with PARALLEL_API_KEY and the Slack pair; up.sh and
+      # env-sync.sh upload every key in that file.
       - key: RUNTIME_ENV
         value: prd
       - key: WAIT_FOR_DB

@@ -121,8 +121,9 @@ For Docker engineering, run the API on the host using the [sandbox setup guide](
 Build the sandbox with `docker build --target sandbox --load -t agno-sandbox:local .`.
 Development checkpoints use the absolute project `tmp/checkpoints` path. Production
 AgentCore requires a persistent `/data` mount; provision its runtime with AWS tooling.
-The deploy layer does not provision `/data` checkpoint storage. Configure a persistent
-mount and host AWS credentials before enabling AgentCore; otherwise leave it disabled.
+The deploy layer does not attach `/data` checkpoint storage by default; `render.yaml`
+carries a commented `disk` block that mounts one. Enable it and give the service host AWS
+credentials before enabling AgentCore; otherwise leave it disabled.
 
 `REPOSITORY` in `app/sandbox.py` defaults to `None`. Set it to a `Repository` with
 the user's URL and branch before enabling a sandbox; startup rejects a sandbox

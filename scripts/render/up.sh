@@ -17,7 +17,8 @@
 #    reference its own public URL from render.yaml, and without it
 #    scheduled jobs silently never fire), generates MCP_CONNECT_SECRET
 #    (chat-app OAuth) into the env file when missing, pauses for the JWT
-#    key, and rolls one deploy with the final env.
+#    key, then uploads every key in the env file (model credentials such as
+#    ANTHROPIC_API_KEY included) and rolls one deploy with the final env.
 #
 #    Prerequisites:
 #      - RENDER_API_KEY set (dashboard.render.com → Account Settings → API Keys),
@@ -214,6 +215,8 @@ if [[ -z "$SERVICE_ID" ]]; then
     echo -e "  1. Open ${BOLD}https://dashboard.render.com/blueprints${NC} -> New Blueprint Instance"
     echo -e "  2. Connect this repo${REPO_URL:+ (${REPO_URL})} — Render reads render.yaml and shows the plan"
     echo -e "  3. It prompts for ${BOLD}OPENAI_API_KEY${NC} (marked sync: false) — paste yours"
+    echo -e "     ${DIM}Other keys (ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN, PARALLEL_API_KEY, Slack)${NC}"
+    echo -e "     ${DIM}go in ${ENV_FILE:-.env.production}; this script uploads them after the service exists${NC}"
     echo -e "  4. Apply. Render builds the Dockerfile and creates the Postgres (~10 min first time)"
     [[ -n "$REPO_URL" ]] && echo -e "  ${DIM}One-click alternative: https://render.com/deploy?repo=${REPO_URL}${NC}"
     echo ""
@@ -303,7 +306,16 @@ elif [[ -n "$AUTH_REQUIRES_JWT" ]]; then
     echo -e "${DIM}JWT_VERIFICATION_KEY or JWT_JWKS_FILE to ${ENV_FILE:-.env.production} and run ./scripts/render/env-sync.sh.${NC}"
 fi
 
-if [[ -n "$NEEDS_DEPLOY" ]]; then
+# The env file is the source of truth for production settings. Upload every
+# key in it — the model credentials the README asks for (ANTHROPIC_API_KEY or
+# CLAUDE_CODE_OAUTH_TOKEN for Claude Engineer, PARALLEL_API_KEY, the Slack
+# pair) are only ever set here, since render.yaml prompts for OPENAI_API_KEY
+# alone. env-sync.sh owns the upload and rolls the deploy that applies it.
+if [[ -n "$ENV_FILE" && -f "$ENV_FILE" ]]; then
+    echo ""
+    echo -e "${ORANGE}▸${NC} ${BOLD}Uploading ${ENV_FILE} and rolling a deploy${NC}"
+    RENDER_API_KEY="$RENDER_API_KEY" "$(dirname "$0")/env-sync.sh" "$ENV_FILE"
+elif [[ -n "$NEEDS_DEPLOY" ]]; then
     echo ""
     echo -e "${ORANGE}▸${NC} ${BOLD}Rolling a deploy with the new env${NC}"
     echo ""
