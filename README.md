@@ -205,6 +205,13 @@ for `OPENAI_API_KEY` only; the setup script uploads every other key from this fi
 
 Set `RENDER_API_KEY` in `.env.production`. Keep the web service on an always-on plan with one instance. The setup script records the public URL and prompts for authentication after the Blueprint has created the service.
 
+For an existing deployment, set `RENDER_SERVICE_ID` and `RENDER_POSTGRES_ID` to the
+intended `agent-os` service and `agentos-db` database IDs. The scripts verify their
+names and stop on ambiguous or potentially truncated name lookups. Nonempty
+exported `RENDER_*` settings override the selected env file; the scripts choose
+`.env.production` when present, otherwise `.env`. `env-sync.sh` uses its explicit
+file argument, defaulting to `.env.production`.
+
 ### 2. Deploy and set up authentication
 
 Connect your copy of this repository through **New → Blueprint** in the Render dashboard. Apply [render.yaml](render.yaml) to create the API service and managed PostgreSQL database, then run the command below to finish configuration.

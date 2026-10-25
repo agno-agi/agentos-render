@@ -27,7 +27,9 @@
 #
 ############################################################################
 
-set -e
+set -e -o pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/resources.sh"
 
 # Colors
 ORANGE='\033[38;5;208m'
@@ -63,13 +65,7 @@ api() {
 }
 
 service_id_by_name() {
-    api GET "/services?name=${SERVICE_NAME}&limit=20" | python3 -c '
-import json, sys
-for item in json.load(sys.stdin):
-    s = item.get("service", item)
-    if s.get("name") == "'"$SERVICE_NAME"'":
-        print(s["id"])
-        break'
+    render_resolve_id services service "$SERVICE_NAME" "$RENDER_SERVICE_ID"
 }
 
 service_url() {
@@ -146,7 +142,10 @@ ${line}"
         current_value="${current_value%\"}"
         current_value="${current_value#\'}"
         current_value="${current_value%\'}"
-        export "${current_key}=${current_value}"
+        case "$current_key" in
+            RENDER_*) ;; # Loaded separately with process-over-file precedence.
+            *) export "${current_key}=${current_value}" ;;
+        esac
         current_key=""
         current_value=""
     done < "$1"
@@ -184,19 +183,19 @@ set_service_env() {
     NEEDS_DEPLOY=1
 }
 
-ENV_FILE=""
-[[ -f .env.production ]] && ENV_FILE=".env.production"
-[[ -z "$ENV_FILE" && -f .env ]] && ENV_FILE=".env"
-if [[ -n "$ENV_FILE" ]]; then
-    load_env_file "$ENV_FILE"
-    echo -e "${DIM}Loaded ${ENV_FILE}${NC}"
-fi
-
 # Preflight
 if ! command -v python3 &> /dev/null; then
     echo "python3 is required (it parses Render API responses)."
     exit 1
 fi
+
+ENV_FILE="$(render_env_file)"
+render_load_config "$ENV_FILE"
+if [[ -n "$ENV_FILE" ]]; then
+    load_env_file "$ENV_FILE"
+    echo -e "${DIM}Loaded ${ENV_FILE}${NC}"
+fi
+
 if [[ -z "$RENDER_API_KEY" ]]; then
     echo "RENDER_API_KEY not set. Create one at dashboard.render.com → Account Settings → API Keys,"
     echo "then export it or add it to ${ENV_FILE:-.env.production}."
@@ -209,7 +208,7 @@ fi
 
 SERVICE_ID="$(service_id_by_name)"
 if [[ -z "$SERVICE_ID" ]]; then
-    REPO_URL="$(git remote get-url origin 2> /dev/null | sed -E 's|git@github.com:|https://github.com/|; s|\.git$||')"
+    REPO_URL="$(git remote get-url origin 2> /dev/null | sed -E 's|git@github.com:|https://github.com/|; s|\.git$||')" || REPO_URL=""
     echo ""
     echo -e "${ORANGE}▸${NC} ${BOLD}No '${SERVICE_NAME}' service yet${NC} — launch the Blueprint first:"
     echo -e "  1. Open ${BOLD}https://dashboard.render.com/blueprints${NC} -> New Blueprint Instance"
@@ -263,7 +262,7 @@ if [[ -z "$MCP_CONNECT_SECRET" ]]; then
     persist_env_var MCP_CONNECT_SECRET "$MCP_CONNECT_SECRET" "$ENV_FILE"
     set_service_env "$SERVICE_ID" MCP_CONNECT_SECRET "$MCP_CONNECT_SECRET"
     MCP_SECRET_DELIVERED=1
-    echo -e "${DIM}Generated MCP_CONNECT_SECRET -> ${ENV_FILE} + Render (shown in the summary below)${NC}"
+    echo -e "${DIM}Generated MCP_CONNECT_SECRET -> ${ENV_FILE} + Render${NC}"
 fi
 
 AUTH_REQUIRES_JWT=1
@@ -314,7 +313,7 @@ fi
 if [[ -n "$ENV_FILE" && -f "$ENV_FILE" ]]; then
     echo ""
     echo -e "${ORANGE}▸${NC} ${BOLD}Uploading ${ENV_FILE} and rolling a deploy${NC}"
-    RENDER_API_KEY="$RENDER_API_KEY" "$(dirname "$0")/env-sync.sh" "$ENV_FILE"
+    RENDER_API_KEY="$RENDER_API_KEY" RENDER_SERVICE_ID="$SERVICE_ID" "$(dirname "$0")/env-sync.sh" "$ENV_FILE"
 elif [[ -n "$NEEDS_DEPLOY" ]]; then
     echo ""
     echo -e "${ORANGE}▸${NC} ${BOLD}Rolling a deploy with the new env${NC}"
@@ -332,8 +331,7 @@ echo -e "${DIM}Sync env vars:  ./scripts/render/env-sync.sh${NC}"
 if [[ -n "$APP_URL" && -n "$MCP_CONNECT_SECRET" ]]; then
     echo -e "${DIM}Chat apps:      add ${APP_URL}/mcp as a custom connector in claude.ai / ChatGPT${NC}"
     echo -e "${DIM}                (leave the optional OAuth client ID/secret fields empty).${NC}"
-    echo -e "${DIM}                Then click Connect and approve the consent page with this secret:${NC}"
-    echo -e "${BOLD}                ${MCP_CONNECT_SECRET}${NC}"
+    echo -e "${DIM}                Approve the consent page using MCP_CONNECT_SECRET from ${ENV_FILE:-your production settings}.${NC}"
     [[ -z "${MCP_SECRET_DELIVERED:-}" ]] && echo -e "${DIM}                Hand-added secret? run ./scripts/render/env-sync.sh to push it to Render.${NC}"
 fi
 echo -e "${DIM}Teardown:       ./scripts/render/down.sh${NC}"

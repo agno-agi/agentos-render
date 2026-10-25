@@ -16,7 +16,9 @@
 #
 ############################################################################
 
-set -e
+set -e -o pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/resources.sh"
 
 # Colors
 ORANGE='\033[38;5;208m'
@@ -31,27 +33,13 @@ if ! command -v python3 &> /dev/null; then
     echo "python3 is required (it parses Render API responses)."
     exit 1
 fi
-if [[ -z "$RENDER_API_KEY" ]]; then
-    for f in .env.production .env; do
-        if [[ -f "$f" ]]; then
-            RENDER_API_KEY="$(sed -nE 's/^RENDER_API_KEY=(.*)$/\1/p' "$f" | head -1)"
-            [[ -n "$RENDER_API_KEY" ]] && break
-        fi
-    done
-fi
+render_load_config "$(render_env_file)"
 if [[ -z "$RENDER_API_KEY" ]]; then
     echo "RENDER_API_KEY not set (env or env file)."
     exit 1
 fi
 
-SERVICE_ID="$(curl -sf "${API}/services?name=${SERVICE_NAME}&limit=20" \
-    -H "Authorization: Bearer ${RENDER_API_KEY}" | python3 -c '
-import json, sys
-for item in json.load(sys.stdin):
-    s = item.get("service", item)
-    if s.get("name") == "'"$SERVICE_NAME"'":
-        print(s["id"])
-        break')"
+SERVICE_ID="$(render_resolve_id services service "$SERVICE_NAME" "$RENDER_SERVICE_ID")"
 if [[ -z "$SERVICE_ID" ]]; then
     echo "Service '${SERVICE_NAME}' not found. Launch the Blueprint first (./scripts/render/up.sh)."
     exit 1

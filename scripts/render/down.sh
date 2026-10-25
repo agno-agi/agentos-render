@@ -10,13 +10,15 @@
 #
 #    Deletes the agent-os service AND the agentos-db Postgres — all data
 #    in the database is deleted. Verify afterwards in the dashboard or
-#    with the list calls this script runs for you.
+#    with the exact-resource checks this script runs for you.
 #
 #    Prerequisites: RENDER_API_KEY (env or env file), python3.
 #
 ############################################################################
 
-set -e
+set -e -o pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/resources.sh"
 
 # Colors
 ORANGE='\033[38;5;208m'
@@ -33,14 +35,7 @@ if ! command -v python3 &> /dev/null; then
     echo "python3 is required (it parses Render API responses)."
     exit 1
 fi
-if [[ -z "$RENDER_API_KEY" ]]; then
-    for f in .env.production .env; do
-        if [[ -f "$f" ]]; then
-            RENDER_API_KEY="$(sed -nE 's/^RENDER_API_KEY=(.*)$/\1/p' "$f" | head -1)"
-            [[ -n "$RENDER_API_KEY" ]] && break
-        fi
-    done
-fi
+render_load_config "$(render_env_file)"
 if [[ -z "$RENDER_API_KEY" ]]; then
     echo "RENDER_API_KEY not set (env or env file)."
     exit 1
@@ -52,19 +47,8 @@ api() {
         -H "Authorization: Bearer ${RENDER_API_KEY}"
 }
 
-first_id_by_name() {
-    # stdin: a Render list response; $1: wrapper key; $2: name to match
-    python3 -c '
-import json, sys
-for item in json.load(sys.stdin):
-    o = item.get(sys.argv[1], item)
-    if o.get("name") == sys.argv[2]:
-        print(o["id"])
-        break' "$1" "$2"
-}
-
-SERVICE_ID="$(api GET "/services?name=${SERVICE_NAME}&limit=20" | first_id_by_name service "$SERVICE_NAME")"
-DB_ID="$(api GET "/postgres?name=${DB_NAME}&limit=20" | first_id_by_name postgres "$DB_NAME")"
+SERVICE_ID="$(render_resolve_id services service "$SERVICE_NAME" "$RENDER_SERVICE_ID")"
+DB_ID="$(render_resolve_id postgres postgres "$DB_NAME" "$RENDER_POSTGRES_ID")"
 
 if [[ -z "$SERVICE_ID" && -z "$DB_ID" ]]; then
     echo "Nothing to tear down — no '${SERVICE_NAME}' service or '${DB_NAME}' database found."
@@ -101,17 +85,9 @@ if [[ -n "$DB_ID" ]]; then
         || echo -e "${DIM}Delete returned non-zero — verifying below${NC}"
 fi
 
-# Gone only when the API no longer lists them — an auth/network blip during
-# delete must not read as a clean teardown.
-LEFT_SERVICE="$(api GET "/services?name=${SERVICE_NAME}&limit=20" | first_id_by_name service "$SERVICE_NAME")"
-LEFT_DB="$(api GET "/postgres?name=${DB_NAME}&limit=20" | first_id_by_name postgres "$DB_NAME")"
-if [[ -n "$LEFT_SERVICE" || -n "$LEFT_DB" ]]; then
-    echo ""
-    echo -e "${RED}${BOLD}Teardown incomplete${NC} — still listed:"
-    [[ -n "$LEFT_SERVICE" ]] && echo "  service ${LEFT_SERVICE}"
-    [[ -n "$LEFT_DB" ]] && echo "  postgres ${LEFT_DB}"
-    exit 1
-fi
+# Verify the exact selected resources. Auth/network failures are not absence.
+render_verify_deleted services "$SERVICE_ID"
+render_verify_deleted postgres "$DB_ID"
 
 echo ""
 echo -e "${BOLD}Done.${NC} Service and database confirmed gone."
