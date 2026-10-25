@@ -113,11 +113,16 @@ if startup fails. Confirm the intended code and component IDs are served before 
 
 ## 6. Smoke test
 
+Use `--form-string` for literal fields so semicolons and leading `@` in user input
+are sent unchanged. Check the saved input when a response seems to ignore part of the request.
+
 Pick a prompt that exercises the change. Use `/agents/<id>/runs` for agents or `/teams/<id>/runs` for the actual target team (OS Manager is `os-manager-internal`). The example assumes the local development endpoint:
 
 ```bash
 curl -sS -X POST http://localhost:8000/agents/<slug>/runs \
-  -F "message=<the targeted prompt>" -F "user_id=claude-extend-agent" -F "stream=false" \
+  --form-string "message=<the targeted prompt>" \
+  --form-string "user_id=claude-extend-agent" \
+  --form-string "stream=false" \
   -o /tmp/extend-out.json -w "HTTP %{http_code} in %{time_total}s\n"
 jq -r '.content // .' < /tmp/extend-out.json
 ```

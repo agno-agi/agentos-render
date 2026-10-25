@@ -205,9 +205,14 @@ Verify the new agent and all previously registered application agents remain in 
 
 ## 7. Smoke test
 
+Use `--form-string` for literal fields so semicolons and leading `@` in user input
+are sent unchanged. Check the saved input when a response seems to ignore part of the request.
+
 ```bash
 curl -sS -X POST http://localhost:8000/agents/<slug>/runs \
-  -F "message=<one of the quick_prompts>" -F "user_id=claude-create-agent" -F "stream=false" \
+  --form-string "message=<one of the quick_prompts>" \
+  --form-string "user_id=claude-create-agent" \
+  --form-string "stream=false" \
   -o /tmp/agent-out.json -w "HTTP %{http_code} in %{time_total}s\n"
 jq -r '.content // .' < /tmp/agent-out.json
 ```

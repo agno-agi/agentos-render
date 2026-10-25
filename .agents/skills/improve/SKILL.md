@@ -49,6 +49,8 @@ configured otherwise. It imports the application without starting the API or sch
 Even `--help` and `--list` need PostgreSQL because knowledge storage initializes on import.
 MCP connections in the API do not carry into the CLI: check the existing entrypoint connects
 the target's required tools using the pinned framework's helpers.
+For custom native probes, load this same environment explicitly, for example
+`uv run --no-project --env-file .env .venv/bin/python tmp/probe.py`.
 
 ## Find weaknesses with simulations
 
@@ -85,7 +87,9 @@ python -m evals --name <case> --json-output tmp/eval-before.json
 
 Inspect responses, tool payloads, persisted effects, run status and judge reasons. Separate
 incorrect expectations, application defects, missing data/tools, infrastructure failures,
-framework behavior and judge variance. Authentication errors or timeouts do not establish
+framework behavior and judge variance. If tool arguments contradict the intended contract,
+inspect the model-facing tool schema, including required fields and nullable types; Python
+annotations alone do not prove what the model receives. Authentication errors or timeouts do not establish
 that instructions need strengthening. HTTP success and tool invocation alone do not prove
 the requested outcome; a read-only prompt does not enforce read-only execution.
 
