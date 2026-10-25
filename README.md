@@ -65,7 +65,7 @@ own repository URL and branch:
   your computer and engineering work in a separate Docker container.
 - [AWS AgentCore sandbox](docs/sandboxes.md#aws-agentcore-sandbox): run engineering
   work remotely when the platform is deployed. The API host needs AWS credentials
-  and persistent checkpoint storage at `/data`.
+  and an S3 bucket for checkpoints. No disk is attached to the API service.
 
 Both engineers stay available with either setup. Sandboxes are optional and are
 not enabled by the default Compose configuration.
@@ -139,6 +139,20 @@ You can give agents documents to search, a notebook to keep notes, and memory
 to remember each user. Keep a product's documentation in its own knowledge base,
 separate from the platform's documents.
 
+### Improve from evidence
+
+Ask your coding agent:
+
+> Follow eval-and-improve. Investigate a recent failure using only evidence I can
+> access. Reproduce it, compare a bounded fix with the baseline on the same cases,
+> try fresh variations, and retain useful regression tests. Return the change and
+> its verification for review.
+
+The result may be corrected knowledge, versioned instructions, code or a workflow.
+A passing tool call is not enough: inspect the outcome. Keep the rationale and
+before/after results with the change, including failed candidates. See the
+[improvement guide](docs/improving.md) for the complete loop.
+
 ## Company
 
 Company organizes ongoing work. A **Product** is what you're working on, a
@@ -187,7 +201,7 @@ If you use sandboxes, also set the repository URL and branch in
 Ask your coding agent to follow [deploy-platform](.agents/skills/deploy-platform/SKILL.md),
 or use the steps below. For an existing deployment, read the [upgrade guide](docs/upgrading.md) first.
 
-You'll need A Render account with access to your GitHub repository, a Render API key, Python 3, and OpenSSL.
+You'll need a Render account with access to your GitHub repository, a Render API key, Python 3, and OpenSSL.
 
 ### 1. Set your production settings
 
@@ -210,8 +224,9 @@ Connect your copy of this repository through **New → Blueprint** in the Render
 ./scripts/render/up.sh
 ```
 
-This creates or uses billed resources. Keep one API instance so scheduled work
-runs once. When the script shows the public URL and asks for a verification key:
+This creates or uses billed resources. Start with one API instance; follow the
+[scaling guide](docs/scaling.md) before adding replicas. When the script shows
+the public URL and asks for a verification key:
 
 1. Open [os.agno.com](https://os.agno.com), choose **Connect OS**, and select **Live**.
 2. Enter the public URL and enable token-based authorization.
@@ -253,12 +268,18 @@ Deletes the web service and managed database. Database contents are lost. Review
 
 ### Sandbox storage
 
-Local Docker sandbox instructions are in the [sandbox guide](docs/sandboxes.md).
-The production deployment does not attach sandbox checkpoint storage by default.
-Before enabling AWS AgentCore, uncomment the `disk` block in [render.yaml](render.yaml)
-to mount a persistent disk at `/data` on the API service, apply the Blueprint
-again, and give the service AWS access. A service with a disk cannot scale,
-which matches the one-instance design. If you skip the disk, leave AgentCore disabled.
+The API service needs no attached disk. Conversations, memories and Company work
+are stored in PostgreSQL. Without a sandbox, engineers run inside the API container;
+their edited files and native sessions can be lost on redeploy or replacement.
+Database conversation history does not reconstruct that working directory.
+
+For durable, isolated engineering, configure [AWS AgentCore and S3](docs/sandboxes.md#aws-agentcore-sandbox).
+S3 stores the last saved workspace and native-session checkpoint. Recovery does
+not preserve unfinished edits at the instant of a crash or replay external actions
+safely. AWS is optional for getting started. Local Docker isolation is also
+available in the [sandbox guide](docs/sandboxes.md#local-docker-sandbox).
+
+Before running multiple API instances, follow [Scaling](docs/scaling.md).
 
 ## Verify and develop
 
@@ -302,6 +323,8 @@ add the others when you need them. Use `.env` locally and `.env.production` for 
 | `AGENTOS_URL` | Public URL used by scheduled jobs and MCP. Deployment scripts save it for you. |
 | `MCP_CONNECT_SECRET` | Connect browser MCP clients. Deployment scripts generate it for you. |
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_DATABASE` | PostgreSQL connection settings. Local Compose configures these for you. |
+| `REDIS_URL` | Optional shared live events and cancellation for multiple API instances. See [Scaling](docs/scaling.md). |
+| `AGENTOS_INTERNAL_SERVICE_TOKEN` | Shared scheduler credential across API instances; use a strong secret. |
 | `RUNTIME_ENV` | `prd` by default. Local Compose uses `dev`, which disables token checks. |
 
 ## Learn more

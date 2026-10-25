@@ -8,27 +8,21 @@
 #
 # Plans: `starter` is the cheapest web plan that never sleeps — the
 # in-process scheduler and MCP streams need an always-on instance, so don't
-# downgrade to `free`. The service is a single instance BY DESIGN: two
-# instances double-fire every cron. `basic-256mb` Postgres carries pgvector;
-# the app runs CREATE EXTENSION itself.
+# downgrade to `free`. Start with one instance; see docs/scaling.md before
+# increasing it. `basic-256mb` Postgres carries pgvector; the app runs
+# CREATE EXTENSION itself.
 
 services:
   - name: agent-os
     type: web
     runtime: docker
     plan: starter
-    numInstances: 1    # single instance by design — two instances double-fire every cron
+    numInstances: 1    # default starter; multi-replica configuration: docs/scaling.md
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
     autoDeploy: true
-    # AgentCore checkpoints need a persistent volume at /data (docs/sandboxes.md).
-    # Uncomment to attach one before enabling agentcore_sandbox() in app/sandbox.py.
-    # A service with a disk cannot scale past one instance, which this one never does.
-    # disk:
-    #   name: agentos-data
-    #   mountPath: /data
-    #   sizeGB: 10
+    # API storage is ephemeral. Optional AgentCore checkpoints use S3, not an API disk.
     envVars:
       - key: OPENAI_API_KEY
         sync: false          # prompted at blueprint launch, stored as a secret

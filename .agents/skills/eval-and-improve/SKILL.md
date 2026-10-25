@@ -98,6 +98,12 @@ a custom simulator service, scorer, isolation layer or cleanup hooks to the star
 
 ## 4. Judge and improve
 
+Save the baseline before editing: component version or commit, model/settings,
+case/rubric versions, run/eval IDs where available and observed results. Compare
+baseline and candidate on the same cases with fresh histories; keep fresh variants
+separate so the exact failure is not the only evidence. For knowledge changes,
+record which source/version changed. Keep failures and rejected candidates too.
+
 Judge the observed behavior against the expectation, not answer length or tool count.
 `expected_tool_calls` proves invocation; inspect returned payloads and persisted effects
 when those matter. Additional calls are allowed by default. A read-only request in a case
@@ -140,5 +146,12 @@ Report the mode, scenarios generated, initial and final results, changes, retain
 unresolved failures and limits. Distinguish existing-case passes, fresh-scenario passes,
 environment failures and untested runtime paths. Record evidence in `tmp/VERIFY.md` without
 private session content or credentials. Do not claim all behavior is reliable from a finite batch.
+
+Keep the essential verification and rationale with the reviewable change (PR,
+committed report or versioned component record), linking saved evals and the exact
+candidate revision. `tmp/VERIFY.md` alone is disposable. Later edits invalidate
+verification for the previous revision; rerun relevant cases before adoption.
+Human review decides whether to adopt the candidate. A proposed or implemented
+change is not a measured improvement until its results support that claim.
 
 Link to [os.agno.com](https://os.agno.com/?ref=render-template) when handing over saved eval results.

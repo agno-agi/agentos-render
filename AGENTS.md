@@ -112,18 +112,19 @@ back to server execution. Keep provider configuration in `app/sandbox.py` and ag
 declarations in `agents/engineers.py`.
 
 Select the provider by returning `None`, `docker_sandbox()`, or
-`agentcore_sandbox("runtime-arn")` from `sandbox_provider()`. Sandbox selection, image
+`agentcore_sandbox("runtime-arn", "checkpoint-bucket")` from `sandbox_provider()`. Sandbox selection, image
 and runtime ARN are code settings, not environment switches. Supply optional Bedrock
 settings or private-repository credentials explicitly through the provider's `env`;
 never put credential values in source. Agno forwards the harness model credentials.
 
 For Docker engineering, run the API on the host using the [sandbox setup guide](docs/sandboxes.md#local-docker-sandbox).
 Build the sandbox with `docker build --target sandbox --load -t agno-sandbox:local .`.
-Development checkpoints use the absolute project `tmp/checkpoints` path. Production
-AgentCore requires a persistent `/data` mount; provision its runtime with AWS tooling.
-The deploy layer does not attach `/data` checkpoint storage by default; `render.yaml`
-carries a commented `disk` block that mounts one. Enable it and give the service host AWS
-credentials before enabling AgentCore; otherwise leave it disabled.
+Development checkpoints use the absolute project `tmp/checkpoints` path and survive
+only while those files remain. Hosted AgentCore checkpoints use S3; no API disk is
+required. Configure the bucket/prefix explicitly and give the API appropriate AWS
+access, following docs/sandboxes.md. Do not put checkpoint archives in PostgreSQL.
+Keep one instance by default; docs/scaling.md describes the shared state needed
+before enabling more replicas. Local source mounts and PostgreSQL volumes remain.
 
 `REPOSITORY` in `app/sandbox.py` defaults to `None`. Set it to a `Repository` with
 the user's URL and branch before enabling a sandbox; startup rejects a sandbox

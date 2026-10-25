@@ -6,6 +6,35 @@ from app.main import agent_os
 
 CASES = (
     Case(
+        name="manager_explains_engineer_recovery",
+        team=agent_os.manager,
+        input="Read README.md and docs/sandboxes.md. I want to deploy this template on Render and use Claude and "
+        "Codex engineers. What survives an API replacement, how do I get isolated engineering with durable recovery, "
+        "and do I need an attached disk? Do not configure or change anything.",
+        criteria="Explain that PostgreSQL preserves saved conversations and Company records, but does not recreate "
+        "the engineer workspace or native session. Direct engineer files/native state may be lost on replacement. "
+        "Describe optional AgentCore with S3 checkpoints, no attached API disk, and recovery from the last saved "
+        "checkpoint rather than exact crash-time state. Do not claim this deployment has been provisioned or tested.",
+        expected_tool_calls=("read_file",),
+        user_id="render-recovery-regression",
+        tags=("deployment",),
+    ),
+    Case(
+        name="manager_explains_simple_local_start",
+        team=agent_os.manager,
+        input="Read README.md and example.env. I only want to try this platform locally using Docker Compose. "
+        "Give the exact startup command and credential variable names for both included engineers. "
+        "Which services must I set up first? Explain where the engineers edit files and whether I need "
+        "AWS, Redis or a GitHub repository just to start. Do not start services or change any files.",
+        criteria="Give the documented Compose startup and OpenAI key requirement. Explain that Claude needs its "
+        "own API key or OAuth credential when used. AWS, Redis, a sandbox and a remote GitHub repository are not "
+        "required for basic local startup. Both engineers are available and direct execution can edit the mounted "
+        "project checkout, including running code. Do not describe Compose alone as isolated engineering.",
+        expected_tool_calls=("read_file",),
+        user_id="render-local-regression",
+        tags=("deployment",),
+    ),
+    Case(
         name="manager_explains_application",
         team=agent_os.manager,
         input="Read README.md. Explain how to start this application, talk to OS Manager and add an agent. "
