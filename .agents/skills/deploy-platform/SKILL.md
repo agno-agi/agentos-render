@@ -34,8 +34,7 @@ public and may be shared to complete configuration.
   PostgreSQL for checkpoint archives. Bedrock settings and private
   repository credentials must be supplied explicitly through the provider's `env`.
   Never put secret values in source.
-- Keep one API instance and the always-running process needed by the scheduler. Do not add Redis or a replacement
-  coordination service. See docs/scaling.md for the current scaling limitations.
+- See [docs/scaling.md](../../../docs/scaling.md) for current scaling guidance.
 
 ## 2. Choose first deployment or update
 

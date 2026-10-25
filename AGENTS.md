@@ -123,8 +123,7 @@ Development checkpoints use the absolute project `tmp/checkpoints` path and surv
 only while those files remain. Hosted AgentCore checkpoints use S3; no API disk is
 required. Configure the bucket/prefix explicitly and give the API appropriate AWS
 access, following docs/sandboxes.md. Do not put checkpoint archives in PostgreSQL.
-Keep one API instance, the supported configuration. Do not add Redis or a
-replacement coordination service; docs/scaling.md explains the current limits.
+See [docs/scaling.md](docs/scaling.md) for current scaling guidance.
 Local source mounts and PostgreSQL volumes remain.
 
 `REPOSITORY` in `app/sandbox.py` defaults to `None`. Set it to a `Repository` with
@@ -140,7 +139,8 @@ supports sandbox HTTP admission through the durable PostgreSQL queue with sessio
 
 Use the deployment skill and [deployment instructions](README.md#deploy-in-production).
 Deployment target: Render. Preserve its deploy layer and provider-specific
-settings. Keep one API instance, persistent PostgreSQL and production token verification.
+settings. The initial deployment uses one API instance, persistent PostgreSQL and
+production token verification. Follow docs/scaling.md when adding replicas.
 Use the production env file described in the README; never deploy `RUNTIME_ENV=dev`.
 Review existing resources before provisioning and verify deployment after changes.
 

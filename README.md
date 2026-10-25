@@ -224,9 +224,9 @@ Connect your copy of this repository through **New → Blueprint** in the Render
 ./scripts/render/up.sh
 ```
 
-This creates or uses billed resources. Use one API instance, the supported
-configuration; see the [scaling limitations](docs/scaling.md). When the script shows
-the public URL and asks for a verification key:
+This creates or uses billed resources. Start with one API instance; see the
+[scaling guide](docs/scaling.md) for the optional multi-replica architecture.
+When the script shows the public URL and asks for a verification key:
 
 1. Open [os.agno.com](https://os.agno.com), choose **Connect OS**, and select **Live**.
 2. Enter the public URL and enable token-based authorization.
