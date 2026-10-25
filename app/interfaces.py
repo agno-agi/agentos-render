@@ -19,7 +19,6 @@ def attach_interfaces(agent_os: AgentOS) -> None:
     if manager is None:
         raise RuntimeError("OS Manager must be configured before attaching interfaces.")
     agent_os.mcp = MCPConfig(
-        default_tools=True,
         tools=[
             manager.as_tool(
                 name="os_manager",
@@ -27,6 +26,7 @@ def attach_interfaces(agent_os: AgentOS) -> None:
                 description="Talk to OS Manager of this AgentOS. Pass session_id back to continue the conversation.",
             )
         ],
+        default_tools=True,
     )
     token, secret = getenv("SLACK_BOT_TOKEN"), getenv("SLACK_SIGNING_SECRET")
     if token and secret:

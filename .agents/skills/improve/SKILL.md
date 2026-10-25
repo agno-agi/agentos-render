@@ -1,22 +1,30 @@
 ---
 name: improve
-description: Explore and improve an existing AgentOS agent or team using realistic user simulations and observed evidence. Use to investigate failures, understand behavior, verify targeted changes, or turn useful simulations into evals. Follow the requested outcome; exploration does not require changing the agent or saving tests. Use create-evals for coverage authoring alone and extend-agent for a specified capability change.
+description: Harden an existing AgentOS agent or team by finding weaknesses through realistic user simulations, diagnosing their causes, making targeted improvements and verifying more reliable behavior. Use for agent hardening, failing evals, simulation-driven improvement or turning useful scenarios into evals. Also support simulation-only requests. Use create-evals for coverage authoring alone and extend-agent for a specified capability change.
 ---
 
 # Improve
 
-Choose the work from the user's request:
+Make the agent more reliable at its intended job. For an improvement or hardening request,
+carry the work through finding weaknesses, diagnosing their causes, making focused fixes and
+verifying the result. Simulations uncover failure modes; evals provide repeatable evidence
+and can preserve useful regressions. Prioritize failures by their impact on the user's task.
 
-- **Explore:** generate realistic user scenarios, run simulations and report what they reveal.
-- **Diagnose:** reproduce an observed failure or failing eval and identify its cause.
-- **Improve:** make a targeted change within the requested scope and verify its effect.
+Adapt this workflow to the request:
+
+- **Harden the agent:** simulate realistic use, diagnose weaknesses, fix them and verify
+  the fixes against the original failures, fresh variants and relevant regressions.
+- **Investigate a failure:** reproduce an observed failure or failing eval and address its
+  cause within the requested scope.
+- **Run simulations only:** exercise behavior and report findings without requiring edits.
 - **Save evals:** turn selected simulations into repeatable coverage using
   [create-evals](../create-evals/SKILL.md).
 
-These can be combined. Infer the intended outcome from the request; clarify only when
-it materially changes the work. A simulation-only request can end with findings. Retaining
-evals is optional unless requested; suggest useful cases without automatically saving every
-probe. The objective is useful behavior and understanding, not repeatedly raising a score.
+Infer the intended outcome from the request; clarify only when it materially changes the
+work. A general hardening request includes targeted fixes, so do not stop at an analysis
+report when those fixes are in scope and feasible. Retaining evals is optional unless
+requested; recommend meaningful regression cases rather than saving every probe. Judge
+success by more reliable behavior across scenarios, not just a higher eval score.
 
 ## Establish the target and execution context
 
@@ -42,7 +50,7 @@ Even `--help` and `--list` need PostgreSQL because knowledge storage initializes
 MCP connections in the API do not carry into the CLI: check the existing entrypoint connects
 the target's required tools using the pinned framework's helpers.
 
-## Explore with simulations
+## Find weaknesses with simulations
 
 Inspect instructions and, when relevant, recent sessions and eval history read-only in the
 configured environment or [os.agno.com](https://os.agno.com/?ref=render-template).
@@ -54,7 +62,7 @@ ambiguity, missing evidence, tool selection and adversarial inputs. For each, id
 user goal, input, expected behavior and evidence needed to judge it. Do not invent a product
 requirement and label its absence a failure.
 
-Run through the selected supported path. Exploratory probes do not have to become committed
+Run through the selected supported path. Simulation probes do not have to become committed
 evals. If the existing eval runner helps, use uniquely named temporary `Case` entries with a
 campaign tag and fixture user, preserving existing cases. Use `agent=` or `team=` correctly
 and require tool calls only where they are part of the behavior being tested.
@@ -105,9 +113,10 @@ applicable existing suite when behavior changes warrant it; direct eval invocati
 fresh code and do not need an API restart. Keep failed candidates and unresolved cases in
 the evidence instead of presenting only successes.
 
-Stop when the requested question is answered, the targeted change is verified, the budget
-is reached or a new decision is needed. Do not keep changing prompts to make a suite green.
-For open-ended improvement, start with one small batch and a targeted candidate; extend the
+For hardening, stop when the selected weaknesses are addressed and verified, the budget
+is reached or a concrete blocker requires a new decision. For simulation-only or diagnostic
+requests, stop when the requested investigation is complete. Do not keep changing prompts to make a suite green.
+For open-ended hardening, start with one small batch and a targeted candidate; extend the
 work only when the findings and remaining budget justify it.
 
 ## Retain useful evals and report
@@ -115,7 +124,7 @@ work only when the findings and remaining budget justify it.
 When the user wants simulations saved as evals, select stable, meaningful scenarios and use
 [create-evals](../create-evals/SKILL.md) to add `Case` entries with observable `criteria` and
 appropriate `expected_tool_calls`. Preserve existing coverage. Remove only disposable case
-entries introduced by this exploration, keeping all recorded run history and concurrent edits.
+entries introduced by this hardening pass, keeping all recorded run history and concurrent edits.
 Do not introduce a custom simulator service, scorer or cleanup framework into the starter.
 
 Report what was requested, scenarios tried, findings, changes if any, retained evals if any,

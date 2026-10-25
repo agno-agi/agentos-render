@@ -114,7 +114,7 @@ With `gh` signed in: `gh repo create agent-platform --private --source=. --push`
 Short summary of what you built, then the loop they own — lead with whichever the smoke test suggested:
 
 - [`/extend-agent`](../extend-agent/SKILL.md) — change the agent: a tool, a capability, a known bug.
-- [`/improve`](../improve/SKILL.md) — explore behavior with simulations, diagnose issues, make targeted improvements or turn useful scenarios into evals.
+- [`/improve`](../improve/SKILL.md) — harden the agent through simulations, diagnosis and verified fixes; optionally turn useful scenarios into evals.
 - [`/create-agent`](../create-agent/SKILL.md) — another agent.
 
 One line: coding agents connect with `uvx agno connect`; claude.ai / ChatGPT connect over OAuth once deployed — [`/deploy-platform`](../deploy-platform/SKILL.md) does that.

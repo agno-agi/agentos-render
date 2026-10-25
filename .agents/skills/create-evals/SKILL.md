@@ -1,13 +1,13 @@
 ---
 name: create-evals
-description: Author eval coverage for an agent in this AgentOS — map what the agent promises, mine real sessions and eval history from Postgres for scenarios, propose capabilities worth testing, then write, run, and audit Case entries in evals/cases.py. Use when the user wants evals created, coverage added, or an agent's behavior pinned down as tests. For failing suites or exploratory simulations, use improve instead.
+description: Author eval coverage for an agent in this AgentOS — map what the agent promises, mine real sessions and eval history from Postgres for scenarios, propose capabilities worth testing, then write, run, and audit Case entries in evals/cases.py. Use when the user wants evals created, coverage added, or an agent's behavior pinned down as tests. For failing suites or agent hardening, use improve instead.
 ---
 
 # Create Evals
 
 > _Coding-agent workflow: run as `/create-evals` or by describing the task._
 
-Turn what an agent promises into `Case` entries in [`evals/cases.py`](../../../evals/cases.py). The template's cases cover the reference components only; a user-built agent is invisible to the suite until this skill writes one. Failing suite → [`improve`](../improve/SKILL.md); explore agent behavior → [`improve`](../improve/SKILL.md).
+Turn what an agent promises into `Case` entries in [`evals/cases.py`](../../../evals/cases.py). The template's cases cover the reference components only; a user-built agent is invisible to the suite until this skill writes one. Failing suite → [`improve`](../improve/SKILL.md); harden an agent → [`improve`](../improve/SKILL.md).
 
 Preconditions: configured PostgreSQL reachable, venv active (`source .venv/bin/activate`; `./scripts/venv_setup.sh` if missing), `.env` populated. Even CLI `--help`/`--list` imports application knowledge storage and requires PostgreSQL; no API server is needed for native agent/team cases.
 

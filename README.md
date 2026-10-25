@@ -127,7 +127,7 @@ Ask your coding agent to follow the relevant skill:
 | Build an agent | [/create-agent](.agents/skills/create-agent/SKILL.md) |
 | Add a tool, change behavior, or fix a bug | [/extend-agent](.agents/skills/extend-agent/SKILL.md) |
 | Write tests for your agent's answers | [/create-evals](.agents/skills/create-evals/SKILL.md) |
-| Explore behavior, diagnose issues or improve an agent | [/improve](.agents/skills/improve/SKILL.md) |
+| Harden an agent with simulations and targeted fixes | [/improve](.agents/skills/improve/SKILL.md) |
 | Check the repo before sharing or releasing it | [/review-and-improve](.agents/skills/review-and-improve/SKILL.md) |
 
 If you write an agent in Python, put it in `agents/` and add it to
