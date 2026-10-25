@@ -29,7 +29,6 @@ agent_os = AgentOS(
     user_isolation=True,
     user_directory=True,
     scheduler_base_url=agentos_url,
-    internal_service_token=getenv("AGENTOS_INTERNAL_SERVICE_TOKEN") or None,
     mcp_auth=mcp_auth(agentos_url),
     authorization=runtime_env != "dev",
     manager=OSManager(

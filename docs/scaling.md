@@ -14,10 +14,11 @@ coordination. A request can reach instance A while the durable queue assigns the
 run to B. Sticky sessions return the client to A without sharing B's events or
 cancellation state. S3 checkpoints do not solve this coordination problem.
 
-MCP transport is stateless; conversation continuity uses the explicit Agno
-`session_id` and PostgreSQL. Legacy MCP transport resumption and server-initiated
-requests are unavailable in this mode. PostgreSQL claims also coordinate schedules,
-but neither feature establishes complete support for multiple API instances.
+MCP uses the framework's transport defaults. Agno generates the internal
+scheduler credential automatically. Both are suitable for this single-instance
+setup; neither provides shared coordination across instances. PostgreSQL claims
+coordinate schedules, but do not establish complete support for multiple API
+instances.
 
 Horizontal scaling remains future work: Agno needs a verified coordination path
 that does not require Redis before this template can support it. That work must

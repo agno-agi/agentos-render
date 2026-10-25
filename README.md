@@ -323,7 +323,6 @@ add the others when you need them. Use `.env` locally and `.env.production` for 
 | `AGENTOS_URL` | Public URL used by scheduled jobs and MCP. Deployment scripts save it for you. |
 | `MCP_CONNECT_SECRET` | Connect browser MCP clients. Deployment scripts generate it for you. |
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_DATABASE` | PostgreSQL connection settings. Local Compose configures these for you. |
-| `AGENTOS_INTERNAL_SERVICE_TOKEN` | Optional explicit scheduler credential; generated automatically when omitted. Use a strong secret. |
 | `RUNTIME_ENV` | `prd` by default. Local Compose uses `dev`, which disables token checks. |
 
 ## Learn more
