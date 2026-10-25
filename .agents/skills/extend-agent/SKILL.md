@@ -1,6 +1,6 @@
 ---
 name: extend-agent
-description: User-driven loop to change an existing agent in this AgentOS — add a tool/MCP server/toolkit, add a capability (knowledge base, learning/memory, sub-agent, scheduled task), grow the safe Studio registry so components built at runtime gain a new capability, refine its instructions, or fix a specific known bug, verifying each change against the selected development runtime. Use whenever the user names a concrete change to an agent, or wants a new building block available to the platform. For autonomous hardening with no specific change in mind, use eval-and-improve.
+description: User-driven loop to change an existing agent in this AgentOS — add a tool/MCP server/toolkit, add a capability (knowledge base, learning/memory, sub-agent, scheduled task), grow the safe Studio registry so components built at runtime gain a new capability, refine its instructions, or fix a specific known bug, verifying each change against the selected development runtime. Use whenever the user names a concrete change to an agent, or wants a new building block available to the platform. For exploratory simulations or diagnosis without a specific change in mind, use improve.
 ---
 
 # Extend an Agent
@@ -8,7 +8,7 @@ description: User-driven loop to change an existing agent in this AgentOS — ad
 > _Coding-agent workflow: run as `/extend-agent` or by describing the task._
 
 Implement the concrete requested change and verify the affected behavior. Use
-[eval-and-improve](../eval-and-improve/SKILL.md) for broader exploratory hardening when
+[improve](../improve/SKILL.md) for exploratory simulations and diagnosis when
 requested; a narrow change does not require a separate hardening campaign.
 
 ## 0. Select the development runtime
@@ -136,4 +136,4 @@ Report completion once the requested change and relevant checks are handled. Con
 
 ## 8. Report
 
-One line per accepted change, `git diff --stat` plus the agent-file diff, a suggested commit (`feat(<slug>): …`, `fix(<slug>): …`, `chore(<slug>): refine instructions`), and any remaining verification. Suggest [`eval-and-improve`](../eval-and-improve/SKILL.md) only when broader hardening would be useful. Update [`AGENTS.md`](../../../AGENTS.md) only when the change affects its documented conventions.
+One line per accepted change, `git diff --stat` plus the agent-file diff, a suggested commit (`feat(<slug>): …`, `fix(<slug>): …`, `chore(<slug>): refine instructions`), and any remaining verification. Suggest [`improve`](../improve/SKILL.md) only when further behavioral exploration would be useful. Update [`AGENTS.md`](../../../AGENTS.md) only when the change affects its documented conventions.

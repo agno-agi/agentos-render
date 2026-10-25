@@ -127,7 +127,7 @@ Ask your coding agent to follow the relevant skill:
 | Build an agent | [/create-agent](.agents/skills/create-agent/SKILL.md) |
 | Add a tool, change behavior, or fix a bug | [/extend-agent](.agents/skills/extend-agent/SKILL.md) |
 | Write tests for your agent's answers | [/create-evals](.agents/skills/create-evals/SKILL.md) |
-| Fix failing tests or try more scenarios | [/eval-and-improve](.agents/skills/eval-and-improve/SKILL.md) |
+| Explore behavior, diagnose issues or improve an agent | [/improve](.agents/skills/improve/SKILL.md) |
 | Check the repo before sharing or releasing it | [/review-and-improve](.agents/skills/review-and-improve/SKILL.md) |
 
 If you write an agent in Python, put it in `agents/` and add it to
@@ -138,20 +138,6 @@ available in Studio, add it to [app/registry.py](app/registry.py).
 You can give agents documents to search, a notebook to keep notes, and memory
 to remember each user. Keep a product's documentation in its own knowledge base,
 separate from the platform's documents.
-
-### Improve from evidence
-
-Ask your coding agent:
-
-> Follow eval-and-improve. Investigate a recent failure using only evidence I can
-> access. Reproduce it, compare a bounded fix with the baseline on the same cases,
-> try fresh variations, and retain useful regression tests. Return the change and
-> its verification for review.
-
-The result may be corrected knowledge, versioned instructions, code or a workflow.
-A passing tool call is not enough: inspect the outcome. Keep the rationale and
-before/after results with the change, including failed candidates. See the
-[improvement guide](docs/improving.md) for the complete loop.
 
 ## Company
 
@@ -199,7 +185,7 @@ If you use sandboxes, also set the repository URL and branch in
 ## Deploy in production
 
 Ask your coding agent to follow [deploy-platform](.agents/skills/deploy-platform/SKILL.md),
-or use the steps below. For an existing deployment, read the [upgrade guide](docs/upgrading.md) first.
+or use the steps below.
 
 You'll need a Render account with access to your GitHub repository, a Render API key, Python 3, and OpenSSL.
 

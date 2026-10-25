@@ -94,6 +94,6 @@ deterministic, model, container and hosted results. Report skipped checks and th
 do not equate a passing linter or mock fixture with a healthy deployed platform.
 
 Route agent behavior changes to [extend-agent](../extend-agent/SKILL.md), missing eval
-coverage to [create-evals](../create-evals/SKILL.md), eval failures and agent hardening to
-[eval-and-improve](../eval-and-improve/SKILL.md), and an explicitly requested deployment
+coverage to [create-evals](../create-evals/SKILL.md), eval failures and exploratory simulations to
+[improve](../improve/SKILL.md), and an explicitly requested deployment
 to [deploy-platform](../deploy-platform/SKILL.md).

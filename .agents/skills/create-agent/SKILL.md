@@ -220,10 +220,10 @@ Use the configured endpoint/authentication if different from this local example.
 - **5xx** — inspect the selected runtime's logs for import/configuration errors.
 - **Empty, paused or failed run** — inspect run status and tool errors before changing the prompt.
 - **Tool not firing** — inspect tool registration, connection and the scenario's expectations;
-  use [eval-and-improve](../eval-and-improve/SKILL.md) for behavioral diagnosis.
+  use [improve](../improve/SKILL.md) for behavioral diagnosis.
 
 Iterate 2–3 times, then ask.
 
 ## 9. Done
 
-Lead with the smoke-test answer. Then where it lives: `https://os.agno.com/?ref=render-template` (**Refresh**, Agents list) or `http://localhost:8000`; `/mcp` (`run_agent`); OS Manager's roster, so the `os_manager` MCP tool runs it by name — say that one out loud. Then the loop: [`/extend-agent`](../extend-agent/SKILL.md) (they drive), [`/eval-and-improve`](../eval-and-improve/SKILL.md) (you drive), [`/create-evals`](../create-evals/SKILL.md) (offer to persist the smoke test as the first case). Report measured setup/ingestion results and any verification still outstanding.
+Lead with the smoke-test answer. Then where it lives: `https://os.agno.com/?ref=render-template` (**Refresh**, Agents list) or `http://localhost:8000`; `/mcp` (`run_agent`); OS Manager's roster, so the `os_manager` MCP tool runs it by name — say that one out loud. Then the loop: [`/extend-agent`](../extend-agent/SKILL.md) (a specific change), [`/improve`](../improve/SKILL.md) (explore and diagnose behavior), [`/create-evals`](../create-evals/SKILL.md) (offer to persist the smoke test as the first case). Report measured setup/ingestion results and any verification still outstanding.

@@ -54,7 +54,4 @@ controls, MCP clients and scheduled work. Replace an API instance and sandbox,
 then verify the expected queue and checkpoint recovery. Check generated-file and
 upload delivery separately: S3 checkpoints are not general artifact hosting.
 
-The earlier local Redis-enabled two-instance checks are recorded in the
-[verification report](verification/render-2026-10-25.md). They do not establish
-hosted load-balancer behavior, AWS recovery or complete failure/load coverage.
 The starter does not provision or enable this optional architecture automatically.
