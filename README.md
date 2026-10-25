@@ -72,7 +72,8 @@ not enabled by the default Compose configuration.
 
 ## Run locally
 
-You'll need Git, Docker with Compose, and an OpenAI API key. Make sure Docker is running.
+You'll need Git, Docker with Compose, an OpenAI API key and an Anthropic API key
+for Claude Engineer. Make sure Docker is running.
 Run the commands below in a terminal.
 
 ### 1. Start the platform
@@ -83,7 +84,9 @@ cd agent-platform
 cp example.env .env
 ```
 
-Open `.env` and set `OPENAI_API_KEY`. Then start the platform:
+Open `.env` and set `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` so both engineers can
+authenticate. For Claude Code OAuth instead, remove `ANTHROPIC_API_KEY` and set
+`CLAUDE_CODE_OAUTH_TOKEN`. Then start the platform:
 
 ```sh
 docker compose up -d --build

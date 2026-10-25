@@ -36,10 +36,16 @@ Read [`AGENTS.md`](../../../AGENTS.md) end to end.
 
 ## 2. Environment
 
-If `.env` does not exist, `cp example.env .env`, then set `OPENAI_API_KEY`:
+If `.env` does not exist, `cp example.env .env`, then set `OPENAI_API_KEY` and
+`ANTHROPIC_API_KEY` for the platform and its two engineers:
 
-- Already in their shell → say so and copy it across without reading or printing it.
+- Already in their shell → copy the credentials across without displaying or logging their values.
 - Otherwise open `.env` in their editor (`cursor`, `code`) and ask them to paste it. Never open a terminal editor from your shell — it hangs the session.
+
+Claude Engineer needs its own credentials. If the user chooses Claude Code OAuth, remove
+the `ANTHROPIC_API_KEY` placeholder and set `CLAUDE_CODE_OAUTH_TOKEN` instead. The API
+container does not inherit a host Claude login. If Claude credentials are unavailable,
+report that Claude Engineer cannot run; do not present API startup as verification of it.
 
 ## 3. Boot
 
