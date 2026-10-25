@@ -34,9 +34,7 @@ public and may be shared to complete configuration.
   PostgreSQL for checkpoint archives. Bedrock settings and private
   repository credentials must be supplied explicitly through the provider's `env`.
   Never put secret values in source.
-- Remove retired `SANDBOX_ENABLED`, `SANDBOX_IMAGE`, and `SANDBOX_RUNTIME_ARN`
-  settings; they no longer select a provider. Keep one API instance and the
-  always-running process needed by the scheduler. Do not add Redis or a replacement
+- Keep one API instance and the always-running process needed by the scheduler. Do not add Redis or a replacement
   coordination service. See docs/scaling.md for the current scaling limitations.
 
 ## 2. Choose first deployment or update

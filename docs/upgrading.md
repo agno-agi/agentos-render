@@ -38,8 +38,6 @@ Before deploying:
   bases. Restore what they need or update them before use. Existing product knowledge is kept.
 - Check the AgentOS Product's saved settings, owner, Sources, and maintenance schedule.
   Its ID is still `this-agentos`. Code declarations do not overwrite saved edits.
-- Remove `ENABLE_MAINTENANCE`, `SANDBOX_ENABLED`, `SANDBOX_IMAGE`, and `SANDBOX_RUNTIME_ARN`
-  from env files. Select a sandbox in [app/sandbox.py](../app/sandbox.py); return `None` to turn it off.
 
 Keep historical conversations, notes, and Company work. Update old references rather
 than deleting the data they belong to.
