@@ -34,7 +34,7 @@ workflows in `.agents/skills/`; `.claude/skills` links to that directory.
 ## Where changes belong
 
 - `app/main.py`: AgentOS registration, shared database, OS Manager, Company and queue.
-- `app/interfaces.py`: MCP OAuth, `agno` and built-in MCP tools, optional Slack.
+- `app/interfaces.py`: MCP OAuth, `os_manager` and built-in MCP tools, optional Slack.
 - `app/company.py`: Product and Source declarations. `app/config.yaml`: component
   descriptions, prompts and optional additional Products.
 - `app/registry.py`: Studio palette, web tools, shared knowledge, learning and notes.
