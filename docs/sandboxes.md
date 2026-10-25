@@ -100,8 +100,8 @@ complete a turn, then replace the API and sandbox and verify that the next turn
 restores the saved file and native session. Recovery starts at the last successfully
 saved checkpoint; unfinished edits, live processes and external side effects are
 not restored. Missing or inaccessible checkpoints must be investigated rather than
-silently restarting the engineer conversation. Before adding API replicas, follow
-[Scaling](scaling.md).
+silently restarting the engineer conversation. Keep one API instance; see the
+[scaling limitations](scaling.md).
 
 To use Claude through Bedrock, add `CLAUDE_CODE_USE_BEDROCK="1"` and an explicit
 `AWS_REGION` to the `AgentCoreSandbox` provider's `env` mapping. Give its execution role

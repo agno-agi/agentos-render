@@ -224,8 +224,8 @@ Connect your copy of this repository through **New → Blueprint** in the Render
 ./scripts/render/up.sh
 ```
 
-This creates or uses billed resources. Start with one API instance; follow the
-[scaling guide](docs/scaling.md) before adding replicas. When the script shows
+This creates or uses billed resources. Use one API instance, the supported
+configuration; see the [scaling limitations](docs/scaling.md). When the script shows
 the public URL and asks for a verification key:
 
 1. Open [os.agno.com](https://os.agno.com), choose **Connect OS**, and select **Live**.
@@ -323,8 +323,7 @@ add the others when you need them. Use `.env` locally and `.env.production` for 
 | `AGENTOS_URL` | Public URL used by scheduled jobs and MCP. Deployment scripts save it for you. |
 | `MCP_CONNECT_SECRET` | Connect browser MCP clients. Deployment scripts generate it for you. |
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_DATABASE` | PostgreSQL connection settings. Local Compose configures these for you. |
-| `REDIS_URL` | Optional shared live events and cancellation for multiple API instances. See [Scaling](docs/scaling.md). |
-| `AGENTOS_INTERNAL_SERVICE_TOKEN` | Shared scheduler credential across API instances; use a strong secret. |
+| `AGENTOS_INTERNAL_SERVICE_TOKEN` | Optional explicit scheduler credential; generated automatically when omitted. Use a strong secret. |
 | `RUNTIME_ENV` | `prd` by default. Local Compose uses `dev`, which disables token checks. |
 
 ## Learn more

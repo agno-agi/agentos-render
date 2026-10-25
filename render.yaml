@@ -8,8 +8,8 @@
 #
 # Plans: `starter` is the cheapest web plan that never sleeps — the
 # in-process scheduler and MCP streams need an always-on instance, so don't
-# downgrade to `free`. Start with one instance; see docs/scaling.md before
-# increasing it. `basic-256mb` Postgres carries pgvector; the app runs
+# downgrade to `free`. One API instance is supported; see docs/scaling.md
+# for the current limits. `basic-256mb` Postgres carries pgvector; the app runs
 # CREATE EXTENSION itself.
 
 services:
@@ -17,7 +17,7 @@ services:
     type: web
     runtime: docker
     plan: starter
-    numInstances: 1    # default starter; multi-replica configuration: docs/scaling.md
+    numInstances: 1    # supported configuration; limitations: docs/scaling.md
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health

@@ -327,8 +327,6 @@ pyyaml==6.0.3
     #   jsonschema-path
 questionary==2.1.1
     # via agnoctl
-redis==8.1.0
-    # via agentos-render (pyproject.toml)
 referencing==0.37.0
     # via
     #   jsonschema

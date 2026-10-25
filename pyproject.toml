@@ -13,7 +13,6 @@ dependencies = [
   "openai",
   "parallel-web",
   "python-dotenv",
-  "redis",
 ]
 
 [project.optional-dependencies]

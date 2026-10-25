@@ -38,7 +38,7 @@ agent_os = AgentOS(
         learning=shared_learning,
     ),
     company=CompanyConfig(products=products, model=manager_model()),
-    queue=QueueConfig(durable=True, db=db, redis=getenv("REDIS_URL") or None),
+    queue=QueueConfig(durable=True, db=db),
     knowledge=[shared_knowledge],
     agents=[*engineers],
     registry=registry,

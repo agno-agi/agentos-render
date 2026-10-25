@@ -123,8 +123,9 @@ Development checkpoints use the absolute project `tmp/checkpoints` path and surv
 only while those files remain. Hosted AgentCore checkpoints use S3; no API disk is
 required. Configure the bucket/prefix explicitly and give the API appropriate AWS
 access, following docs/sandboxes.md. Do not put checkpoint archives in PostgreSQL.
-Keep one instance by default; docs/scaling.md describes the shared state needed
-before enabling more replicas. Local source mounts and PostgreSQL volumes remain.
+Keep one API instance, the supported configuration. Do not add Redis or a
+replacement coordination service; docs/scaling.md explains the current limits.
+Local source mounts and PostgreSQL volumes remain.
 
 `REPOSITORY` in `app/sandbox.py` defaults to `None`. Set it to a `Repository` with
 the user's URL and branch before enabling a sandbox; startup rejects a sandbox
