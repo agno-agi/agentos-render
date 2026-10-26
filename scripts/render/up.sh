@@ -13,9 +13,8 @@
 #    the repo — that step happens in the dashboard (or the README's deploy
 #    button); Render then builds the Dockerfile and creates the Postgres.
 #    This script wraps everything around it: it waits for the service to
-#    exist, then pins AGENTOS_URL to the real service URL (a service can't
-#    reference its own public URL from render.yaml, and without it
-#    scheduled jobs silently never fire), generates MCP_CONNECT_SECRET
+#    exist, then pins AGENTOS_URL to the real service URL for scheduler
+#    callbacks and MCP clients, generates MCP_CONNECT_SECRET
 #    (chat-app OAuth) into the env file when missing, pauses for the JWT
 #    key, then uploads every key in the env file (model credentials such as
 #    ANTHROPIC_API_KEY included) and rolls one deploy with the final env.
@@ -241,8 +240,7 @@ if [[ -z "$APP_URL" ]]; then
     exit 1
 fi
 
-# The scheduler reaches AgentOS over its public URL; render.yaml can't
-# express "my own URL", so it gets pinned here.
+# Persist the public URL for scheduler callbacks and MCP clients.
 if [[ -z "$AGENTOS_URL" ]]; then
     AGENTOS_URL="$APP_URL"
     set_service_env "$SERVICE_ID" AGENTOS_URL "$AGENTOS_URL"

@@ -2,9 +2,8 @@
 #
 # Launch it from the dashboard (New + → Blueprint, pointing at your copy of
 # this repo). After the first deploy, run ./scripts/render/up.sh once — it
-# pins AGENTOS_URL to the real service URL (a service can't reference its own
-# public URL from this file, and without it scheduled jobs silently never
-# fire) and pauses so you can mint the JWT verification key.
+# pins AGENTOS_URL to the real service URL for scheduler callbacks and MCP
+# clients, and pauses so you can mint the JWT verification key.
 #
 # Plans: `starter` is the cheapest web plan that never sleeps — the
 # in-process scheduler and MCP streams need an always-on instance, so don't
