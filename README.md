@@ -215,9 +215,9 @@ It initially runs without authentication. Continue directly to the next step to 
 
 ### 3. Configure authentication and credentials
 
-1. Open [os.agno.com](https://os.agno.com), choose **Connect OS → Live**, and enter
-   the Render service URL.
-2. In **Settings → OS & Security**, enable **Token-Based Authorization (JWT)**
+1. Open [os.agno.com](https://os.agno.com), choose **New AgentOS → Connect → Live**,
+   enter the Render service URL, and connect.
+2. In **Settings → OS Security**, enable **Token-Based Authorization (JWT)**
    and copy the full public verification key.
 3. In the Render API service's **Environment** settings, set:
 
@@ -226,7 +226,7 @@ It initially runs without authentication. Continue directly to the next step to 
    | `AGENTOS_URL` | Public HTTPS service URL, without a trailing slash. |
    | `JWT_VERIFICATION_KEY` | Full public PEM, with real line breaks and no surrounding quotes. |
    | `RUNTIME_ENV` | `prd`, set together with the verification key to enable production authorization. |
-   | Additional credentials | Keys used by your agents, such as `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` for Claude Engineer. |
+   | `ANTHROPIC_API_KEY` | Your Anthropic API key, if you use Claude Engineer with API-key authentication. |
 
 4. Choose **Save, rebuild, and deploy**. Review startup logs and verify the
    AgentOS connection once the API is healthy.

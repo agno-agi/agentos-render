@@ -48,7 +48,7 @@ deployment, keep `RUNTIME_ENV=prd`.
 ## 3. Configure access
 
 At [os.agno.com](https://os.agno.com/?ref=render-template), create a **Live** connection
-using the Render URL. In **Settings → OS & Security**, enable **Token-Based
+using the Render URL. In **Settings → OS Security**, enable **Token-Based
 Authorization (JWT)** and copy the public verification key.
 
 In the Render API service's **Environment** settings, configure:
@@ -58,7 +58,7 @@ In the Render API service's **Environment** settings, configure:
 | `AGENTOS_URL` | Public HTTPS service URL, without a trailing slash; used by scheduling and MCP OAuth. |
 | `JWT_VERIFICATION_KEY` | Complete public PEM, with real line breaks and no surrounding quotes. |
 | `RUNTIME_ENV` | `prd`, set together with the verification key to enable production authorization. |
-| Model and integration credentials | Values required by the configured agents, such as `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` for Claude Engineer. |
+| Model and integration credentials | Values required by the configured agents, such as `ANTHROPIC_API_KEY` for Claude Engineer. |
 
 Have the user enter secrets directly in Render. Preserve existing working settings,
 including `JWT_JWKS_FILE` when used for verification. Choose **Save, rebuild, and deploy**,
