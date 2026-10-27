@@ -195,7 +195,9 @@ or use the steps below.
 Create or reuse your own GitHub repository and push the application branch you
 want to deploy, including `Dockerfile` and `render.yaml`. Your coding agent can
 help create the repository and configure the remotes; see [Make it yours](#make-it-yours).
-Give Render's GitHub connection access to that repository.
+Give Render's GitHub connection access to that repository. The Blueprint names the
+project **AgentOS**; change `projects[0].name` before pushing if you prefer your
+application's name.
 
 ### 2. Deploy the Blueprint
 
@@ -204,7 +206,8 @@ connect your repository, and select the deployment branch and root
 [render.yaml](render.yaml). Enter `OPENAI_API_KEY`, review the resources and billing,
 and choose **Deploy Blueprint**. Reuse the existing Blueprint for later updates.
 
-The Blueprint creates one always-on API instance and a managed PostgreSQL 18 database
+The Blueprint creates an **AgentOS** project with a **Production** environment,
+containing one always-on API instance and a managed PostgreSQL 18 database
 in **Virginia** (`region: virginia`). Confirm that region for both resources.
 Keep `RUNTIME_ENV=prd`. Open the API service and copy its public HTTPS URL.
 The API may fail startup until you configure authentication in the next step.
@@ -248,15 +251,12 @@ uvx agno connect --url https://YOUR-DOMAIN
 
 Try asking OS Manager about the platform to check that the connection works.
 
-### Organize your project
+### Open your project
 
-Once the application is live, choose **New → Project** in Render, name it after
-your application, and create a **Production** environment. Reuse an existing
-project if you have one. Select the API service and PostgreSQL database in the
-workspace's service list, choose **Move**, and select the project and environment.
-
-Keep the Blueprint connected to manage configuration. Both resources now appear
-in your project; subsequent Blueprint syncs preserve this grouping.
+Once the application is live, open the project created by the Blueprint and
+verify that its **Production** environment contains the API service and
+PostgreSQL database. The Blueprint manages the project, environment, and
+resources together.
 
 ### Update or remove the deployment
 

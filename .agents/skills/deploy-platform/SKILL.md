@@ -23,6 +23,9 @@ Preserve the template remote as `upstream` when making the user's repository
 commit the application, and push the intended deployment branch. Verify that the
 pushed branch includes the user's agents, `Dockerfile`, and root `render.yaml`.
 Help the user grant Render's GitHub connection access to this repository.
+The Blueprint creates an **AgentOS** project and **Production** environment.
+Set `projects[0].name` to the user's application name before pushing if they want
+a different project name.
 
 ## 2. Deploy the Blueprint
 
@@ -76,22 +79,14 @@ Check the public deployment:
 Production has its own database. Ingest any required documents there before testing
 knowledge-dependent agents. Claim success only for behavior actually verified.
 
-## 5. Organize the project and hand over
+## 5. Confirm the project and hand over
 
-Once the application is live, help the user group its resources in a
-[Render project](https://render.com/docs/projects):
+Open the project created by the Blueprint and verify that its **Production**
+environment contains both the API service and PostgreSQL database. The Blueprint
+manages the project, environment, and resources together.
 
-1. Reuse the application's project, or choose **New → Project**, name it after
-   the application, and create a **Production** environment.
-2. Select the existing API service and PostgreSQL database in the workspace's
-   service list, choose **Move**, and select that project and environment.
-3. Verify both resources appear together. Keep the Blueprint connected; it
-   continues to manage their configuration. The template's top-level resource
-   definitions preserve project membership on sync.
-
-If the resources already belong to the intended project and environment, keep
-that organization. Hand over the live URL, project/environment, Blueprint link,
-and verification results so the user knows where to manage the application.
+Hand over the live URL, project/environment, Blueprint link, and verification
+results so the user knows where to manage the application.
 
 ## Updating the application
 

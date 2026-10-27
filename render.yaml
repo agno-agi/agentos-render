@@ -1,48 +1,52 @@
 # AgentOS on Render. See README.md for deployment and authentication setup.
 
-services:
-  - name: agent-os
-    type: web
-    runtime: docker
-    region: virginia
-    plan: starter  # Always-on for scheduled work and MCP connections.
-    numInstances: 1
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    healthCheckPath: /health
-    autoDeployTrigger: commit
-    envVars:
-      - key: OPENAI_API_KEY
-        sync: false
-      - key: RUNTIME_ENV
-        value: prd
-      - key: WAIT_FOR_DB
-        value: "True"
-      - key: DB_HOST
-        fromDatabase:
-          name: agentos-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: agentos-db
-          property: port
-      - key: DB_USER
-        fromDatabase:
-          name: agentos-db
-          property: user
-      - key: DB_PASS
-        fromDatabase:
-          name: agentos-db
-          property: password
-      - key: DB_DATABASE
-        fromDatabase:
-          name: agentos-db
-          property: database
+projects:
+  - name: AgentOS
+    environments:
+      - name: Production
+        services:
+          - name: agent-os
+            type: web
+            runtime: docker
+            region: virginia
+            plan: starter  # Always-on for scheduled work and MCP connections.
+            numInstances: 1
+            dockerfilePath: ./Dockerfile
+            dockerContext: .
+            healthCheckPath: /health
+            autoDeployTrigger: commit
+            envVars:
+              - key: OPENAI_API_KEY
+                sync: false
+              - key: RUNTIME_ENV
+                value: prd
+              - key: WAIT_FOR_DB
+                value: "True"
+              - key: DB_HOST
+                fromDatabase:
+                  name: agentos-db
+                  property: host
+              - key: DB_PORT
+                fromDatabase:
+                  name: agentos-db
+                  property: port
+              - key: DB_USER
+                fromDatabase:
+                  name: agentos-db
+                  property: user
+              - key: DB_PASS
+                fromDatabase:
+                  name: agentos-db
+                  property: password
+              - key: DB_DATABASE
+                fromDatabase:
+                  name: agentos-db
+                  property: database
 
-databases:
-  - name: agentos-db
-    region: virginia
-    plan: basic-256mb
-    postgresMajorVersion: "18"
-    databaseName: ai
-    user: ai
+        databases:
+          - name: agentos-db
+            region: virginia
+            plan: basic-256mb
+            postgresMajorVersion: "18"
+            databaseName: ai
+            user: ai
