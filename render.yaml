@@ -4,6 +4,7 @@ services:
   - name: agent-os
     type: web
     runtime: docker
+    region: virginia
     plan: starter  # Always-on for scheduled work and MCP connections.
     numInstances: 1
     dockerfilePath: ./Dockerfile
@@ -40,6 +41,7 @@ services:
 
 databases:
   - name: agentos-db
+    region: virginia
     plan: basic-256mb
     postgresMajorVersion: "18"
     databaseName: ai

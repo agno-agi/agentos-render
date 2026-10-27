@@ -35,7 +35,8 @@ For a new deployment, guide the user through [Render](https://dashboard.render.c
 3. Enter `OPENAI_API_KEY`, review the resources and billing, and choose **Deploy Blueprint**.
 4. Open the API service and copy its public HTTPS URL.
 
-Start with the Blueprint's one always-on API instance and managed PostgreSQL.
+Start with the Blueprint's one always-on API instance and PostgreSQL 18 database.
+Confirm both use **Virginia** (`region: virginia`) before deploying.
 Keep `RUNTIME_ENV=prd` and the database references intact. The initial API may fail
 startup until the JWT verification key is configured; proceed with that setup.
 
@@ -62,7 +63,7 @@ secret, save and deploy, then connect the client to `<AGENTOS_URL>/mcp`. The use
 enters that secret on the consent page. Preserve an existing secret during updates
 and never print credentials. Coding clients can use `uvx agno connect --url <AGENTOS_URL>`.
 
-## 4. Verify and hand over
+## 4. Verify the application
 
 Check the public deployment:
 
@@ -73,8 +74,24 @@ Check the public deployment:
   the intended client connects with authentication. A plain `GET /mcp` is not an auth test.
 
 Production has its own database. Ingest any required documents there before testing
-knowledge-dependent agents. Report the service URL, checks completed, and pending
-steps. Claim success only for behavior actually verified.
+knowledge-dependent agents. Claim success only for behavior actually verified.
+
+## 5. Organize the project and hand over
+
+Once the application is live, help the user group its resources in a
+[Render project](https://render.com/docs/projects):
+
+1. Reuse the application's project, or choose **New → Project**, name it after
+   the application, and create a **Production** environment.
+2. Select the existing API service and PostgreSQL database in the workspace's
+   service list, choose **Move**, and select that project and environment.
+3. Verify both resources appear together. Keep the Blueprint connected; it
+   continues to manage their configuration. The template's top-level resource
+   definitions preserve project membership on sync.
+
+If the resources already belong to the intended project and environment, keep
+that organization. Hand over the live URL, project/environment, Blueprint link,
+and verification results so the user knows where to manage the application.
 
 ## Updating the application
 
