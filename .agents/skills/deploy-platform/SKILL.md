@@ -1,90 +1,148 @@
 ---
 name: deploy-platform
-description: Deploy this AgentOS using its own provider instructions, configure JWT verification, and verify the public service. Use for first deployment, redeployment, or production configuration changes.
+description: Deploy this AgentOS on Render through the dashboard, configure authentication, and verify the live service. Use for first deployment, redeployment, or production configuration changes. Render API scripts are optional.
 ---
 
-# Deploy the Platform
+# Deploy the Platform on Render
 
-Read `AGENTS.md`, the README deployment section, and this repository's deploy
-configuration and scripts. Use those files to identify the provider and its exact
-commands, required CLI versions, environment file, and teardown behavior.
-Do not assume every template has deploy scripts or supports the same flags.
-For Docker or an existing Kubernetes cluster, follow the repository's Compose or
-Helm instructions.
+Use the **Render dashboard by default**. Guide the user through the browser steps
+and help with repository preparation, settings, and verification. A Render API
+key, the Render CLI, and `.env.production` are not prerequisites for this path.
+Use the scripts only when the user chooses API-assisted deployment or already
+uses that workflow.
+
+Read `AGENTS.md`, [render.yaml](../../../render.yaml), and the relevant application
+settings. The [README deployment scripts](../../../README.md#deploy-in-production)
+provide the optional API-assisted path; don't make them a required dashboard step.
+Check current [Render Blueprint](https://render.com/docs/infrastructure-as-code)
+and [environment-variable](https://render.com/docs/configure-environment-variables)
+instructions when UI details are uncertain.
 
 Never print credentials or the MCP connect secret. The JWT verification key is
-public and may be shared to complete configuration.
+public and may be shared to complete configuration. Preserve existing settings.
 
-## 1. Prepare
+## 1. Prepare the repository and target
 
-- Check the required tools and the authenticated provider account. Interactive
-  logins belong in the user's terminal.
-- Confirm the intended workspace, account, project, region, or cluster context
-  before making changes. Use the inputs required by this repository's commands.
-- Set up the project environment if the deploy scripts need it. Use the production
-  env file documented in the README; create it from `example.env` only if absent.
-  Configure credentials without printing them. Check how the deploy scripts load
-  settings rather than assuming they read `.env` or exported shell variables.
-- Keep production authentication enabled. Do not upload `RUNTIME_ENV=dev`.
-  Configure `JWT_VERIFICATION_KEY` or a `JWT_JWKS_FILE` available on the server.
-- If a sandbox is requested, configure its provider and `REPOSITORY` in
-  `app/sandbox.py` using the [sandbox setup guide](../../../docs/sandboxes.md).
-  AgentCore needs an existing runtime, host AWS access, and an S3 checkpoint bucket.
-  Configure its bucket/prefix in app/sandbox.py; do not attach an API disk or use
-  PostgreSQL for checkpoint archives. Bedrock settings and private
-  repository credentials must be supplied explicitly through the provider's `env`.
-  Never put secret values in source.
-- See [docs/scaling.md](../../../docs/scaling.md) for current scaling guidance.
+- Confirm the intended Render workspace and whether this platform already has a
+  Blueprint, API service, and database. Use existing resources when present. A
+  failed health check does not mean a service is missing; inspect logs and settings
+  before creating anything else.
+- Check that the platform, including the user's agents, is committed and pushed
+  to their own GitHub repository and branch, with `render.yaml` present. Preserve
+  configured remotes. Render's GitHub connection must have access to that repo.
+- Identify the model credentials the agents need. Have the user enter secrets
+  directly in Render; don't upload the local development `.env` wholesale.
+- Start with the template's one always-running API instance and managed
+  PostgreSQL. Explain the selected resources and their billing before deployment.
+  Keep `RUNTIME_ENV=prd` and the Blueprint's database references intact.
 
-## 2. Choose first deployment or update
+If browser interaction is unavailable, give the next specific dashboard action
+and resume when the user supplies the result. Don't claim a click, saved setting,
+or deployment succeeded without evidence.
 
-Use the provider's status/list commands, saved project identifiers, and local
-configuration to find an existing deployment. A failed health check does not mean
-its resources are gone. Resolve authentication, permission, and network errors
-before deciding to create anything. Link an existing project where required.
+## 2. Create the Blueprint in Render
 
-For a new deployment, explain which resources will be created, their billing,
-and the actual teardown command and data it deletes. Run the README's first-deploy
-procedure with the intended account and target explicitly selected.
-For owned infrastructure, configure its public URL and JWT key before first boot.
+For a new deployment, guide the user through the [Render dashboard](https://dashboard.render.com):
 
-For an update, follow the README's code and environment update commands. Read the
-scripts to establish their order and whether updating settings also triggers a
-redeploy. Use flags such as `--no-deploy` only when implemented by that script.
-If a command fails, inspect existing resources and any partial settings changes
-before retrying. Do not create a second project to recover from a failed deploy.
+1. Choose **New → Blueprint** and select their repository.
+2. Select the pushed branch and the root `render.yaml`.
+3. Enter `OPENAI_API_KEY` when prompted, review the API/database plans, and choose
+   **Deploy Blueprint**.
+4. Open the API service and copy its public HTTPS URL.
 
-## 3. Complete authentication and settings
+For an existing deployment, use its service and public URL and continue with the
+settings below. Don't create another Blueprint to recover from a failed deploy.
 
-Some providers create a URL before the API can start. Follow this repository's
-handoff: use that URL to connect a Live OS at https://os.agno.com/?ref=render-template, enable token-based
-JWT authorization, and obtain the public verification key. Save the full key as a
-quoted multiline `JWT_VERIFICATION_KEY` in the production settings, or configure
-`JWT_JWKS_FILE`. Then use the documented sync/deploy commands to finish.
-Do not treat an exit code or missing-key stop as identical across providers.
+The initial service may fail its health check until JWT verification is
+configured. Don't disable authorization or wait for a healthy API before
+helping the user obtain the key.
 
-Ensure `AGENTOS_URL` is the public HTTPS URL used by the scheduler and MCP OAuth.
-Keep `MCP_CONNECT_SECRET` in the production settings for browser MCP connections.
-Check how this provider clears remote variables; removing a local line may not
-remove the saved value. Database credential rotation is separate from updating
-API settings. Disable a sandbox by returning `None` from `sandbox_provider()` and
-redeploying.
+## 3. Connect AgentOS and configure the service
+
+1. At [os.agno.com](https://os.agno.com/?ref=render-template), create a **Live**
+   connection using the public Render URL.
+2. In the connection's **Settings → OS & Security**, enable **Token-Based
+   Authorization (JWT)** and copy the public verification key.
+3. In the Render API service's **Environment** settings, set:
+
+   | Variable | Value |
+   | --- | --- |
+   | `AGENTOS_URL` | The public HTTPS service URL, without a trailing slash. Used by scheduling and MCP OAuth. |
+   | `JWT_VERIFICATION_KEY` | The complete public PEM, with real line breaks and no surrounding quotes in the dashboard. |
+   | Additional model credentials | The keys the configured agents use, such as `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` for Claude Engineer. |
+
+   Preserve an existing working `JWT_JWKS_FILE` configuration if the deployment
+   uses a JWKS file available on the server instead. Keep authentication enabled.
+4. Choose **Save, rebuild, and deploy**, inspect startup logs, and return to
+   AgentOS to complete the connection once the service is healthy.
+
+For browser MCP connections, have the user generate a long random secret using
+their password manager or a secure local method and set `MCP_CONNECT_SECRET` in
+Render. Keep an existing secret unless rotation is requested. Choose **Save and
+deploy** to apply it. This enables the template's MCP OAuth flow; the client uses
+`<AGENTOS_URL>/mcp` and the secret on its consent page.
+
+Production PostgreSQL is separate from local PostgreSQL. When checking a product
+agent, ingest its documents into the deployed knowledge base first. Code deploys
+do not copy local knowledge records or conversations.
 
 ## 4. Verify and hand over
 
-Build submission is not successful deployment. Inspect bounded provider logs and
-test the public URL: `/health` must succeed; unauthenticated `/agents` requests and
-MCP initialization POSTs must reject access. A plain `GET /mcp` may return public
-server-card metadata; it does not test authorization. With MCP OAuth enabled,
-verify the POST's Bearer challenge. Exercise an authenticated request with an
-existing token, then confirm the UI connects at
-[os.agno.com](https://os.agno.com/?ref=render-template).
+Inspect bounded startup logs and check the public service:
 
-Model prompts spend calls; report exactly what ran. Engineer HTTP runs, delegation,
-and Company Task completion need separate verification before claiming they work.
+- `/health` succeeds and `/docs` loads.
+- `/agents` without a token rejects access; an authenticated request works for
+  the caller's permissions, and the AgentOS UI connects.
+- When MCP is configured, an unauthenticated initialization POST rejects access.
+  With OAuth enabled, check the Bearer challenge and the intended client's
+  authenticated connection. A plain `GET /mcp` may serve public metadata and
+  does not test authorization.
 
-Provide the URL, verification results, and this repository's commands for code
-updates, settings, logs, and teardown. For browser MCP, use `<AGENTOS_URL>/mcp` and
-tell the user to enter `MCP_CONNECT_SECRET` from the production settings into the
-consent page; do not print it. For coding clients, use
-`uvx agno connect --url <AGENTOS_URL>`.
+Report what you actually checked and anything still pending. Agent prompts spend
+model calls; name the tests run. Direct engineer runs, HTTP runs, delegation, and
+Company Task completion need separate checks before claiming they work.
+
+Give the user the service URL and the dashboard update path:
+
+- **Code:** push to the connected branch and check the resulting deploy, or use
+  **Manual Deploy → Deploy latest commit** if automatic deployment is disabled.
+- **Settings:** edit **Environment** and choose **Save and deploy**. Removing a
+  local variable does not clear its saved Render value.
+- **Redeploy:** use **Manual Deploy → Deploy latest commit** on the Deploys page.
+
+For coding clients, `uvx agno connect --url <AGENTOS_URL>` connects to the live
+platform; it does not require a Render API key. Preserve saved conversations,
+knowledge, schedules, and Company work during updates. Do not remove resources
+as deployment cleanup.
+
+## Optional: API-assisted deployment
+
+When the user chooses the scripts, read the README and `scripts/render/` before
+running them. This path requires a **Render API key**, Python 3, and OpenSSL.
+Create `.env.production` from `example.env` only if it does not exist, remove unused
+placeholder credentials, and keep it out of Git.
+
+For an existing dashboard deployment, reconcile the local production settings
+with Render first. Preserve the public URL, JWT configuration, MCP secret, model
+keys, and Blueprint-managed database values. Set `RENDER_API_KEY` securely and
+identify the intended `RENDER_SERVICE_ID` and `RENDER_POSTGRES_ID`. Nonempty
+exported `RENDER_*` values override the env file; don't target resources by an
+ambiguous name.
+
+- `./scripts/render/up.sh` finishes configuration of a Blueprint-created service;
+  it does not create the Blueprint. It reads `.env.production` before `.env`.
+- `./scripts/render/env-sync.sh` uploads settings from `.env.production` and triggers
+  a deploy. It can overwrite dashboard values, so review the intended changes.
+- `./scripts/render/redeploy.sh` deploys the connected source.
+
+Quote multiline PEM values in an env file, unlike a raw dashboard value. Reuse
+existing resources and verify the public service as above. If a script fails,
+inspect partial changes before retrying.
+
+## Optional: sandboxes and replicas
+
+Configure these only when requested. Follow [docs/sandboxes.md](../../../docs/sandboxes.md)
+for `REPOSITORY`, AgentCore, and S3 checkpoints, and [docs/scaling.md](../../../docs/scaling.md)
+for Redis and replicas. The API needs no checkpoint disk. Supply private repository
+and Bedrock settings explicitly through the sandbox provider's environment.
+Verify recovery and shared coordination before claiming those paths work.
