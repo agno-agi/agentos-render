@@ -5,7 +5,7 @@ projects:
     environments:
       - name: Production
         services:
-          - name: agent-os
+          - name: agentos-api
             type: web
             runtime: docker
             region: virginia
