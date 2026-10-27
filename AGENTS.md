@@ -105,8 +105,9 @@ executor restrictions.
 
 ## Engineers and sandboxes
 
-Keep the engineers' stable IDs and explicit models. Both are registered and run in the
-absolute project root on the AgentOS server when no sandbox is configured. A configured
+Keep the engineers' stable IDs and explicit models. Enable their factories in
+`app/main.py`; they are unregistered by default. Enabled engineers run in the absolute
+project root on the AgentOS server when no sandbox is configured. A configured
 sandbox owns its repository checkout; invalid configuration must fail rather than fall
 back to server execution. Keep provider configuration in `app/sandbox.py` and agent
 declarations in `agents/engineers.py`.

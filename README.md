@@ -45,9 +45,10 @@ Prefer to set it up yourself? Follow the steps below.
 ## Engineers
 
 The platform includes **Claude Engineer** and **Codex Engineer**. They can read your
-code, make changes, and run commands.
+code, make changes, and run commands. They are **disabled by default**.
+Enable either one in code using the [harness setup guide](docs/harnesses.md).
 
-Chat with either engineer in AgentOS, or ask OS Manager to use one:
+Once enabled, chat with an engineer in AgentOS, or ask OS Manager to use one:
 
 > Ask Codex Engineer to review this project and suggest improvements. Don't change any files yet.
 
@@ -72,8 +73,7 @@ not enabled by the default Compose configuration.
 
 ## Run locally
 
-You'll need Git, Docker with Compose, an OpenAI API key and an Anthropic API key
-for Claude Engineer. Make sure Docker is running.
+You'll need Git, Docker with Compose, and an OpenAI API key. Make sure Docker is running.
 Run the commands below in a terminal.
 
 ### 1. Start the platform
@@ -84,9 +84,7 @@ cd agent-platform
 cp example.env .env
 ```
 
-Open `.env` and set `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` so both engineers can
-authenticate. For Claude Code OAuth instead, remove `ANTHROPIC_API_KEY` and set
-`CLAUDE_CODE_OAUTH_TOKEN`. Then start the platform:
+Open `.env` and set `OPENAI_API_KEY`, then start the platform:
 
 ```sh
 docker compose up -d --build

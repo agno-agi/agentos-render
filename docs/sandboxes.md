@@ -1,6 +1,6 @@
 # Run engineers in a sandbox
 
-By default, engineers work in the project folder on the AgentOS server. A sandbox
+After [enabling engineers](harnesses.md), they work in the project folder on the AgentOS server. A sandbox
 runs them in a separate environment with its own copy of your repository.
 Choose Docker for local development or AWS AgentCore for a hosted sandbox.
 
