@@ -40,7 +40,7 @@ workflows in `.agents/skills/`; `.claude/skills` links to that directory.
 - `app/registry.py`: Studio palette, web tools, shared knowledge, learning and notes.
   `app/settings.py`: application model factories.
 - `app/sandbox.py`: providers, repository URL/branch and checkpoint paths.
-- `agents/`: application agents, including the Claude and Codex engineers.
+- `agents/`: application agents, including the Claude and Codex coding agents.
   `teams/`: user-defined teams; no Engineering team ships by default.
 - `db/`: cached OS database and distinct knowledge content adapters.
 - `evals/`: application cases and the Agno eval CLI entrypoint.
@@ -103,10 +103,10 @@ specialists remain excluded. Before adding a Routine, verify executor support an
 the caller's authorization. Do not register internal manager members to bypass
 executor restrictions.
 
-## Engineers and sandboxes
+## Coding agents and sandboxes
 
-Keep the engineers' stable IDs and explicit models. Enable their factories in
-`app/main.py`; they are unregistered by default. Enabled engineers run in the absolute
+Keep the coding agents' stable IDs and explicit models. Enable their factories in
+`app/main.py`; they are unregistered by default. Enabled coding agents run in the absolute
 project root on the AgentOS server when no sandbox is configured. A configured
 sandbox owns its repository checkout; invalid configuration must fail rather than fall
 back to server execution. Keep provider configuration in `app/sandbox.py` and agent
@@ -168,7 +168,7 @@ custom isolation, scorers or cleanup machinery by default.
   these cases do not enforce read-only execution. Use owned fixtures for mutating cases.
 - `./scripts/mcp_check.sh`: initializes MCP and checks required tools without model calls.
   `--prompt` spends model calls. Set `MCP_CHECK_HOST=1` for the host API.
-- Verify direct engineer execution, HTTP execution, team delegation and Company Task
+- Verify direct coding agent execution, HTTP execution, team delegation and Company Task
   acceptance/completion separately. API startup does not establish these capabilities.
 
 Record checks and limits in `tmp/VERIFY.md`, separating static, deterministic, model,

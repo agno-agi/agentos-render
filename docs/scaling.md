@@ -18,8 +18,8 @@ deployment skill pointed at this guide.
 | Component | Responsibility |
 | --- | --- |
 | PostgreSQL | Saved conversations, Company records, schedule claims and the durable execution queue |
-| AgentCore | Isolated engineer execution outside API containers |
-| S3 | Engineer workspace and native-session checkpoints, restored after compute replacement |
+| AgentCore | Isolated coding agent execution outside API containers |
+| S3 | Coding agent workspace and native-session checkpoints, restored after compute replacement |
 | Redis | Shared live run events and cancellation across API instances |
 | API replicas and load balancer | Serve requests using the same database, authorization and coordination configuration |
 
@@ -42,7 +42,7 @@ multiple API instances:
 Sticky sessions alone cannot share run events or cancellation: a request may
 reach instance A while a queue worker on B executes it. Redis supplies that shared
 coordination in the current Agno implementation. PostgreSQL supplies queue durability
-and worker-lease recovery; S3 supplies last-checkpoint engineer recovery. These
+and worker-lease recovery; S3 supplies last-checkpoint coding agent recovery. These
 solve different parts of failure handling. Retrying a run can repeat external
 side effects, and checkpoints do not restore live processes or unsaved changes.
 

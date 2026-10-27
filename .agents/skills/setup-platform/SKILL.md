@@ -41,7 +41,7 @@ If `.env` does not exist, `cp example.env .env`, then set `OPENAI_API_KEY`:
 - Already in their shell → copy the credentials across without displaying or logging their values.
 - Otherwise open `.env` in their editor (`cursor`, `code`) and ask them to paste it. Never open a terminal editor from your shell — it hangs the session.
 
-Engineers are opt-in; see [harness setup](../../../docs/harnesses.md).
+Coding agents are opt-in; see [harness setup](../../../docs/harnesses.md).
 If enabled, Claude Engineer needs its own credentials. If the user chooses Claude Code OAuth, remove
 the `ANTHROPIC_API_KEY` placeholder and set `CLAUDE_CODE_OAUTH_TOKEN` instead. The API
 container does not inherit a host Claude login. If Claude credentials are unavailable,
@@ -59,7 +59,7 @@ and keep the Uvicorn process running in a persistent terminal. The host API
 uses Docker directly. Check `/health` and `/config`; Company should list its four tables,
 OS Manager, and the optional coding executors. Never start two APIs on the same port.
 The pinned framework admits sandbox HTTP runs through the durable PostgreSQL queue.
-Configuration and API startup do not prove execution: verify an engineer HTTP run and
+Configuration and API startup do not prove execution: verify a coding agent HTTP run and
 Company Task acceptance/completion separately. Keep the Product repository Source aligned
 with `REPOSITORY.url`; never bypass a framework rejection.
 For this host path use `MCP_CHECK_HOST=1 ./scripts/mcp_check.sh` below.

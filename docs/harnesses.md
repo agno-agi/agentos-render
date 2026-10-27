@@ -1,21 +1,21 @@
-# Enable coding engineers
+# Enable coding agents
 
-Claude and Codex engineers are disabled by default. Enable only the ones you need
+Claude and Codex coding agents are disabled by default. Enable only the ones you need
 in `app/main.py`. For a public deployment, complete JWT setup first.
 
-## Enable an engineer
+## Enable a coding agent
 
 1. Add its credentials to `.env` locally or your hosted environment settings:
    `ANTHROPIC_API_KEY` for Claude, `OPENAI_API_KEY` for Codex.
 2. In `app/main.py`, uncomment its `from agents.engineers import ...` line and
    matching factory call in the `agents` list. Keep your other agents in the list.
-3. Run `./scripts/format.sh`, then rebuild and deploy. Chat with the engineer in AgentOS.
+3. Run `./scripts/format.sh`, then rebuild and deploy. Chat with the coding agent in AgentOS.
 
 To disable it, comment out both lines and redeploy. Adding a key alone does not
-activate an engineer. Models and harness options live in
+activate a coding agent. Models and harness options live in
 [agents/engineers.py](../agents/engineers.py).
 
-With `sandbox_provider()` returning `None`, engineers work directly in the project
+With `sandbox_provider()` returning `None`, coding agents work directly in the project
 folder with the API process's access to files, commands and environment. Start with
 trusted users and one API instance. Files and native coding sessions can be lost
 when a hosted container is replaced; PostgreSQL does not restore that filesystem.
@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends gh \
 
 Configure `gh auth setup-git --hostname github.com` in the execution environment
 and set the Git author identity. The deployed image has no `.git` directory: ask
-the engineer to clone your repository into a separate writable directory, create
+the coding agent to clone your repository into a separate writable directory, create
 a feature branch, run checks, push and open a PR. Leave merging and deployment to
 you. Verify a small PR before scheduling improvement work.
 
@@ -43,7 +43,7 @@ you. Verify a small PR before scheduling improvement work.
 Sandboxes are optional. They give engineering sessions their own environment and
 repository checkout; checkpoints save the workspace and coding session for recovery.
 Choose Docker locally or AWS AgentCore when hosted. Follow the setup below from
-the repository root after enabling an engineer.
+the repository root after enabling a coding agent.
 
 Pass GitHub publishing credentials into the sandbox explicitly through the provider's
 `env`; private checkout uses `GITHUB_READ_TOKEN`. Configure the Git credential helper
@@ -84,7 +84,7 @@ Keep that terminal running. From another terminal, check the API's MCP connectio
 MCP_CHECK_HOST=1 ./scripts/mcp_check.sh
 ```
 
-Checkpoints are saved in `tmp/checkpoints`. Agno passes the engineers' model credentials
+Checkpoints are saved in `tmp/checkpoints`. Agno passes the coding agents' model credentials
 to the sandbox. These files are local: deleting them loses that recovery point.
 For a private repository, also supply `GITHUB_READ_TOKEN` through the
 `env` argument of `docker_sandbox()`. Read its value from your environment or secret store;
@@ -135,12 +135,12 @@ forwarded into the sandbox. Code inside AgentCore can use its execution role, so
 give that role only the permissions the engineering work needs, not the API's
 production database or checkpoint-store credentials.
 
-After configuring the provider, redeploy and test both engineers. Save a file,
+After configuring the provider, redeploy and test both coding agents. Save a file,
 complete a turn, then replace the API and sandbox and verify that the next turn
 restores the saved file and native session. Recovery starts at the last successfully
 saved checkpoint; unfinished edits, live processes and external side effects are
 not restored. Missing or inaccessible checkpoints must be investigated rather than
-silently restarting the engineer conversation. See the [scaling guide](scaling.md)
+silently restarting the coding agent conversation. See the [scaling guide](scaling.md)
 before adding API replicas.
 
 To use Claude through Bedrock, pass `CLAUDE_CODE_USE_BEDROCK="1"` and an explicit
@@ -164,7 +164,7 @@ supply `GITHUB_READ_TOKEN` through the same mapping, reading it from your secret
 
 Before using a sandbox for Company Tasks, check that the Product's saved Git Source
 matches `REPOSITORY.url`. Keep its local source too, so Company can read the files.
-Test an engineer run and a Company Task through completion on your deployment;
+Test a coding agent run and a Company Task through completion on your deployment;
 a successful API startup does not prove either one works.
 
 ## Scaling

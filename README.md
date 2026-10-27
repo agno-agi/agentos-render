@@ -42,24 +42,24 @@ to follow [setup-platform](.agents/skills/setup-platform/SKILL.md) in that folde
 
 Prefer to set it up yourself? Follow the steps below.
 
-## Engineers
+## Coding agents
 
 The platform includes **Claude Engineer** and **Codex Engineer**. They can read your
 code, make changes, and run commands. They are **disabled by default**.
 Enable either one in code using the [harness setup guide](docs/harnesses.md).
 
-Once enabled, chat with an engineer in AgentOS, or ask OS Manager to use one:
+Once enabled, chat with a coding agent in AgentOS, or ask OS Manager to use one:
 
 > Ask Codex Engineer to review this project and suggest improvements. Don't change any files yet.
 
 Codex uses the `OPENAI_API_KEY` you added during setup. To use Claude, add
 `ANTHROPIC_API_KEY` to `.env`. After changing `.env`, run `docker compose up -d` again.
 
-By default, engineers work in this project's folder. With Docker Compose, they
+By default, coding agents work in this project's folder. With Docker Compose, they
 can change files in your local checkout, including the code serving the platform.
 Review those changes before committing them.
 
-For engineers to work in a separate environment, configure a sandbox with your
+For coding agents to work in a separate environment, configure a sandbox with your
 own repository URL and branch:
 
 - [Local Docker sandbox](docs/harnesses.md#local-docker-sandbox): run the API on
@@ -68,7 +68,7 @@ own repository URL and branch:
   work remotely when the platform is deployed. The API host needs AWS credentials
   and an S3 bucket for checkpoints. No disk is attached to the API service.
 
-Both engineers stay available with either setup. Sandboxes are optional and are
+Both coding agents stay available with either setup. Sandboxes are optional and are
 not enabled by the default Compose configuration.
 
 ## Run locally
@@ -276,7 +276,7 @@ resources together.
 ### Sandbox storage
 
 The API service needs no attached disk. Conversations, memories and Company work
-are stored in PostgreSQL. Without a sandbox, engineers run inside the API container;
+are stored in PostgreSQL. Without a sandbox, coding agents run inside the API container;
 their edited files and native sessions can be lost on redeploy or replacement.
 Database conversation history does not reconstruct that working directory.
 
