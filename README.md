@@ -44,36 +44,21 @@ Prefer to set it up yourself? Follow the steps below.
 
 ## Engineers
 
-The platform includes **Claude Engineer** and **Codex Engineer**. They can read your
-code, make changes, and run commands.
+**Claude Engineer** and **Codex Engineer** can read code, edit files, and run commands.
+They are **disabled by default**. Adding credentials does not enable them.
 
-Chat with either engineer in AgentOS, or ask OS Manager to use one:
+Follow the [harness setup guide](docs/sandboxes.md) to configure a sandbox and register
+`create_claude_engineer()` or `create_codex_engineer()` in `app/main.py`.
+Use a [Docker sandbox](docs/sandboxes.md#local-docker-sandbox) locally or
+[AWS AgentCore with S3 checkpoints](docs/sandboxes.md#aws-agentcore-sandbox) when hosted.
+The factories require a sandbox and never run engineers inside the API server.
 
-> Ask Codex Engineer to review this project and suggest improvements. Don't change any files yet.
-
-Codex uses the `OPENAI_API_KEY` you added during setup. To use Claude, add
-`ANTHROPIC_API_KEY` to `.env`. After changing `.env`, run `docker compose up -d` again.
-
-By default, engineers work in this project's folder. With Docker Compose, they
-can change files in your local checkout, including the code serving the platform.
-Review those changes before committing them.
-
-For engineers to work in a separate environment, configure a sandbox with your
-own repository URL and branch:
-
-- [Local Docker sandbox](docs/sandboxes.md#local-docker-sandbox): run the API on
-  your computer and engineering work in a separate Docker container.
-- [AWS AgentCore sandbox](docs/sandboxes.md#aws-agentcore-sandbox): run engineering
-  work remotely when the platform is deployed. The API host needs AWS credentials
-  and an S3 bucket for checkpoints. No disk is attached to the API service.
-
-Both engineers stay available with either setup. Sandboxes are optional and are
-not enabled by the default Compose configuration.
+Claude needs `ANTHROPIC_API_KEY`; Codex uses `OPENAI_API_KEY`. Once an engineer is
+enabled, chat with it in AgentOS or ask OS Manager to use it.
 
 ## Run locally
 
-You'll need Git, Docker with Compose, an OpenAI API key and an Anthropic API key
-for Claude Engineer. Make sure Docker is running.
+You'll need Git, Docker with Compose, and an OpenAI API key. Make sure Docker is running.
 Run the commands below in a terminal.
 
 ### 1. Start the platform
@@ -84,9 +69,7 @@ cd agent-platform
 cp example.env .env
 ```
 
-Open `.env` and set `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` so both engineers can
-authenticate. For Claude Code OAuth instead, remove `ANTHROPIC_API_KEY` and set
-`CLAUDE_CODE_OAUTH_TOKEN`. Then start the platform:
+Open `.env` and set `OPENAI_API_KEY`, then start the platform:
 
 ```sh
 docker compose up -d --build
@@ -226,7 +209,6 @@ It initially runs without authentication. Continue directly to the next step to 
    | `AGENTOS_URL` | Public HTTPS service URL, without a trailing slash. |
    | `JWT_VERIFICATION_KEY` | Full public PEM, with real line breaks and no surrounding quotes. |
    | `RUNTIME_ENV` | `prd`, set together with the verification key to enable production authorization. |
-   | `ANTHROPIC_API_KEY` | Your Anthropic API key, if you use Claude Engineer with API-key authentication. |
 
 4. Choose **Save, rebuild, and deploy**. Review startup logs and verify the
    AgentOS connection once the API is healthy.
@@ -278,9 +260,9 @@ resources together.
 ### Sandbox storage
 
 The API service needs no attached disk. Conversations, memories and Company work
-are stored in PostgreSQL. Without a sandbox, engineers run inside the API container;
-their edited files and native sessions can be lost on redeploy or replacement.
-Database conversation history does not reconstruct that working directory.
+are stored in PostgreSQL. Enabled engineers work in their configured sandbox.
+Database conversation history does not restore engineering files or native sessions;
+configure checkpoints to recover that workspace.
 
 For durable, isolated engineering, configure [AWS AgentCore and S3](docs/sandboxes.md#aws-agentcore-sandbox).
 S3 stores the last saved workspace and native-session checkpoint. Recovery does
@@ -324,8 +306,8 @@ add the others when you need them. Use `.env` locally and Render's **Environment
 
 | Setting | What it's for |
 | --- | --- |
-| `OPENAI_API_KEY` | OS Manager, embeddings, and Codex Engineer. |
-| `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` | Claude Engineer. |
+| `OPENAI_API_KEY` | OS Manager, embeddings, and Codex Engineer when explicitly enabled. |
+| `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` | Required when explicitly enabling Claude Engineer with Anthropic authentication. |
 | `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` | Connect OS Manager to Slack. Set both. |
 | `PARALLEL_API_KEY` | Optional web search key. Without it, search uses Parallel's MCP server without an API key. |
 | `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE` | Check login tokens in production. A JWKS file must be available on the server. |

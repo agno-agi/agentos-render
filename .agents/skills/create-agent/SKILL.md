@@ -174,7 +174,8 @@ Step 7: three probes, not one — a covered question (details plus a Source URL)
 ## 4. Register in `app/main.py`
 
 Import the new agent and insert it into the existing `agents` list. Preserve every existing
-application agent and `*engineers`; do not replace the list with a starter example. Preserve
+application agent and any explicitly enabled engineers; do not enable engineers as part of
+creating an application agent. Do not replace the list with a starter example. Preserve
 the `teams`, `workflows`, `knowledge`, manager and Company wiring too. Check both code and
 Studio IDs before registration. AgentOS makes registered agents discoverable to OS Manager.
 
@@ -184,7 +185,6 @@ For example, adding a new agent when another already exists is an insertion:
  agents=[
 +    new_agent,
      existing_agent,
-     *engineers,
  ],
 ```
 

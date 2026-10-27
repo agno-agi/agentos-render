@@ -36,16 +36,14 @@ Read [`AGENTS.md`](../../../AGENTS.md) end to end.
 
 ## 2. Environment
 
-If `.env` does not exist, `cp example.env .env`, then set `OPENAI_API_KEY` and
-`ANTHROPIC_API_KEY` for the platform and its two engineers:
+If `.env` does not exist, `cp example.env .env`, then set `OPENAI_API_KEY`:
 
-- Already in their shell → copy the credentials across without displaying or logging their values.
+- Already in their shell → copy the credential across without displaying or logging its value.
 - Otherwise open `.env` in their editor (`cursor`, `code`) and ask them to paste it. Never open a terminal editor from your shell — it hangs the session.
 
-Claude Engineer needs its own credentials. If the user chooses Claude Code OAuth, remove
-the `ANTHROPIC_API_KEY` placeholder and set `CLAUDE_CODE_OAUTH_TOKEN` instead. The API
-container does not inherit a host Claude login. If Claude credentials are unavailable,
-report that Claude Engineer cannot run; do not present API startup as verification of it.
+Claude and Codex engineers are disabled by default. Credentials do not enable them.
+When the user requests engineering capabilities, follow the [harness setup guide](../../../docs/sandboxes.md)
+to configure a sandbox, credentials, and explicit code registration.
 
 ## 3. Boot
 

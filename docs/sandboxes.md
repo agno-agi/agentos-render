@@ -1,13 +1,40 @@
 # Run engineers in a sandbox
 
-By default, engineers work in the project folder on the AgentOS server. A sandbox
-runs them in a separate environment with its own copy of your repository.
-Choose Docker for local development or AWS AgentCore for a hosted sandbox.
+Claude and Codex engineers are disabled by default. Enable either one explicitly
+in code after configuring a sandbox and its credentials. The factories reject a
+missing sandbox or repository; they never fall back to the API server's filesystem.
+Choose Docker locally or AWS AgentCore when hosted.
 
-Follow the [platform setup](../README.md#run-locally) first. Run the commands below
-from the repository root. The engineers still need their model credentials:
-`OPENAI_API_KEY` for Codex, and `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` for Claude.
+Follow [platform setup](../README.md#run-locally) first. Run commands from the repository
+root. Codex needs `OPENAI_API_KEY`; Claude needs `ANTHROPIC_API_KEY` (or
+`CLAUDE_CODE_OAUTH_TOKEN` for OAuth). Hosted settings belong in your deployment's
+secret configuration. The container does not inherit a host Claude login.
 Their models are configured in [agents/engineers.py](../agents/engineers.py).
+
+## Enable an engineer in code
+
+Configure the repository and one of the providers below before registering an engineer.
+For a hosted API, complete JWT setup before enabling engineering access.
+Import only the factories you want in `app/main.py`:
+
+```python
+from agents.engineers import create_claude_engineer, create_codex_engineer
+```
+
+Add their results to the existing `AgentOS(agents=[...])` list, preserving application agents:
+
+```python
+agents=[
+    # Keep your existing application agents here.
+    create_claude_engineer(),
+    create_codex_engineer(),
+],
+```
+
+You can enable either engineer independently. Adding API keys alone enables neither.
+To disable one, remove its factory call and unused import, then redeploy. Before removing
+an existing engineer, check saved Studio teams, schedules and Company Tasks that reference
+its ID; preserve their history and update active references deliberately.
 
 ## Choose your repository
 

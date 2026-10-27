@@ -105,11 +105,11 @@ executor restrictions.
 
 ## Engineers and sandboxes
 
-Keep the engineers' stable IDs and explicit models. Both are registered and run in the
-absolute project root on the AgentOS server when no sandbox is configured. A configured
-sandbox owns its repository checkout; invalid configuration must fail rather than fall
-back to server execution. Keep provider configuration in `app/sandbox.py` and agent
-declarations in `agents/engineers.py`.
+Engineers are disabled by default. Keep their stable IDs and models in factory
+functions in `agents/engineers.py`. Enable one only by calling its factory in the
+`AgentOS(agents=[...])` list in `app/main.py`; credentials are not activation switches.
+Factories require a configured sandbox, repository and model credentials, and must
+never fall back to executing in the API server. Follow docs/sandboxes.md for setup.
 
 Select the provider by returning `None`, `docker_sandbox()`, or
 `agentcore_sandbox(runtime_arn="runtime-arn", checkpoint_bucket="checkpoint-bucket")` from `sandbox_provider()`.
@@ -128,7 +128,7 @@ Local source mounts and PostgreSQL volumes remain.
 
 `REPOSITORY` in `app/sandbox.py` defaults to `None`. Set it to a `Repository` with
 the user's URL and branch before enabling a sandbox; startup rejects a sandbox
-without a repository. Direct server execution does not need one. Company always
+without a repository. Company always
 declares the local readable Source and only declares a remote Git Source when
 `REPOSITORY` is set. Company sandbox acceptance requires a saved Product Git Source
 matching `REPOSITORY.url`; retain the local readable Source.

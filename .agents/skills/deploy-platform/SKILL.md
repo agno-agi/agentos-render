@@ -58,7 +58,7 @@ In the Render API service's **Environment** settings, configure:
 | `AGENTOS_URL` | Public HTTPS service URL, without a trailing slash; used by scheduling and MCP OAuth. |
 | `JWT_VERIFICATION_KEY` | Complete public PEM, with real line breaks and no surrounding quotes. |
 | `RUNTIME_ENV` | `prd`, set together with the verification key to enable production authorization. |
-| Model and integration credentials | Values required by the configured agents, such as `ANTHROPIC_API_KEY` for Claude Engineer. |
+| Model and integration credentials | Values required by the configured agents, when needed. Claude and Codex engineers remain disabled until explicitly registered in code. |
 
 Have the user enter secrets directly in Render. Preserve existing working settings,
 including `JWT_JWKS_FILE` when used for verification. Choose **Save, rebuild, and deploy**,
@@ -100,5 +100,6 @@ settings in **Environment** and save and deploy. Keep infrastructure changes in
 `render.yaml`; Blueprint sync can overwrite conflicting dashboard settings.
 Preserve the database and saved application state during updates.
 
-When requested, follow [sandboxes](../../../docs/sandboxes.md) for hosted engineer
-execution and durable checkpoints, or [scaling](../../../docs/scaling.md) for replicas.
+When requested, follow [sandboxes](../../../docs/sandboxes.md) to configure a sandbox,
+model credentials and explicit engineer registration in code. Complete JWT setup first.
+Follow [scaling](../../../docs/scaling.md) for replicas.
