@@ -62,9 +62,9 @@ Review those changes before committing them.
 For engineers to work in a separate environment, configure a sandbox with your
 own repository URL and branch:
 
-- [Local Docker sandbox](docs/sandboxes.md#local-docker-sandbox): run the API on
+- [Local Docker sandbox](docs/harnesses.md#local-docker-sandbox): run the API on
   your computer and engineering work in a separate Docker container.
-- [AWS AgentCore sandbox](docs/sandboxes.md#aws-agentcore-sandbox): run engineering
+- [AWS AgentCore sandbox](docs/harnesses.md#aws-agentcore-sandbox): run engineering
   work remotely when the platform is deployed. The API host needs AWS credentials
   and an S3 bucket for checkpoints. No disk is attached to the API service.
 
@@ -179,7 +179,7 @@ Future pushes go to your repository. You can still fetch updates from `upstream`
 and review them before merging.
 
 If you use sandboxes, also set the repository URL and branch in
-[the sandbox configuration](docs/sandboxes.md#choose-your-repository).
+[the sandbox configuration](docs/harnesses.md#choose-your-repository).
 
 <a id="deploy-in-production"></a>
 
@@ -280,11 +280,11 @@ are stored in PostgreSQL. Without a sandbox, engineers run inside the API contai
 their edited files and native sessions can be lost on redeploy or replacement.
 Database conversation history does not reconstruct that working directory.
 
-For durable, isolated engineering, configure [AWS AgentCore and S3](docs/sandboxes.md#aws-agentcore-sandbox).
+For durable, isolated engineering, configure [AWS AgentCore and S3](docs/harnesses.md#aws-agentcore-sandbox).
 S3 stores the last saved workspace and native-session checkpoint. Recovery does
 not preserve unfinished edits at the instant of a crash or replay external actions
 safely. AWS is optional for getting started. Local Docker isolation is also
-available in the [sandbox guide](docs/sandboxes.md#local-docker-sandbox).
+available in the [sandbox guide](docs/harnesses.md#local-docker-sandbox).
 
 Before running multiple API instances, follow [Scaling](docs/scaling.md).
 

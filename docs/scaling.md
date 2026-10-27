@@ -6,7 +6,7 @@ Start with one always-running API instance, one Uvicorn worker and PostgreSQL.
 Redis is not required or included in the starter. MCP uses the framework defaults,
 and Agno generates its internal scheduler credential automatically. The API needs
 no attached disk. Local engineering state may be lost when its container is replaced;
-see [sandbox setup](sandboxes.md) for optional isolation and checkpoint recovery.
+see [sandbox setup](harnesses.md) for optional isolation and checkpoint recovery.
 
 ## Optional multi-replica architecture
 
@@ -26,7 +26,7 @@ deployment skill pointed at this guide.
 S3, AgentCore and Redis are valid additions as the platform grows. Before enabling
 multiple API instances:
 
-1. Configure [AgentCore and S3](sandboxes.md#aws-agentcore-sandbox) with the same
+1. Configure [AgentCore and S3](harnesses.md#aws-agentcore-sandbox) with the same
    repository and checkpoint bucket/prefix for the platform's replicas.
 2. Install the Redis client and configure Agno's existing `QueueConfig.redis`
    with a shared private Redis connection. Keep the durable queue in PostgreSQL.

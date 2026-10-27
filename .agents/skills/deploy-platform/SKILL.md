@@ -100,5 +100,5 @@ settings in **Environment** and save and deploy. Keep infrastructure changes in
 `render.yaml`; Blueprint sync can overwrite conflicting dashboard settings.
 Preserve the database and saved application state during updates.
 
-When requested, follow [sandboxes](../../../docs/sandboxes.md) for hosted engineer
+When requested, follow [sandboxes](../../../docs/harnesses.md) for hosted engineer
 execution and durable checkpoints, or [scaling](../../../docs/scaling.md) for replicas.

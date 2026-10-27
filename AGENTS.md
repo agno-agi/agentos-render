@@ -118,12 +118,12 @@ Sandbox selection, image and runtime ARN are code settings, not environment swit
 settings or private-repository credentials explicitly through the provider's `env`;
 never put credential values in source. Agno forwards the harness model credentials.
 
-For Docker engineering, run the API on the host using the [sandbox setup guide](docs/sandboxes.md#local-docker-sandbox).
+For Docker engineering, run the API on the host using the [sandbox setup guide](docs/harnesses.md#local-docker-sandbox).
 Build the sandbox with `docker build --target sandbox --load -t agno-sandbox:local .`.
 Development checkpoints use the absolute project `tmp/checkpoints` path and survive
 only while those files remain. Hosted AgentCore checkpoints use S3; no API disk is
 required. Configure the bucket/prefix explicitly and give the API appropriate AWS
-access, following docs/sandboxes.md. Do not put checkpoint archives in PostgreSQL.
+access, following docs/harnesses.md. Do not put checkpoint archives in PostgreSQL.
 See [docs/scaling.md](docs/scaling.md) for current scaling guidance.
 Local source mounts and PostgreSQL volumes remain.
 
