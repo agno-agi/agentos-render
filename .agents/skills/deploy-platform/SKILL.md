@@ -35,13 +35,15 @@ For a new deployment, guide the user through [Render](https://dashboard.render.c
 
 1. Choose **New → Blueprint** and connect their GitHub repository.
 2. Select the deployment branch and root `render.yaml`.
-3. Enter `OPENAI_API_KEY`, review the resources and billing, and choose **Deploy Blueprint**.
-4. Open the API service and copy its public HTTPS URL.
+3. Enter `OPENAI_API_KEY` and set `RUNTIME_ENV` to `dev` for initial setup.
+4. Review the resources and billing, then choose **Deploy Blueprint**.
+5. Wait for the API to become live and copy its public HTTPS URL.
 
 Start with the Blueprint's one always-on API instance and PostgreSQL 18 database.
 Confirm both use **Virginia** (`region: virginia`) before deploying.
-Keep `RUNTIME_ENV=prd` and the database references intact. The initial API may fail
-startup until the JWT verification key is configured; proceed with that setup.
+Preserve the database references. Initial setup runs without authentication;
+continue directly to securing the application below. For an existing secured
+deployment, keep `RUNTIME_ENV=prd`.
 
 ## 3. Configure access
 
@@ -55,11 +57,13 @@ In the Render API service's **Environment** settings, configure:
 | --- | --- |
 | `AGENTOS_URL` | Public HTTPS service URL, without a trailing slash; used by scheduling and MCP OAuth. |
 | `JWT_VERIFICATION_KEY` | Complete public PEM, with real line breaks and no surrounding quotes. |
+| `RUNTIME_ENV` | `prd`, set together with the verification key to enable production authorization. |
 | Model and integration credentials | Values required by the configured agents, such as `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` for Claude Engineer. |
 
 Have the user enter secrets directly in Render. Preserve existing working settings,
 including `JWT_JWKS_FILE` when used for verification. Choose **Save, rebuild, and deploy**,
-inspect startup logs, and complete the AgentOS connection once the API is healthy.
+inspect startup logs, and verify the AgentOS connection once the API is healthy.
+`RUNTIME_ENV` uses `sync: false`, so later Blueprint syncs preserve its dashboard value.
 
 For browser MCP access, set `MCP_CONNECT_SECRET` to a securely generated random
 secret, save and deploy, then connect the client to `<AGENTOS_URL>/mcp`. The user
@@ -68,9 +72,9 @@ and never print credentials. Coding clients can use `uvx agno connect --url <AGE
 
 ## 4. Verify the application
 
-Check the public deployment:
+Complete setup only after the production redeploy passes these checks:
 
-- `/health` succeeds and `/docs` loads.
+- `RUNTIME_ENV=prd` is deployed, `/health` succeeds, and `/docs` loads.
 - `/agents` rejects unauthenticated requests; an authenticated request succeeds
   within the user's permissions, and the AgentOS UI connects.
 - If MCP is configured, an unauthenticated initialization POST rejects access and

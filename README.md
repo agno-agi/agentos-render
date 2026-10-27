@@ -203,14 +203,15 @@ application's name.
 
 In the [Render dashboard](https://dashboard.render.com), choose **New → Blueprint**,
 connect your repository, and select the deployment branch and root
-[render.yaml](render.yaml). Enter `OPENAI_API_KEY`, review the resources and billing,
-and choose **Deploy Blueprint**. Reuse the existing Blueprint for later updates.
+[render.yaml](render.yaml). Enter `OPENAI_API_KEY` and set `RUNTIME_ENV` to `dev`
+for initial setup. Review the resources and billing, then choose **Deploy Blueprint**.
+Reuse the existing Blueprint for later updates, keeping `RUNTIME_ENV=prd` once secured.
 
 The Blueprint creates an **AgentOS** project with a **Production** environment,
 containing one always-on API instance and a managed PostgreSQL 18 database
 in **Virginia** (`region: virginia`). Confirm that region for both resources.
-Keep `RUNTIME_ENV=prd`. Open the API service and copy its public HTTPS URL.
-The API may fail startup until you configure authentication in the next step.
+Wait for the API service to become live and copy its public HTTPS URL.
+It initially runs without authentication. Continue directly to the next step to secure it.
 
 ### 3. Configure authentication and credentials
 
@@ -224,18 +225,23 @@ The API may fail startup until you configure authentication in the next step.
    | --- | --- |
    | `AGENTOS_URL` | Public HTTPS service URL, without a trailing slash. |
    | `JWT_VERIFICATION_KEY` | Full public PEM, with real line breaks and no surrounding quotes. |
+   | `RUNTIME_ENV` | `prd`, set together with the verification key to enable production authorization. |
    | Additional credentials | Keys used by your agents, such as `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` for Claude Engineer. |
 
-4. Choose **Save, rebuild, and deploy**. Review startup logs and complete the
+4. Choose **Save, rebuild, and deploy**. Review startup logs and verify the
    AgentOS connection once the API is healthy.
+
+`RUNTIME_ENV` is dashboard-managed (`sync: false`), so later Blueprint syncs
+preserve your switch to `prd`.
 
 Enter secrets directly in Render and preserve the Blueprint's database settings.
 Production has its own database; ingest any documents your deployed agents need.
 
 ### 4. Check the deployment
 
-Open `/health` and `/docs` on your public URL, then connect through the AgentOS UI.
-Check that `/agents` rejects requests without a token and works with a valid token.
+Confirm the redeploy with `RUNTIME_ENV=prd` has completed. Open `/health` and `/docs`
+on your public URL, then connect through the AgentOS UI. Check that `/agents` rejects
+requests without a token and works with a valid token. Setup is complete after these checks pass.
 
 ### Connect your AI apps
 
@@ -326,7 +332,7 @@ add the others when you need them. Use `.env` locally and Render's **Environment
 | `AGENTOS_URL` | Public URL used by scheduled jobs and MCP. Set it in Render. |
 | `MCP_CONNECT_SECRET` | Random secret for browser MCP clients. Generate it and set it in Render. |
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_DATABASE` | PostgreSQL connection settings. Local Compose and the Render Blueprint configure these for you. |
-| `RUNTIME_ENV` | `prd` by default. Local Compose uses `dev`, which disables token checks. |
+| `RUNTIME_ENV` | Set `dev` for initial Render setup, then `prd` with the JWT key. Managed in the Render dashboard. Application default: `prd`; local Compose: `dev`. |
 
 ## Learn more
 

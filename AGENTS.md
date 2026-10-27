@@ -139,10 +139,13 @@ supports sandbox HTTP admission through the durable PostgreSQL queue with sessio
 
 Use the deployment skill and [deployment instructions](README.md#deploy-in-production).
 Deployment target: Render. Preserve its deploy layer and provider-specific
-settings. The initial deployment uses one API instance, persistent PostgreSQL and
-production token verification. Follow docs/scaling.md when adding replicas.
-Configure production settings in the Render dashboard; never deploy `RUNTIME_ENV=dev`.
-Review existing resources before provisioning and verify deployment after changes.
+settings. Use one API instance and persistent PostgreSQL. For a fresh deployment,
+start with `RUNTIME_ENV=dev`, connect the AgentOS UI, then set `RUNTIME_ENV=prd`
+together with the JWT verification key in Render's dashboard and redeploy.
+`RUNTIME_ENV` is dashboard-managed; preserve `prd` on existing secured deployments.
+Complete setup only after verifying authenticated access and unauthenticated rejection.
+Follow docs/scaling.md when adding replicas. Review existing resources before
+provisioning and verify deployment after changes.
 
 Before removing or renaming components in an existing deployment, inspect saved schedules
 and Studio references. Removing a declaration does not remove persisted records. Preserve

@@ -19,7 +19,7 @@ projects:
               - key: OPENAI_API_KEY
                 sync: false
               - key: RUNTIME_ENV
-                value: prd
+                sync: false  # Enter dev for setup, then set prd in the dashboard.
               - key: WAIT_FOR_DB
                 value: "True"
               - key: DB_HOST
