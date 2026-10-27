@@ -1,9 +1,8 @@
 # Render Blueprint for AgentOS.
 #
 # Launch it from the dashboard (New + → Blueprint, pointing at your copy of
-# this repo). After the first deploy, run ./scripts/render/up.sh once — it
-# pins AGENTOS_URL to the real service URL for scheduler callbacks and MCP
-# clients, and pauses so you can mint the JWT verification key.
+# this repo). Set AGENTOS_URL and JWT_VERIFICATION_KEY in the API service's
+# Environment settings, then save and deploy. See README.md for the full setup.
 #
 # Plans: `starter` is the cheapest web plan that never sleeps — the
 # in-process scheduler and MCP streams need an always-on instance, so don't
@@ -25,11 +24,9 @@ services:
     envVars:
       - key: OPENAI_API_KEY
         sync: false          # prompted at blueprint launch, stored as a secret
-      # Optional keys are not blueprint prompts: Render asks for sync: false
-      # values only on first creation, and both Claude Engineer credentials
-      # (ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN) are optional. Put them in
-      # .env.production with PARALLEL_API_KEY and the Slack pair; up.sh and
-      # env-sync.sh upload every key in that file.
+      # Add other model and integration credentials in the API service's
+      # Environment settings, including ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN
+      # for Claude Engineer, and any Parallel or Slack keys the application uses.
       - key: RUNTIME_ENV
         value: prd
       - key: WAIT_FOR_DB
