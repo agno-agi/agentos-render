@@ -204,7 +204,7 @@ connect your repository, and select the deployment branch and root
 [render.yaml](render.yaml). Enter `OPENAI_API_KEY`, review the resources and billing,
 and choose **Deploy Blueprint**. Reuse the existing Blueprint for later updates.
 
-The Blueprint creates one always-on API instance and a managed PostgreSQL database.
+The Blueprint creates one always-on API instance and a managed PostgreSQL 18 database.
 Keep `RUNTIME_ENV=prd`. Open the API service and copy its public HTTPS URL.
 The API may fail startup until you configure authentication in the next step.
 

@@ -1,32 +1,18 @@
-# Render Blueprint for AgentOS.
-#
-# Launch it from the dashboard (New + → Blueprint, pointing at your copy of
-# this repo). Set AGENTOS_URL and JWT_VERIFICATION_KEY in the API service's
-# Environment settings, then save and deploy. See README.md for the full setup.
-#
-# Plans: `starter` is the cheapest web plan that never sleeps — the
-# in-process scheduler and MCP streams need an always-on instance, so don't
-# downgrade to `free`. One API instance is supported; see docs/scaling.md
-# for the current limits. `basic-256mb` Postgres carries pgvector; the app runs
-# CREATE EXTENSION itself.
+# AgentOS on Render. See README.md for deployment and authentication setup.
 
 services:
   - name: agent-os
     type: web
     runtime: docker
-    plan: starter
-    numInstances: 1    # supported configuration; limitations: docs/scaling.md
+    plan: starter  # Always-on for scheduled work and MCP connections.
+    numInstances: 1
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
-    autoDeploy: true
-    # API storage is ephemeral. Optional AgentCore checkpoints use S3, not an API disk.
+    autoDeployTrigger: commit
     envVars:
       - key: OPENAI_API_KEY
-        sync: false          # prompted at blueprint launch, stored as a secret
-      # Add other model and integration credentials in the API service's
-      # Environment settings, including ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN
-      # for Claude Engineer, and any Parallel or Slack keys the application uses.
+        sync: false
       - key: RUNTIME_ENV
         value: prd
       - key: WAIT_FOR_DB
@@ -55,6 +41,6 @@ services:
 databases:
   - name: agentos-db
     plan: basic-256mb
-    postgresMajorVersion: "17"
+    postgresMajorVersion: "18"
     databaseName: ai
     user: ai
