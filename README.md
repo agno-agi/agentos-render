@@ -190,60 +190,65 @@ If you use sandboxes, also set the repository URL and branch in
 Ask your coding agent to follow [deploy-platform](.agents/skills/deploy-platform/SKILL.md),
 or use the steps below.
 
-You'll need a Render account with access to your GitHub repository, a Render API key, Python 3, and OpenSSL.
+### 1. Push your application to GitHub
 
-### 1. Set your production settings
+Create or reuse your own GitHub repository and push the application branch you
+want to deploy, including `Dockerfile` and `render.yaml`. Your coding agent can
+help create the repository and configure the remotes; see [Make it yours](#make-it-yours).
+Give Render's GitHub connection access to that repository. The Blueprint names the
+project **AgentOS**; change `projects[0].name` before pushing if you prefer your
+application's name.
 
-```sh
-[ -f .env.production ] || cp example.env .env.production
-```
+### 2. Deploy the Blueprint
 
-Add `OPENAI_API_KEY` and any other model keys you use, such as `ANTHROPIC_API_KEY`
-or `CLAUDE_CODE_OAUTH_TOKEN` for Claude Engineer. Keep `RUNTIME_ENV=prd` or leave
-it unset. The scripts read `.env.production` before `.env`. The Blueprint prompts
-for `OPENAI_API_KEY` only; the setup script uploads every other key from this file.
+In the [Render dashboard](https://dashboard.render.com), choose **New → Blueprint**,
+connect your repository, and select the deployment branch and root
+[render.yaml](render.yaml). Enter `OPENAI_API_KEY` and set `RUNTIME_ENV` to `dev`
+for initial setup. Review the resources and billing, then choose **Deploy Blueprint**.
+Reuse the existing Blueprint for later updates, keeping `RUNTIME_ENV=prd` once secured.
 
-Set `RENDER_API_KEY` in `.env.production`. Keep the web service on an always-on plan with one instance. The setup script records the public URL and prompts for authentication after the Blueprint has created the service.
+The Blueprint creates an **AgentOS** project with a **Production** environment,
+containing one always-on API instance and a managed PostgreSQL 18 database
+in **Virginia** (`region: virginia`). Confirm that region for both resources.
+Wait for the API service to become live and copy its public HTTPS URL.
+It initially runs without authentication. Continue directly to the next step to secure it.
 
-For an existing deployment, set `RENDER_SERVICE_ID` and `RENDER_POSTGRES_ID` to the
-intended `agent-os` service and `agentos-db` database IDs. The scripts verify their
-names and stop on ambiguous or potentially truncated name lookups. Nonempty
-exported `RENDER_*` settings override the selected env file; the scripts choose
-`.env.production` when present, otherwise `.env`. `env-sync.sh` uses its explicit
-file argument, defaulting to `.env.production`.
+### 3. Configure authentication and credentials
 
-### 2. Deploy and set up authentication
+1. Open [os.agno.com](https://os.agno.com), choose **New AgentOS → Connect → Live**,
+   enter the Render service URL, and connect.
+2. In **Settings → OS Security**, enable **Token-Based Authorization (JWT)**
+   and copy the full public verification key.
+3. In the Render API service's **Environment** settings, set:
 
-Connect your copy of this repository through **New → Blueprint** in the Render dashboard. Apply [render.yaml](render.yaml) to create the API service and managed PostgreSQL database, then run the command below to finish configuration.
+   | Variable | Value |
+   | --- | --- |
+   | `AGENTOS_URL` | Public HTTPS service URL, without a trailing slash. |
+   | `JWT_VERIFICATION_KEY` | Full public PEM, with real line breaks and no surrounding quotes. |
+   | `RUNTIME_ENV` | `prd`, set together with the verification key to enable production authorization. |
+   | `ANTHROPIC_API_KEY` | Your Anthropic API key, if you use Claude Engineer with API-key authentication. |
 
-```sh
-./scripts/render/up.sh
-```
+4. Choose **Save, rebuild, and deploy**. Review startup logs and verify the
+   AgentOS connection once the API is healthy.
 
-This creates or uses billed resources. Start with one API instance; see the
-[scaling guide](docs/scaling.md) for the optional multi-replica architecture.
-When the script shows the public URL and asks for a verification key:
+`RUNTIME_ENV` is dashboard-managed (`sync: false`), so later Blueprint syncs
+preserve your switch to `prd`.
 
-1. Open [os.agno.com](https://os.agno.com), choose **Connect OS**, and select **Live**.
-2. Enter the public URL and enable token-based authorization.
-3. Copy the full public verification key into the script's prompt.
+Enter secrets directly in Render and preserve the Blueprint's database settings.
+Production has its own database; ingest any documents your deployed agents need.
 
-The script saves the key and connection settings in `.env.production`. If you
-skipped the prompt, save the quoted `JWT_VERIFICATION_KEY` there and run
-`./scripts/render/env-sync.sh` to finish. Production requires a valid token
-to access agents and data.
+### 4. Check the deployment
 
-### 3. Check the deployment
-
-Open `/health` and `/docs` on your public URL, then connect through the AgentOS UI.
-Check that `/agents` rejects requests without a token and works with a valid token.
-
-Use the provider dashboard to review startup logs.
+Confirm the redeploy with `RUNTIME_ENV=prd` has completed. Open `/health` and `/docs`
+on your public URL, then connect through the AgentOS UI. Check that `/agents` rejects
+requests without a token and works with a valid token. Setup is complete after these checks pass.
 
 ### Connect your AI apps
 
-Use your public URL followed by `/mcp` as the connector URL in an AI app.
-When prompted, enter the `MCP_CONNECT_SECRET` saved in your production env file.
+For browser MCP clients, generate a random secret with your password manager,
+set it as `MCP_CONNECT_SECRET` in Render's **Environment** settings, and save and deploy.
+Use your public URL followed by `/mcp` as the connector URL and enter the secret
+on the consent page. Preserve the secret during updates.
 For a supported coding client, run:
 
 ```sh
@@ -252,15 +257,23 @@ uvx agno connect --url https://YOUR-DOMAIN
 
 Try asking OS Manager about the platform to check that the connection works.
 
+### Open your project
+
+Once the application is live, open the project created by the Blueprint and
+verify that its **Production** environment contains the API service and
+PostgreSQL database. The Blueprint manages the project, environment, and
+resources together.
+
 ### Update or remove the deployment
 
-| What you want to do | Command |
-| --- | --- |
-| Deploy code changes | `./scripts/render/redeploy.sh` |
-| Upload production settings | `./scripts/render/env-sync.sh` |
-| Remove the deployment | `./scripts/render/down.sh` |
-
-Deletes the web service and managed database. Database contents are lost. Review the resources listed before confirming deletion.
+- **Code:** push to the connected branch and check the resulting deployment.
+  To redeploy manually, choose **Manual Deploy → Deploy latest commit**.
+- **Settings:** edit **Environment** and save and deploy.
+- **Infrastructure:** update `render.yaml` and sync the Blueprint. A sync can
+  overwrite conflicting dashboard settings.
+- **Removal:** disconnect the Blueprint, then delete its API service and database
+  in the dashboard. Disconnecting alone leaves resources running; deleting the
+  database destroys its contents. Verify that both resources are gone.
 
 ### Sandbox storage
 
@@ -307,7 +320,7 @@ See [AGENTS.md](AGENTS.md) for the code layout and development conventions.
 ## Configuration
 
 [example.env](example.env) shows the main settings. Start with `OPENAI_API_KEY`;
-add the others when you need them. Use `.env` locally and `.env.production` for deployment.
+add the others when you need them. Use `.env` locally and Render's **Environment** settings for deployment.
 
 | Setting | What it's for |
 | --- | --- |
@@ -316,10 +329,10 @@ add the others when you need them. Use `.env` locally and `.env.production` for 
 | `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` | Connect OS Manager to Slack. Set both. |
 | `PARALLEL_API_KEY` | Optional web search key. Without it, search uses Parallel's MCP server without an API key. |
 | `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE` | Check login tokens in production. A JWKS file must be available on the server. |
-| `AGENTOS_URL` | Public URL used by scheduled jobs and MCP. Deployment scripts save it for you. |
-| `MCP_CONNECT_SECRET` | Connect browser MCP clients. Deployment scripts generate it for you. |
-| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_DATABASE` | PostgreSQL connection settings. Local Compose configures these for you. |
-| `RUNTIME_ENV` | `prd` by default. Local Compose uses `dev`, which disables token checks. |
+| `AGENTOS_URL` | Public URL used by scheduled jobs and MCP. Set it in Render. |
+| `MCP_CONNECT_SECRET` | Random secret for browser MCP clients. Generate it and set it in Render. |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_DATABASE` | PostgreSQL connection settings. Local Compose and the Render Blueprint configure these for you. |
+| `RUNTIME_ENV` | Set `dev` for initial Render setup, then `prd` with the JWT key. Managed in the Render dashboard. Application default: `prd`; local Compose: `dev`. |
 
 ## Learn more
 

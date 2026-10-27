@@ -44,7 +44,7 @@ workflows in `.agents/skills/`; `.claude/skills` links to that directory.
   `teams/`: user-defined teams; no Engineering team ships by default.
 - `db/`: cached OS database and distinct knowledge content adapters.
 - `evals/`: application cases and the Agno eval CLI entrypoint.
-- `scripts/`: local setup, validation and builds. Deployment files: `render.yaml`, `scripts/render/`.
+- `scripts/`: local setup, validation and builds. Deployment configuration: `render.yaml`.
 - `compose.yaml`: local PostgreSQL and development API. `Dockerfile`: shared API and sandbox dependencies.
 
 ## Local development
@@ -139,10 +139,13 @@ supports sandbox HTTP admission through the durable PostgreSQL queue with sessio
 
 Use the deployment skill and [deployment instructions](README.md#deploy-in-production).
 Deployment target: Render. Preserve its deploy layer and provider-specific
-settings. The initial deployment uses one API instance, persistent PostgreSQL and
-production token verification. Follow docs/scaling.md when adding replicas.
-Use the production env file described in the README; never deploy `RUNTIME_ENV=dev`.
-Review existing resources before provisioning and verify deployment after changes.
+settings. Use one API instance and persistent PostgreSQL. For a fresh deployment,
+start with `RUNTIME_ENV=dev`, connect the AgentOS UI, then set `RUNTIME_ENV=prd`
+together with the JWT verification key in Render's dashboard and redeploy.
+`RUNTIME_ENV` is dashboard-managed; preserve `prd` on existing secured deployments.
+Complete setup only after verifying authenticated access and unauthenticated rejection.
+Follow docs/scaling.md when adding replicas. Review existing resources before
+provisioning and verify deployment after changes.
 
 Before removing or renaming components in an existing deployment, inspect saved schedules
 and Studio references. Removing a declaration does not remove persisted records. Preserve

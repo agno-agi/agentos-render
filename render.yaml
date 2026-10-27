@@ -1,63 +1,52 @@
-# Render Blueprint for AgentOS.
-#
-# Launch it from the dashboard (New + → Blueprint, pointing at your copy of
-# this repo). After the first deploy, run ./scripts/render/up.sh once — it
-# pins AGENTOS_URL to the real service URL for scheduler callbacks and MCP
-# clients, and pauses so you can mint the JWT verification key.
-#
-# Plans: `starter` is the cheapest web plan that never sleeps — the
-# in-process scheduler and MCP streams need an always-on instance, so don't
-# downgrade to `free`. One API instance is supported; see docs/scaling.md
-# for the current limits. `basic-256mb` Postgres carries pgvector; the app runs
-# CREATE EXTENSION itself.
+# AgentOS on Render. See README.md for deployment and authentication setup.
 
-services:
-  - name: agent-os
-    type: web
-    runtime: docker
-    plan: starter
-    numInstances: 1    # supported configuration; limitations: docs/scaling.md
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    healthCheckPath: /health
-    autoDeploy: true
-    # API storage is ephemeral. Optional AgentCore checkpoints use S3, not an API disk.
-    envVars:
-      - key: OPENAI_API_KEY
-        sync: false          # prompted at blueprint launch, stored as a secret
-      # Optional keys are not blueprint prompts: Render asks for sync: false
-      # values only on first creation, and both Claude Engineer credentials
-      # (ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN) are optional. Put them in
-      # .env.production with PARALLEL_API_KEY and the Slack pair; up.sh and
-      # env-sync.sh upload every key in that file.
-      - key: RUNTIME_ENV
-        value: prd
-      - key: WAIT_FOR_DB
-        value: "True"
-      - key: DB_HOST
-        fromDatabase:
-          name: agentos-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: agentos-db
-          property: port
-      - key: DB_USER
-        fromDatabase:
-          name: agentos-db
-          property: user
-      - key: DB_PASS
-        fromDatabase:
-          name: agentos-db
-          property: password
-      - key: DB_DATABASE
-        fromDatabase:
-          name: agentos-db
-          property: database
+projects:
+  - name: AgentOS
+    environments:
+      - name: Production
+        services:
+          - name: agentos-api
+            type: web
+            runtime: docker
+            region: virginia
+            plan: starter  # Always-on for scheduled work and MCP connections.
+            numInstances: 1
+            dockerfilePath: ./Dockerfile
+            dockerContext: .
+            healthCheckPath: /health
+            autoDeployTrigger: commit
+            envVars:
+              - key: OPENAI_API_KEY
+                sync: false
+              - key: RUNTIME_ENV
+                sync: false  # Enter dev for setup, then set prd in the dashboard.
+              - key: WAIT_FOR_DB
+                value: "True"
+              - key: DB_HOST
+                fromDatabase:
+                  name: agentos-db
+                  property: host
+              - key: DB_PORT
+                fromDatabase:
+                  name: agentos-db
+                  property: port
+              - key: DB_USER
+                fromDatabase:
+                  name: agentos-db
+                  property: user
+              - key: DB_PASS
+                fromDatabase:
+                  name: agentos-db
+                  property: password
+              - key: DB_DATABASE
+                fromDatabase:
+                  name: agentos-db
+                  property: database
 
-databases:
-  - name: agentos-db
-    plan: basic-256mb
-    postgresMajorVersion: "17"
-    databaseName: ai
-    user: ai
+        databases:
+          - name: agentos-db
+            region: virginia
+            plan: basic-256mb
+            postgresMajorVersion: "18"
+            databaseName: ai
+            user: ai
