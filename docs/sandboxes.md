@@ -1,9 +1,8 @@
-# Run engineers in a sandbox
+# Set up coding engineers
 
 Claude and Codex engineers are disabled by default. Enable either one explicitly
-in code after configuring a sandbox and its credentials. The factories reject a
-missing sandbox or repository; they never fall back to the API server's filesystem.
-Choose Docker locally or AWS AgentCore when hosted.
+in code with its model credentials. Start with direct execution, add a sandbox
+and checkpoints when needed, then add Redis and replicas using the [scaling guide](scaling.md).
 
 Follow [platform setup](../README.md#run-locally) first. Run commands from the repository
 root. Codex needs `OPENAI_API_KEY`; Claude needs `ANTHROPIC_API_KEY` (or
@@ -13,7 +12,7 @@ Their models are configured in [agents/engineers.py](../agents/engineers.py).
 
 ## Enable an engineer in code
 
-Configure the repository and one of the providers below before registering an engineer.
+Leave `sandbox_provider()` returning `None` to start with direct execution.
 For a hosted API, complete JWT setup before enabling engineering access.
 Import only the factories you want in `app/main.py`:
 
@@ -35,6 +34,55 @@ You can enable either engineer independently. Adding API keys alone enables neit
 To disable one, remove its factory call and unused import, then redeploy. Before removing
 an existing engineer, check saved Studio teams, schedules and Company Tasks that reference
 its ID; preserve their history and update active references deliberately.
+
+## Direct execution
+
+With no sandbox configured, engineers work in the project directory on the API
+host. They can read its files, edit code and run commands with the process's access,
+including access to its environment. Start with trusted users and disposable work.
+This mode requires no sandbox infrastructure or checkpoint store. On Render, files
+and native coding sessions can disappear on restart or redeploy; PostgreSQL retains
+platform records, not the working filesystem. Push work you want to keep.
+
+## Publish branches and pull requests
+
+Give the engineer access to the target GitHub repository using `GH_TOKEN` in your
+local environment or hosted secret settings. For a fine-grained token, select only
+the target repository and grant Contents and Pull requests read/write permissions.
+Complete any organization approval your repository requires. Never put tokens in code.
+
+The template image includes Git. To add the GitHub CLI, insert this in the
+`Dockerfile` base stage before `FROM base AS sandbox`, then rebuild and deploy:
+
+```dockerfile
+RUN apt-get update && apt-get install -y --no-install-recommends gh \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+Configure [Git authentication](https://cli.github.com/manual/gh_auth_setup-git)
+with `gh auth setup-git --hostname github.com`. The CLI reads
+[`GH_TOKEN`](https://cli.github.com/manual/gh_help_environment) from the environment.
+Set the Git author name and email for the working checkout.
+
+Render's image contains source files but no `.git` directory. Ask the engineer to
+clone your repository into a separate writable directory, work on a feature branch,
+run checks, push that branch and open a PR. Leave merging and deployment to you.
+Do not edit the serving source tree for this workflow. Verify one small PR manually
+before scheduling improvements; setup alone does not prove publishing works.
+
+For sandboxes, pass `GH_TOKEN` explicitly through the provider's `env` mapping,
+reading it from your secret store. Private checkout additionally uses
+`GITHUB_READ_TOKEN`; keep that token read-only. Configure the GitHub credential
+helper inside the sandbox too. The provider does not automatically forward the
+API host's GitHub credentials. Only expose write access to sessions authorized
+to publish changes.
+
+## Add a sandbox and checkpoints
+
+When you want per-session isolation and workspace recovery, configure one of the
+providers below. A configured sandbox requires `REPOSITORY`; invalid sandbox
+configuration fails instead of falling back to direct execution. Docker uses
+local checkpoints; AgentCore uses S3. Neither is required for the direct mode above.
 
 ## Choose your repository
 
@@ -75,7 +123,8 @@ Checkpoints are saved in `tmp/checkpoints`. Agno passes the engineers' model cre
 to the sandbox. These files are local: deleting them loses that recovery point.
 For a private repository, also supply `GITHUB_READ_TOKEN` through the
 `env` argument of `docker_sandbox()`. Read its value from your environment or secret store;
-never put the token itself in code. Git push credentials need separate configuration.
+never put the token itself in code. For publishing, also configure `GH_TOKEN` and
+the credential helper as described above.
 
 ## AWS AgentCore sandbox
 

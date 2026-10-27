@@ -47,11 +47,12 @@ Prefer to set it up yourself? Follow the steps below.
 **Claude Engineer** and **Codex Engineer** can read code, edit files, and run commands.
 They are **disabled by default**. Adding credentials does not enable them.
 
-Follow the [harness setup guide](docs/sandboxes.md) to configure a sandbox and register
+Follow the [harness setup guide](docs/sandboxes.md) to register
 `create_claude_engineer()` or `create_codex_engineer()` in `app/main.py`.
-Use a [Docker sandbox](docs/sandboxes.md#local-docker-sandbox) locally or
-[AWS AgentCore with S3 checkpoints](docs/sandboxes.md#aws-agentcore-sandbox) when hosted.
-The factories require a sandbox and never run engineers inside the API server.
+Start with direct execution on the API host and configure GitHub credentials to
+publish branches and PRs. Add [Docker](docs/sandboxes.md#local-docker-sandbox) or
+[AWS AgentCore with S3 checkpoints](docs/sandboxes.md#aws-agentcore-sandbox) when
+you need isolation and recovery. Sandboxes and checkpoints are optional.
 
 Claude needs `ANTHROPIC_API_KEY`; Codex uses `OPENAI_API_KEY`. Once an engineer is
 enabled, chat with it in AgentOS or ask OS Manager to use it.
@@ -260,7 +261,8 @@ resources together.
 ### Sandbox storage
 
 The API service needs no attached disk. Conversations, memories and Company work
-are stored in PostgreSQL. Enabled engineers work in their configured sandbox.
+are stored in PostgreSQL. Engineers run directly on the API host unless you configure
+a sandbox. Direct-mode files and native sessions are ephemeral on Render.
 Database conversation history does not restore engineering files or native sessions;
 configure checkpoints to recover that workspace.
 

@@ -100,6 +100,7 @@ settings in **Environment** and save and deploy. Keep infrastructure changes in
 `render.yaml`; Blueprint sync can overwrite conflicting dashboard settings.
 Preserve the database and saved application state during updates.
 
-When requested, follow [sandboxes](../../../docs/sandboxes.md) to configure a sandbox,
-model credentials and explicit engineer registration in code. Complete JWT setup first.
+When requested, follow [sandboxes](../../../docs/sandboxes.md) for model credentials, GitHub access
+and explicit engineer registration in code. Start with direct execution; sandboxes and
+checkpoints are optional upgrades. Complete JWT setup first.
 Follow [scaling](../../../docs/scaling.md) for replicas.

@@ -108,8 +108,10 @@ executor restrictions.
 Engineers are disabled by default. Keep their stable IDs and models in factory
 functions in `agents/engineers.py`. Enable one only by calling its factory in the
 `AgentOS(agents=[...])` list in `app/main.py`; credentials are not activation switches.
-Factories require a configured sandbox, repository and model credentials, and must
-never fall back to executing in the API server. Follow docs/sandboxes.md for setup.
+Factories require model credentials. With no sandbox, they execute directly in the
+project directory on the API host. Sandboxes and checkpoints are optional upgrades;
+a configured sandbox still requires a repository. Follow docs/sandboxes.md for
+setup and GitHub credentials for branch/PR publishing.
 
 Select the provider by returning `None`, `docker_sandbox()`, or
 `agentcore_sandbox(runtime_arn="runtime-arn", checkpoint_bucket="checkpoint-bucket")` from `sandbox_provider()`.

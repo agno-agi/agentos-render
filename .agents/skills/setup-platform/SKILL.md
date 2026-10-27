@@ -43,7 +43,8 @@ If `.env` does not exist, `cp example.env .env`, then set `OPENAI_API_KEY`:
 
 Claude and Codex engineers are disabled by default. Credentials do not enable them.
 When the user requests engineering capabilities, follow the [harness setup guide](../../../docs/sandboxes.md)
-to configure a sandbox, credentials, and explicit code registration.
+to configure credentials and explicit code registration. Start with direct execution;
+sandboxes and checkpoints are optional. Configure GitHub access when publishing PRs.
 
 ## 3. Boot
 
