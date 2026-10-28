@@ -111,7 +111,7 @@ The check should report `9 tools; required tools available`.
 
 Tell OS Manager what you want to build. For example:
 
-> Help me build an agent that answers questions about my product. Here's the documentation URL: …
+> Help me build a daily briefing agent about the companies and topics I follow. Here's what I care about: …
 
 Review what it proposes, then ask it to build and publish the agent.
 Refresh the Agents list and try it out. You can chat with your new agent directly

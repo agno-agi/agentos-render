@@ -85,20 +85,20 @@ Don't gate on the click and don't ask "connect or build first?" — bridge strai
 
 ## 6. Build their first agent
 
-Below the connect direction, ask the one question that starts it — plain text, no structured choice control:
+If the user already described the agent they want, pass that request directly to
+[`create-agent`](../create-agent/SKILL.md). Otherwise, below the connect direction,
+ask one plain-text question and wait for the answer:
 
-> Now let's build your first agent. Do you have a product you'd like to build an agent for — or a product you use that you'd like an agent for? Give me its docs or website URL and I'll build an agent that answers questions about it from its own docs, ready to serve in your product, in claude.ai and ChatGPT, and over MCP.
->
-> Or if you have something else in mind — issue triage, release notes, your weekly update — say it in your own words and I'll build that instead.
+> What would you like your first agent to do?
 
-Whatever they type is the first discovery answer for [`create-agent`](../create-agent/SKILL.md): a URL or product name takes its **product-agent pattern** (Step 3 there); anything else takes its normal path. Close the message with the first build move, never with "ready?".
-
-**The product brief** you hand create-agent when they name a product — complete, so it builds without asking more: the product pattern (Step 3 there), first declare and register a dedicated `product_knowledge` in `app/registry.py` (none ships by default), then ingest with the framework `KnowledgeManagementTools(knowledge=product_knowledge).aingest_url` in the selected Compose or host runtime, initial page cap 50, `knowledge=product_knowledge`, `learning=shared_learning`, instructions you write that carry the grounding rules in create-agent's product pattern, no other tools; three smoke probes.
+Use their answer as create-agent's discovery input and follow that skill immediately.
+Do not ask them to invoke it separately or repeat a brief they already supplied.
+A product name or URL is context; it does not by itself request a documentation Q&A agent.
 
 Follow create-agent through its smoke test, then land where the agent now lives, in the same breath as its first answer:
 
-- **In the UI** — **Refresh** puts it in the Agents list, and its base on the Knowledge page.
-- **On OS Manager's roster** — registering in `app/main.py` lets OS Manager run it by name ("OS Manager, ask the <Product> agent…" through the `os_manager` MCP tool) from the UI, Slack, or any MCP client.
+- **In the UI** — **Refresh** puts it in the Agents list. Show its knowledge base only if one was created.
+- **On OS Manager's roster** — registering in `app/main.py` lets OS Manager run it by name ("OS Manager, ask the <agent name>…" through the `os_manager` MCP tool) from the UI or an MCP client; Slack when configured.
 - **Ready to serve** — REST inside their product and MCP now; claude.ai and ChatGPT once deployed (Step 8).
 
 Stop before create-agent's own closing — Steps 7 and 8 replace it. If they push back or want to stop, adapt and carry on.
