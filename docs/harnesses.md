@@ -34,10 +34,23 @@ Checkpoints save its workspace and native coding session for recovery. Use Docke
 for local development or AWS AgentCore for a hosted platform. Follow the steps below
 from the repository root.
 
-### Local Docker sandbox
+In [app/sandbox.py](../app/sandbox.py), enable sandboxes and set your repository:
 
-Set `sandbox_provider()` to return `docker_sandbox()`. Update `REPOSITORY` to your
-GitHub repository and branch. The sandbox checks out that repository.
+```python
+SANDBOX_ENABLED = True
+REPOSITORY = Repository("https://github.com/YOUR-ORG/YOUR-REPO", branch="main")
+```
+
+`SANDBOX_PROVIDER` selects the backend: `docker` (the local default) or `agentcore`.
+The Render Blueprint sets `agentcore`. This is independent of `RUNTIME_ENV`, which
+controls JWT authorization. Set up the selected backend before deploying this change.
+An invalid provider or missing AgentCore ARN/bucket stops startup when coding agents
+are enabled; it never falls back to execution on the API host.
+
+Set `SANDBOX_ENABLED = False` to return enabled coding agents to direct execution
+on the API host. This does not disable the agents or delete their checkpoints.
+
+### Local Docker sandbox
 
 Run the API on your computer so it can reach Docker. Install [uv](https://docs.astral.sh/uv/)
 and configure `.env` using the [local setup instructions](../README.md#run-locally).
@@ -48,7 +61,7 @@ docker compose up -d agentos-db
 ./scripts/venv_setup.sh
 docker build --target sandbox --load -t agno-sandbox:local .
 docker compose stop agentos-api
-RUNTIME_ENV=dev DB_HOST=127.0.0.1 DB_PORT=5432 \
+RUNTIME_ENV=dev SANDBOX_PROVIDER=docker DB_HOST=127.0.0.1 DB_PORT=5432 \
   AGENTOS_URL=http://127.0.0.1:8000 \
   uv run --no-project --env-file .env --with-requirements requirements.txt \
   uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload \
@@ -143,11 +156,10 @@ CloudFormation; a failed stack may need recovery before retrying.
 
 #### 3. Connect your API
 
-The script prints the runtime ARN, bucket, prefix, application user and a ready-to-paste
-`sandbox_provider()` function for [app/sandbox.py](../app/sandbox.py).
-Add `import os`, set `REPOSITORY` to your GitHub URL and branch, then paste the function.
-It reads the runtime ARN and checkpoint settings from environment variables, so those
-values stay out of your repository. To retrieve the values again:
+The script prints the runtime ARN, bucket, prefix, application user and environment
+settings. In [app/sandbox.py](../app/sandbox.py), set `SANDBOX_ENABLED = True` and
+`REPOSITORY` to your GitHub URL and branch as shown above. The provider reads the
+runtime ARN and checkpoint settings from the environment. To retrieve the values again:
 
 ```sh
 scripts/aws.py status
@@ -160,6 +172,7 @@ settings (`Environment` on Render):
 
 | Variable | Value |
 | --- | --- |
+| `SANDBOX_PROVIDER` | `agentcore`. Already set by the Render Blueprint; check existing deployments after syncing it. |
 | `AWS_ACCESS_KEY_ID` | The application's access key ID. |
 | `AWS_SECRET_ACCESS_KEY` | Its secret access key. |
 | `AWS_DEFAULT_REGION` | The region printed by the script. |
@@ -179,7 +192,7 @@ credentials to the coding agents. Private checkout needs `GITHUB_READ_TOKEN` sup
 explicitly through the provider's `env` mapping, read from your environment or secret
 store. See [GitHub access](#publish-changes-to-github) for publishing changes.
 
-Commit the provider code and redeploy your API, preserving JWT authorization.
+Commit the switch and repository settings and redeploy your API, preserving JWT authorization.
 Keep account-specific values in `.env` and your host settings; do not commit them.
 No API disk or Docker daemon is required on the host. Use the same checkpoint
 bucket/prefix on all replicas of this platform. Keep the bucket private and do not

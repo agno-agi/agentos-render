@@ -294,17 +294,11 @@ def show_connection(values: dict[str, str], region: str) -> None:
             "[yellow]Setup is incomplete. Run apply for a new setup, or inspect CloudFormation events.[/yellow]"
         )
         return
-    snippet = """def sandbox_provider() -> Sandbox | None:
-    return agentcore_sandbox(
-        runtime_arn=os.environ["AGENTCORE_RUNTIME_ARN"],
-        checkpoint_bucket=os.environ["AGENTCORE_CHECKPOINT_BUCKET"],
-        checkpoint_prefix=os.environ.get("AGENTCORE_CHECKPOINT_PREFIX", "agentos/checkpoints/"),
-    )"""
     console.print("\n[bold]Configure app/sandbox.py[/bold]")
-    console.print("Add import os, set REPOSITORY to your GitHub URL and branch, then use:")
-    show_code(snippet, "python")
+    console.print("Set SANDBOX_ENABLED = True and REPOSITORY to your GitHub URL and branch.")
     console.print("\n[bold]Set these in your API host's environment settings[/bold]")
     environment = {
+        "SANDBOX_PROVIDER": "agentcore",
         "AWS_DEFAULT_REGION": region,
         "AGENTCORE_RUNTIME_ARN": values["RuntimeArn"],
         "AGENTCORE_CHECKPOINT_BUCKET": values["CheckpointBucket"],

@@ -53,8 +53,8 @@ For standard development, `docker compose up -d --build`, then poll http://local
 
 For sandbox development, follow the host API commands in the
 [sandbox setup guide](../../../docs/harnesses.md#local-docker-sandbox).
-Select `docker_sandbox()` in `sandbox_provider()` and edit `REPOSITORY` in
-`app/sandbox.py` for the target repository and branch,
+Set `SANDBOX_ENABLED = True` and `REPOSITORY` in `app/sandbox.py` for the target
+repository and branch. Use `SANDBOX_PROVIDER=docker` for this local host setup,
 and keep the Uvicorn process running in a persistent terminal. The host API
 uses Docker directly. Check `/health` and `/config`; Company should list its four tables,
 OS Manager, and the optional coding executors. Never start two APIs on the same port.

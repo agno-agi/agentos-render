@@ -58,7 +58,9 @@ access. For isolation and checkpoint recovery, the same guide covers local Docke
 and [AWS AgentCore](docs/harnesses.md#aws-agentcore-sandbox). The included
 [scripts/aws.py](scripts/aws.py) prepares the AWS resources;
 preview with `plan`, provision with `apply`, and retrieve configuration with `status`.
-Sandbox activation remains an explicit change in `app/sandbox.py`.
+Set `SANDBOX_ENABLED = True` and your repository in `app/sandbox.py` to enable sandboxes.
+`SANDBOX_PROVIDER` selects `docker` locally or `agentcore` on your host, independently
+of JWT authorization. Configure the backend before deploying the enabled code.
 
 ## Run locally
 

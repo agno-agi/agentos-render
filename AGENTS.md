@@ -112,8 +112,11 @@ sandbox owns its repository checkout; invalid configuration must fail rather tha
 back to server execution. Keep provider configuration in `app/sandbox.py` and agent
 declarations in `agents/engineers.py`.
 
-Select the provider in `sandbox_provider()` by returning `None`, `docker_sandbox()`,
-or `agentcore_sandbox(...)`. Sandbox selection and image remain code settings.
+Enable sandboxes with `SANDBOX_ENABLED = True` in `app/sandbox.py`; the template
+defaults to `False`. `SANDBOX_PROVIDER` selects `docker` (default) or `agentcore`,
+independently of `RUNTIME_ENV` and JWT authorization. Invalid providers and missing
+AgentCore ARN/bucket values must fail without falling back to server execution.
+The sandbox image remains a code setting.
 Read account-specific runtime ARNs and checkpoint settings from environment variables;
 never commit their values. Supply optional Bedrock
 settings or private-repository credentials explicitly through the provider's `env`;
