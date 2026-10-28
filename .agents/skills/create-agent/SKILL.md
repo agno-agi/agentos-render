@@ -89,7 +89,7 @@ For web access, reuse `get_web_tools()` from `app.registry` when its contract fi
 from agno.tools.mcp import MCPTools
 
 web_tools = MCPTools(
-    url="https://search.parallel.ai/mcp", transport="streamable-http", name="parallel_tools", timeout_seconds=30
+    url="https://mcp.parallel.ai/mcp", transport="streamable-http", name="parallel_tools", timeout_seconds=30
 )
 ```
 
