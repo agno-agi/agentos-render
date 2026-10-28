@@ -26,8 +26,9 @@ deployment skill pointed at this guide.
 S3, AgentCore and Redis are valid additions as the platform grows. Before enabling
 multiple API instances:
 
-1. Configure [AgentCore and S3](harnesses.md#aws-agentcore-sandbox) with the same
-   repository and checkpoint bucket/prefix for the platform's replicas.
+1. If you use coding agents, configure [AgentCore and S3](harnesses.md#aws-agentcore-sandbox)
+   with the same repository and checkpoint bucket/prefix for the platform's replicas.
+   Platforms without coding agents do not need these sandbox resources.
 2. Install the Redis client and configure Agno's existing `QueueConfig.redis`
    with a shared private Redis connection. Keep the durable queue in PostgreSQL.
 3. Configure a shared internal scheduler credential and consistent JWT/MCP
