@@ -118,9 +118,11 @@ independently of `RUNTIME_ENV` and JWT authorization. Invalid providers and miss
 AgentCore ARN/bucket values must fail without falling back to server execution.
 The sandbox image remains a code setting.
 Read account-specific runtime ARNs and checkpoint settings from environment variables;
-never commit their values. Supply optional Bedrock
-settings or private-repository credentials explicitly through the provider's `env`;
-never put credential values in source. Agno forwards the harness model credentials.
+never commit their values. Supply optional Bedrock settings through the provider's
+`env`. Agno forwards the harness model credentials.
+The sandbox helpers forward GH_TOKEN, optional GITHUB_READ_TOKEN, and Git author/committer
+settings. Private checkout falls back to GH_TOKEN. GitHub CLI and its Git credential helper
+are installed in the shared image; supply tokens at runtime only.
 
 For local Docker sandboxes, keep the API in Compose using the [sandbox setup guide](docs/harnesses.md#local-docker-sandbox).
 The API image includes the Docker CLI; Compose mounts the daemon socket into the API

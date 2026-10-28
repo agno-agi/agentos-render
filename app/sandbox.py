@@ -41,7 +41,7 @@ def docker_sandbox(env: Mapping[str, str] | None = None) -> DockerSandbox:
         network="isolated",
         workspace_mb=2048,
         checkpoints=FileCheckpointStore(LOCAL_CHECKPOINTS),
-        env=env,
+        env=sandbox_env(env),
     )
 
 
@@ -57,5 +57,23 @@ def agentcore_sandbox(
     return AgentCoreSandbox(
         runtime_arn=runtime_arn,
         checkpoints=S3CheckpointStore(bucket=checkpoint_bucket, prefix=checkpoint_prefix),
-        env=env,
+        env=sandbox_env(env),
     )
+
+
+def sandbox_env(overrides: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Pass GitHub access and commit identity to coding sessions."""
+    names = (
+        "GH_TOKEN",
+        "GITHUB_READ_TOKEN",
+        "GIT_AUTHOR_NAME",
+        "GIT_AUTHOR_EMAIL",
+        "GIT_COMMITTER_NAME",
+        "GIT_COMMITTER_EMAIL",
+    )
+    values = {name: value for name in names if (value := getenv(name))}
+    values.update(overrides or {})
+    # Agno's repository checkout uses a separate variable from the GitHub CLI.
+    if values.get("GH_TOKEN") and not values.get("GITHUB_READ_TOKEN"):
+        values["GITHUB_READ_TOKEN"] = values["GH_TOKEN"]
+    return values
