@@ -1,39 +1,134 @@
-# Enable coding agents
+# Run coding agents on AgentOS
 
-Claude and Codex coding agents are disabled by default. Enable only the ones you need
-in `app/main.py`. For a public deployment, complete JWT setup first.
+Your platform comes with Claude Code and Codex wired into AgentOS as **Claude Engineer**
+and **Codex Engineer**. Enable them, give them a repository, and chat with them in the
+AgentOS UI. They can explore the code, implement features, run checks, and open pull
+requests once you configure GitHub access.
+
+Start with this platform's repository: ask an agent to build a new agent, write evals,
+or improve an existing one. You can also point the coding agents at another project,
+or add a Claude/Codex pair for each repository your team works on.
 
 ## Enable a coding agent
 
-1. Add its credentials to `.env` locally or your hosted environment settings:
-   `ANTHROPIC_API_KEY` for Claude, `OPENAI_API_KEY` for Codex.
-2. In `app/main.py`, uncomment its `from agents.engineers import ...` line and
-   matching factory call in the `agents` list. Keep your other agents in the list.
-3. Run `./scripts/format.sh`, then rebuild and deploy. Chat with the coding agent in AgentOS.
+The included agents are disabled by default. For a public deployment, complete JWT
+setup before enabling them.
 
-To disable it, comment out both lines and redeploy. Adding a key alone does not
-activate a coding agent. Models and harness options live in
-[agents/engineers.py](../agents/engineers.py).
+1. Add `ANTHROPIC_API_KEY` for Claude or `OPENAI_API_KEY` for Codex to `.env` locally
+   or your hosted environment settings.
+2. In [app/main.py](../app/main.py), uncomment the matching import from
+   `agents.engineers` and factory call in the `agents` list. Keep your other agents.
+3. Run `./scripts/format.sh`, rebuild and deploy, then open the agent in AgentOS.
 
-With `sandbox_provider()` returning `None`, coding agents work directly in the project
-folder with the API process's access to files, commands and environment. Start with
-trusted users and one API instance. Files and native coding sessions can be lost
-when a hosted container is replaced; PostgreSQL does not restore that filesystem.
+Try:
+
+> Read this project and suggest three improvements to its agents. Don't change any files yet.
+
+[agents/engineers.py](../agents/engineers.py) defines their models and harness options.
+To disable an agent, comment out its import and factory call and redeploy.
+
+## Choose your repository
+
+For a first local test, the included agents already work in this platform's checkout.
+With no sandbox configured, they run on the API host and can access its files,
+commands and environment. Use this mode with trusted users; hosted file changes and
+native coding sessions can be lost when the container is replaced.
+
+To give them their own checkout, configure a [Docker or AWS sandbox](#sandboxes-and-checkpoints)
+and set `REPOSITORY` in [app/sandbox.py](../app/sandbox.py):
+
+```python
+REPOSITORY = Repository("https://github.com/YOUR-ORG/agent-platform", branch="main")
+```
+
+Use your copy of this template to have the agents work on the platform itself.
+To work on a different project, use that project's URL and branch instead:
+
+```python
+REPOSITORY = Repository("https://github.com/YOUR-ORG/website", branch="main")
+```
+
+Both included agents use this setting when a sandbox is enabled. Setting the URL
+alone does not switch direct execution away from the API folder. For private repos,
+provide `GITHUB_READ_TOKEN` through the sandbox's `env` mapping, reading it from your
+environment or secret store. [Publishing changes](#publish-changes-to-github) needs
+GitHub write permissions too.
+
+## Add agents for more repositories
+
+You can run several Claude and Codex agents on the same platform: a pair for the
+platform, another for your website, and another for your backend. Give each agent a
+unique ID and its own repository configuration.
+
+The included factories have fixed IDs, so keep one instance of each. For additional
+agents, configure a sandbox first, then create `agents/repositories.py`:
+
+```python
+from agno.agents.claude import ClaudeAgent
+from agno.agents.codex import CodexAgent
+from agno.sandbox import Repository
+
+from app.sandbox import sandbox_provider
+from db import get_postgres_db
+
+sandbox = sandbox_provider()
+if sandbox is None:
+    raise ValueError("Configure a sandbox in app/sandbox.py first.")
+db = get_postgres_db()
+
+
+def create_repository_agents(slug: str, url: str, branch: str = "main"):
+    repository = Repository(url, branch=branch)
+    return [
+        ClaudeAgent(
+            id=f"{slug}-claude",
+            name=f"{slug.title()} Claude",
+            model="claude-opus-5-5",
+            db=db,
+            sandbox=sandbox,
+            repository=repository,
+            system_prompt={"type": "preset", "preset": "claude_code"},
+            permission_mode="acceptEdits",
+        ),
+        CodexAgent(
+            id=f"{slug}-codex",
+            name=f"{slug.title()} Codex",
+            model="gpt-6.1-sol",
+            db=db,
+            sandbox=sandbox,
+            repository=repository,
+            sandbox_mode="workspace-write",
+        ),
+    ]
+```
+
+In `app/main.py`, import `create_repository_agents` from `agents.repositories` and
+add these entries to the existing `AgentOS` agent list, preserving your other agents:
+
+```python
+agents=[
+    # Keep your existing agents here.
+    *create_repository_agents("platform", "https://github.com/YOUR-ORG/agent-platform"),
+    *create_repository_agents("website", "https://github.com/YOUR-ORG/website"),
+],
+```
+
+This adds **Platform Claude**, **Platform Codex**, **Website Claude**, and **Website Codex**.
+Remove either constructor if you only want one coding agent per repository. Add their
+suggested prompts to [app/config.yaml](../app/config.yaml), then format and redeploy.
+
+The pairs can share a sandbox provider and checkpoint store; each agent's conversations
+have their own sandbox state. They do not share an in-progress checkout, even when
+pointed at the same repository. Use Git commits and PRs to share work, and start a new
+conversation when changing an agent's repository. Separate agent IDs do not restrict
+which repositories a shared GitHub token can access; scope credentials accordingly.
 
 ## Sandboxes and checkpoints
 
-Sandboxes are optional. They give engineering sessions their own environment and
-repository checkout; checkpoints save the workspace and coding session for recovery.
-Choose Docker locally or AWS AgentCore when hosted. Follow the setup below from
-the repository root after enabling a coding agent.
-
-### Choose your repository
-
-In [app/sandbox.py](../app/sandbox.py), set `REPOSITORY` to your own repo and branch:
-
-```python
-REPOSITORY = Repository("https://github.com/YOUR-ORG/YOUR-REPO", branch="main")
-```
+A sandbox gives a coding session its own environment and repository checkout.
+Checkpoints save its workspace and native coding session for recovery. Use Docker
+for local development or AWS AgentCore for a hosted platform. Follow the steps below
+from the repository root.
 
 ### Local Docker sandbox
 
@@ -185,10 +280,11 @@ checkpoint-deleting cleanup command.
 
 ### Company Tasks
 
-Before using a sandbox for Company Tasks, check that the Product's saved Git Source
-matches `REPOSITORY.url`. Keep its local source too, so Company can read the files.
-Test a coding agent run and a Company Task through completion on your deployment;
-a successful API startup does not prove either one works.
+For Company Tasks, configure a Product with a saved Git Source matching the coding
+agent's repository. The included pair uses `REPOSITORY.url`; additional agents use
+their own repository URLs. Adding an agent does not create a Company Product or Source.
+Keep the platform's local Source too. Verify a Company Task through completion
+separately from chatting with the agent.
 
 ## Publish changes to GitHub
 
