@@ -27,102 +27,6 @@ Try:
 [agents/engineers.py](../agents/engineers.py) defines their models and harness options.
 To disable an agent, comment out its import and factory call and redeploy.
 
-## Choose your repository
-
-For a first local test, the included agents already work in this platform's checkout.
-With no sandbox configured, they run on the API host and can access its files,
-commands and environment. Use this mode with trusted users; hosted file changes and
-native coding sessions can be lost when the container is replaced.
-
-To give them their own checkout, configure a [Docker or AWS sandbox](#sandboxes-and-checkpoints)
-and set `REPOSITORY` in [app/sandbox.py](../app/sandbox.py):
-
-```python
-REPOSITORY = Repository("https://github.com/YOUR-ORG/agent-platform", branch="main")
-```
-
-Use your copy of this template to have the agents work on the platform itself.
-To work on a different project, use that project's URL and branch instead:
-
-```python
-REPOSITORY = Repository("https://github.com/YOUR-ORG/website", branch="main")
-```
-
-Both included agents use this setting when a sandbox is enabled. Setting the URL
-alone does not switch direct execution away from the API folder. For private repos,
-provide `GITHUB_READ_TOKEN` through the sandbox's `env` mapping, reading it from your
-environment or secret store. [Publishing changes](#publish-changes-to-github) needs
-GitHub write permissions too.
-
-## Add agents for more repositories
-
-You can run several Claude and Codex agents on the same platform: a pair for the
-platform, another for your website, and another for your backend. Give each agent a
-unique ID and its own repository configuration.
-
-The included factories have fixed IDs, so keep one instance of each. For additional
-agents, configure a sandbox first, then create `agents/repositories.py`:
-
-```python
-from agno.agents.claude import ClaudeAgent
-from agno.agents.codex import CodexAgent
-from agno.sandbox import Repository
-
-from app.sandbox import sandbox_provider
-from db import get_postgres_db
-
-sandbox = sandbox_provider()
-if sandbox is None:
-    raise ValueError("Configure a sandbox in app/sandbox.py first.")
-db = get_postgres_db()
-
-
-def create_repository_agents(slug: str, url: str, branch: str = "main"):
-    repository = Repository(url, branch=branch)
-    return [
-        ClaudeAgent(
-            id=f"{slug}-claude",
-            name=f"{slug.title()} Claude",
-            model="claude-opus-5-5",
-            db=db,
-            sandbox=sandbox,
-            repository=repository,
-            system_prompt={"type": "preset", "preset": "claude_code"},
-            permission_mode="acceptEdits",
-        ),
-        CodexAgent(
-            id=f"{slug}-codex",
-            name=f"{slug.title()} Codex",
-            model="gpt-6.1-sol",
-            db=db,
-            sandbox=sandbox,
-            repository=repository,
-            sandbox_mode="workspace-write",
-        ),
-    ]
-```
-
-In `app/main.py`, import `create_repository_agents` from `agents.repositories` and
-add these entries to the existing `AgentOS` agent list, preserving your other agents:
-
-```python
-agents=[
-    # Keep your existing agents here.
-    *create_repository_agents("platform", "https://github.com/YOUR-ORG/agent-platform"),
-    *create_repository_agents("website", "https://github.com/YOUR-ORG/website"),
-],
-```
-
-This adds **Platform Claude**, **Platform Codex**, **Website Claude**, and **Website Codex**.
-Remove either constructor if you only want one coding agent per repository. Add their
-suggested prompts to [app/config.yaml](../app/config.yaml), then format and redeploy.
-
-The pairs can share a sandbox provider and checkpoint store; each agent's conversations
-have their own sandbox state. They do not share an in-progress checkout, even when
-pointed at the same repository. Use Git commits and PRs to share work, and start a new
-conversation when changing an agent's repository. Separate agent IDs do not restrict
-which repositories a shared GitHub token can access; scope credentials accordingly.
-
 ## Sandboxes and checkpoints
 
 A sandbox gives a coding session its own environment and repository checkout.
@@ -310,6 +214,102 @@ agent's repository. The included pair uses `REPOSITORY.url`; additional agents u
 their own repository URLs. Adding an agent does not create a Company Product or Source.
 Keep the platform's local Source too. Verify a Company Task through completion
 separately from chatting with the agent.
+
+## Choose your repository
+
+For a first local test, the included agents already work in this platform's checkout.
+With no sandbox configured, they run on the API host and can access its files,
+commands and environment. Use this mode with trusted users; hosted file changes and
+native coding sessions can be lost when the container is replaced.
+
+To give them their own checkout, configure a [Docker or AWS sandbox](#sandboxes-and-checkpoints)
+and set `REPOSITORY` in [app/sandbox.py](../app/sandbox.py):
+
+```python
+REPOSITORY = Repository("https://github.com/YOUR-ORG/agent-platform", branch="main")
+```
+
+Use your copy of this template to have the agents work on the platform itself.
+To work on a different project, use that project's URL and branch instead:
+
+```python
+REPOSITORY = Repository("https://github.com/YOUR-ORG/website", branch="main")
+```
+
+Both included agents use this setting when a sandbox is enabled. Setting the URL
+alone does not switch direct execution away from the API folder. For private repos,
+provide `GITHUB_READ_TOKEN` through the sandbox's `env` mapping, reading it from your
+environment or secret store. [Publishing changes](#publish-changes-to-github) needs
+GitHub write permissions too.
+
+## Add agents for more repositories
+
+You can run several Claude and Codex agents on the same platform: a pair for the
+platform, another for your website, and another for your backend. Give each agent a
+unique ID and its own repository configuration.
+
+The included factories have fixed IDs, so keep one instance of each. For additional
+agents, configure a sandbox first, then create `agents/repositories.py`:
+
+```python
+from agno.agents.claude import ClaudeAgent
+from agno.agents.codex import CodexAgent
+from agno.sandbox import Repository
+
+from app.sandbox import sandbox_provider
+from db import get_postgres_db
+
+sandbox = sandbox_provider()
+if sandbox is None:
+    raise ValueError("Configure a sandbox in app/sandbox.py first.")
+db = get_postgres_db()
+
+
+def create_repository_agents(slug: str, url: str, branch: str = "main"):
+    repository = Repository(url, branch=branch)
+    return [
+        ClaudeAgent(
+            id=f"{slug}-claude",
+            name=f"{slug.title()} Claude",
+            model="claude-opus-5-5",
+            db=db,
+            sandbox=sandbox,
+            repository=repository,
+            system_prompt={"type": "preset", "preset": "claude_code"},
+            permission_mode="acceptEdits",
+        ),
+        CodexAgent(
+            id=f"{slug}-codex",
+            name=f"{slug.title()} Codex",
+            model="gpt-6.1-sol",
+            db=db,
+            sandbox=sandbox,
+            repository=repository,
+            sandbox_mode="workspace-write",
+        ),
+    ]
+```
+
+In `app/main.py`, import `create_repository_agents` from `agents.repositories` and
+add these entries to the existing `AgentOS` agent list, preserving your other agents:
+
+```python
+agents=[
+    # Keep your existing agents here.
+    *create_repository_agents("platform", "https://github.com/YOUR-ORG/agent-platform"),
+    *create_repository_agents("website", "https://github.com/YOUR-ORG/website"),
+],
+```
+
+This adds **Platform Claude**, **Platform Codex**, **Website Claude**, and **Website Codex**.
+Remove either constructor if you only want one coding agent per repository. Add their
+suggested prompts to [app/config.yaml](../app/config.yaml), then format and redeploy.
+
+The pairs can share a sandbox provider and checkpoint store; each agent's conversations
+have their own sandbox state. They do not share an in-progress checkout, even when
+pointed at the same repository. Use Git commits and PRs to share work, and start a new
+conversation when changing an agent's repository. Separate agent IDs do not restrict
+which repositories a shared GitHub token can access; scope credentials accordingly.
 
 ## Publish changes to GitHub
 
