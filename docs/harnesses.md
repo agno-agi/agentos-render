@@ -1,13 +1,12 @@
 # Run coding agents on AgentOS
 
-Your platform comes with Claude Code and Codex wired into AgentOS as **Claude Engineer**
-and **Codex Engineer**. Enable them, give them a repository, and chat with them in the
-AgentOS UI. They can explore the code, implement features, run checks, and open pull
+Your platform includes **Claude Engineer** (Claude Code) and **Codex Engineer** agents.
+Enable coding agents to explore code, build features, run checks, and open pull
 requests once you configure GitHub access.
 
-Start with this platform's repository: ask an agent to build a new agent, write evals,
-or improve an existing one. You can also point the coding agents at another project,
-or add a Claude/Codex pair for each repository your team works on.
+Start with this platform's repository, use another project, or add a coding-agent
+pair for each repository. First enable an agent, then choose a sandbox for isolation
+and checkpoint recovery.
 
 ## Enable a coding agent
 
@@ -29,28 +28,28 @@ To disable an agent, comment out its import and factory call and redeploy.
 
 ## Sandboxes and checkpoints
 
-A sandbox gives a coding session its own environment and repository checkout.
-Checkpoints save its workspace and native coding session for recovery. Use Docker
-for local development or AWS AgentCore for a hosted platform. Follow the steps below
-from the repository root.
+Without a sandbox, coding agents run directly on the API host with access to its
+files, commands, and environment. Use that mode with trusted users.
 
-In [app/sandbox.py](../app/sandbox.py), enable sandboxes and set your repository:
+A sandbox gives each coding session its own environment and repository checkout.
+Checkpoints save its files and native coding session for recovery.
+Choose **Docker for local development** or **AgentCore for a hosted platform**.
+
+In [app/sandbox.py](../app/sandbox.py), enable sandboxes and set the repository:
 
 ```python
 SANDBOX_ENABLED = True
 REPOSITORY = Repository("https://github.com/YOUR-ORG/YOUR-REPO", branch="main")
 ```
 
-`SANDBOX_PROVIDER` selects the backend: `docker` (the local default) or `agentcore`.
-The Render Blueprint sets `agentcore`. This is independent of `RUNTIME_ENV`, which
-controls JWT authorization. Set up the selected backend before deploying SANDBOX_ENABLED = True.
+Complete the backend setup below before deploying this change. Compose selects
+`SANDBOX_PROVIDER=docker`; the Render Blueprint selects `agentcore`.
+`RUNTIME_ENV` still controls JWT authorization independently.
 
 ### Local Docker sandbox
 
-The API and PostgreSQL run in Docker Compose. The API uses Docker to create a separate
-container for each coding session. Configure `.env` using the
-[local setup instructions](../README.md#run-locally), then build the sandbox image and
-start the platform:
+Configure `.env` using the [local setup instructions](../README.md#run-locally).
+From the repository root, build the sandbox image and start the platform:
 
 ```sh
 docker build --target sandbox --load -t agno-sandbox:local .
@@ -58,77 +57,71 @@ docker compose up -d --build
 ./scripts/mcp_check.sh
 ```
 
-The first command builds the Dockerfile's `sandbox` stage and loads it into your local
-Docker image store. Agno starts containers from that image when coding sessions run.
-Rebuild it when you change its dependencies or Dockerfile.
+The first command builds and loads the Dockerfile's `sandbox` stage. The API runs in
+Compose and starts separate containers from that image for coding sessions.
+Rebuild the sandbox image when its dependencies or Dockerfile change.
 
-Compose mounts the Docker socket into the API, giving it control of your local Docker
-daemon. Use this setup for trusted local development. The coding sandboxes do not
-receive the socket. Checkpoints are saved in `tmp/checkpoints` through the project mount,
-so they survive API container replacement while those files remain.
+Compose gives the API access to your Docker daemon through its socket. Use this for
+trusted local development; coding sandboxes receive no socket. Checkpoints persist
+in the project's `tmp/checkpoints` folder while those files remain.
 
-Agno passes the coding agents' model credentials to the sandbox. For a private repository,
-also supply `GITHUB_READ_TOKEN` through the provider's `env` mapping, reading it from your
-environment. See [GitHub access](#publish-changes-to-github) for publishing changes.
+Model credentials are forwarded automatically. For private repositories and publishing,
+configure [GitHub access](#publish-changes-to-github).
 
 ### AWS AgentCore sandbox
 
-Your API stays on its current host. AgentCore runs the coding sessions, and S3
-stores their checkpoints. Run [scripts/aws.py](../scripts/aws.py)
-from your computer to prepare these resources:
+Your API stays on its current host (Render). AgentCore runs coding sessions, and S3 stores
+their checkpoints. Run [scripts/aws.py](../scripts/aws.py) locally to set this up.
+It creates the runtime, image repository, checkpoint bucket, and required IAM identities.
 
-| Resource | Purpose |
-| --- | --- |
-| ECR repository | Stores the sandbox Docker image. |
-| AgentCore runtime | Runs coding sessions; AWS returns its ARN for your application configuration. |
-| Private S3 bucket | Stores workspace and native-session checkpoints. |
-| IAM execution role | Lets the runtime pull its image and write logs. |
-| Application IAM user | Lets your API call this runtime and access its checkpoint prefix. |
+#### 1. Configure AWS
 
-#### 1. Configure and preview
-
-Install Docker with ARM64 build support, then prepare and activate the project's
-Python environment:
+You need Docker with ARM64 build support and an AWS profile that can manage
+CloudFormation, ECR, AgentCore, S3, and IAM. Prepare your Python environment:
 
 ```sh
 ./scripts/venv_setup.sh
 source .venv/bin/activate
 ```
 
-The script uses boto3 with your AWS profile. Configure a profile with permission to
-manage CloudFormation, ECR, AgentCore, S3 and IAM in your account. If your organization
-uses IAM Identity Center, install [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-and run `aws configure sso` to set up the profile.
-
-Use the existing `.env` in the repository root. If you have not created it yet, copy
-[example.env](../example.env) to `.env`. The AWS sandbox setup section lists the optional
-settings. `.env` is excluded from Git and Docker images; the script loads it automatically,
-with exported environment variables taking precedence.
-Select your local profile, or omit `AWS_PROFILE` to use boto3's default credentials:
+Add your profile to the existing `.env` (copy [example.env](../example.env) if needed):
 
 ```dotenv
 AWS_PROFILE=your-profile
+AWS_DEFAULT_REGION=us-east-1
 ```
 
-The account ID is resolved through STS using those credentials. The region comes from
-`AWS_REGION`, `AWS_DEFAULT_REGION`, or your profile, falling back to `us-east-1`.
-You can also set these optional values in `.env`:
+For SSO, use [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+to configure the profile with `aws configure sso`, then sign in:
 
-| Variable | Default |
-| --- | --- |
-| `DEPLOYMENT_NAME` | `agentos-sandbox` |
-| `BUCKET_NAME` | Derived from deployment name, resolved account and region. |
-| `CHECKPOINT_PREFIX` | `agentos/checkpoints/` |
+```sh
+aws sso login --profile your-profile
+```
 
-Keep credentials in your AWS profile. For SSO, sign in with
-`aws sso login --profile YOUR_PROFILE`, then preview the resolved configuration:
+Preview the account, region, and resource names:
 
 ```sh
 scripts/aws.py plan
 ```
 
-This calls STS to verify your identity and creates nothing. Check the displayed account,
-region and resource names before applying. It is a preview, not an AWS change set.
+`plan` verifies your AWS identity and creates nothing. Check the output before continuing.
+
+<details>
+<summary>Optional setup settings</summary>
+
+The script reads `.env`; exported variables take precedence. Omit `AWS_PROFILE` to
+use default AWS credentials. Region precedence is `AWS_REGION`, `AWS_DEFAULT_REGION`,
+profile region, then `us-east-1`.
+
+| Variable | Default |
+| --- | --- |
+| `DEPLOYMENT_NAME` | `agentos-sandbox` |
+| `BUCKET_NAME` | Derived from deployment name, account, and region. |
+| `CHECKPOINT_PREFIX` | `agentos/checkpoints/` |
+
+Keep credentials in your AWS profile and account-specific settings out of Git.
+
+</details>
 
 #### 2. Create the resources
 
@@ -136,116 +129,118 @@ region and resource names before applying. It is a preview, not an AWS change se
 scripts/aws.py apply
 ```
 
-This creates two CloudFormation stacks, builds and pushes the Dockerfile's `sandbox`
-target for ARM64, and waits for the runtime and its default endpoint to become ready.
-AWS usage incurs charges. The runtime requires IAM authentication; its public
-networking lets the coding agent reach GitHub and model APIs.
+This creates two CloudFormation stacks, builds and uploads the ARM64 sandbox image,
+and waits for the runtime and endpoint to be ready. These resources incur AWS charges.
 
-Run `apply` again after changing the sandbox image or its dependencies. Keep resource
-names and the checkpoint prefix stable. The script refuses unrelated stacks and
-storage replacements. If provisioning fails, inspect the named stack's Events in
-CloudFormation; a failed stack may need recovery before retrying.
+Wait for **Sandbox resources are ready**, then keep the printed settings for the
+next steps. To retrieve them again, run `scripts/aws.py status`.
 
-#### 3. Connect your API
+#### 3. Create credentials for your API
 
-The script prints the runtime ARN, bucket, prefix, application user and environment
-settings. In [app/sandbox.py](../app/sandbox.py), set `SANDBOX_ENABLED = True` and
-`REPOSITORY` to your GitHub URL and branch as shown above. The provider reads the
-runtime ARN and checkpoint settings from the environment. To retrieve the values again:
+Your local profile provisions resources. The script creates a separate
+`ApplicationUser` with access to the runtime and checkpoint storage for your API.
 
-```sh
-scripts/aws.py status
-```
+In the AWS console:
 
-For an API hosted outside AWS, open **IAM → Users** in the AWS console and select
-the printed `ApplicationUser`. Under **Security credentials**, create an access key
-for an application running outside AWS. Enter it directly in your API host's secret
-settings (`Environment` on Render):
+1. Open **IAM → Users** and select the printed `ApplicationUser`.
+2. Open **Security credentials → Create access key**.
+3. Choose the use case for an application running outside AWS and save the key securely.
+
+Use this application's key on your API host. Keep your provisioning credentials local.
+If your API already uses an AWS workload role, grant it the application user's scoped
+policy instead; the runtime's execution role is a separate identity.
+
+#### 4. Connect and deploy
+
+In your API host's environment settings (**Environment** on Render), add:
 
 | Variable | Value |
 | --- | --- |
-| `SANDBOX_PROVIDER` | `agentcore`. Already set by the Render Blueprint; check existing deployments after syncing it. |
-| `AWS_ACCESS_KEY_ID` | The application's access key ID. |
+| `SANDBOX_PROVIDER` | `agentcore` (already set by the Render Blueprint). |
+| `AWS_ACCESS_KEY_ID` | The application user's access key ID. |
 | `AWS_SECRET_ACCESS_KEY` | Its secret access key. |
 | `AWS_DEFAULT_REGION` | The region printed by the script. |
 | `AGENTCORE_RUNTIME_ARN` | The printed runtime ARN. |
 | `AGENTCORE_CHECKPOINT_BUCKET` | The printed checkpoint bucket. |
 | `AGENTCORE_CHECKPOINT_PREFIX` | The printed checkpoint prefix. |
 
-The script creates no access keys. Keep the provisioning profile's administrator
-credentials on your computer. IAM user keys do not need `AWS_SESSION_TOKEN`; remove
-stale session credentials or `AWS_PROFILE` settings from the hosted API.
-If your API already has an AWS workload role, grant that role the application user's
-scoped policy instead of creating access keys. The sandbox execution role is separate:
-it has image and logging permissions, not the API's checkpoint or database access.
+Keep production JWT authorization, database settings, and your agents' model keys.
+Agno forwards model credentials to the sandbox. For IAM user keys, remove stale
+`AWS_PROFILE` or `AWS_SESSION_TOKEN` settings from the hosted API.
 
-Keep your existing `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY`; Agno forwards model
-credentials to the coding agents. Private checkout needs `GITHUB_READ_TOKEN` supplied
-explicitly through the provider's `env` mapping, read from your environment or secret
-store. See [GitHub access](#publish-changes-to-github) for publishing changes.
+Confirm sandboxes and the repository are configured in `app/sandbox.py`, and the
+coding agents are enabled in `app/main.py`. Push any code changes to your deployment
+branch, then save the environment settings and redeploy. On Render, choose
+**Save, rebuild, and deploy**. No Docker daemon or persistent API disk is needed there.
 
-Commit the switch and repository settings and redeploy your API, preserving JWT authorization.
-Keep account-specific values in `.env` and your host settings; do not commit them.
-No API disk or Docker daemon is required on the host. Use the same checkpoint
-bucket/prefix on all replicas of this platform. Keep the bucket private and do not
-add a lifecycle rule that expires active checkpoints.
+#### 5. Try a coding agent
 
-#### 4. Verify recovery
+Once the API is healthy, select your deployed platform in AgentOS and start a new
+conversation with an enabled coding agent:
 
-Chat with each enabled coding agent. Have it create a test file and finish the turn
-so a checkpoint is saved. Replace the API instance and stop that sandbox session,
-then continue the same conversation as the same user. Verify that the file and
-native coding session are restored. API startup alone does not prove recovery.
+> Show the current repository and branch. Create sandbox-check.txt containing
+> "AgentCore is working", then read it back. Do not commit or push anything.
 
-Recovery starts at the last successful checkpoint. Unfinished edits and running
-processes are not restored; checkpoints cannot undo external actions such as a push.
-Investigate inaccessible checkpoints rather than silently starting a new conversation.
+Confirm the run completes, uses the expected repository, and reads back the file.
+Repeat for each enabled agent. If it fails, inspect the run error and API logs;
+runtime startup errors are in CloudWatch. A healthy API alone does not prove execution.
 
-#### Remove the AWS resources
+<details>
+<summary>Verify checkpoint recovery</summary>
 
-Disable sandbox use in the API and redeploy first. Revoke/delete the application's
-access keys in IAM, then delete the `<DEPLOYMENT_NAME>-runtime` stack followed by
+After the test turn finishes and its checkpoint is saved, replace the API instance
+and stop the test's AgentCore runtime session. Continue the **same conversation as
+the same user** and ask it to read `sandbox-check.txt` without recreating it.
+Verify the file and native coding session are restored.
+
+Restarting only the API can reconnect to a live sandbox, so it does not prove recovery.
+Checkpoints restore the last saved state, not unfinished edits or running processes,
+and cannot undo external actions such as Git pushes.
+
+Keep the bucket private, preserve active checkpoints, and use the same bucket/prefix
+across this platform's API replicas.
+
+</details>
+
+<details>
+<summary>Update or troubleshoot AWS resources</summary>
+
+Run `scripts/aws.py apply` again after changing sandbox dependencies or the Dockerfile.
+Keep resource names and the checkpoint prefix stable. Updating the API alone does not
+update the AgentCore image.
+
+If provisioning fails, inspect the named stack's **Events** in CloudFormation before
+retrying. The script rejects unrelated stacks and storage replacements. For runtime
+access errors, compare the API's region, ARN, credentials, and bucket with
+`scripts/aws.py status`.
+
+</details>
+
+<details>
+<summary>Remove the AWS resources</summary>
+
+Disable the coding agents and redeploy first. Delete the application's access keys
+in IAM, then delete the `<DEPLOYMENT_NAME>-runtime` stack followed by
 `<DEPLOYMENT_NAME>-foundation` in CloudFormation.
 
-S3 checkpoints and ECR images are retained to protect your data. Empty and delete
-those resources separately when you no longer need them; CloudWatch logs can also
-remain. Retained resources can incur storage charges. There is no automatic
-checkpoint-deleting cleanup command.
+S3 checkpoints and ECR images are retained. Empty and delete them separately when no
+longer needed; CloudWatch logs may also remain. Retained resources can incur charges.
 
-### Company Tasks
-
-For Company Tasks, configure a Product with a saved Git Source matching the coding
-agent's repository. The included pair uses `REPOSITORY.url`; additional agents use
-their own repository URLs. Adding an agent does not create a Company Product or Source.
-Keep the platform's local Source too. Verify a Company Task through completion
-separately from chatting with the agent.
+</details>
 
 ## Choose your repository
 
-For a first local test, the included agents already work in this platform's checkout.
-With no sandbox configured, they run on the API host and can access its files,
-commands and environment. Use this mode with trusted users; hosted file changes and
-native coding sessions can be lost when the container is replaced.
-
-To give them their own checkout, configure a [Docker or AWS sandbox](#sandboxes-and-checkpoints)
-and set `REPOSITORY` in [app/sandbox.py](../app/sandbox.py):
-
-```python
-REPOSITORY = Repository("https://github.com/YOUR-ORG/agent-platform", branch="main")
-```
-
-Use your copy of this template to have the agents work on the platform itself.
-To work on a different project, use that project's URL and branch instead:
+With sandboxes enabled, both included agents use `REPOSITORY` in
+[app/sandbox.py](../app/sandbox.py). Point it at your copy of this platform or another
+project:
 
 ```python
 REPOSITORY = Repository("https://github.com/YOUR-ORG/website", branch="main")
 ```
 
-Both included agents use this setting when a sandbox is enabled. Setting the URL
-alone does not switch direct execution away from the API folder. For private repos,
-provide `GITHUB_READ_TOKEN` through the sandbox's `env` mapping, reading it from your
-environment or secret store. [Publishing changes](#publish-changes-to-github) needs
-GitHub write permissions too.
+Start a new conversation after changing repositories. Without a sandbox, the agents
+work in the API's project directory; this URL alone does not change that directory.
+For private repositories, configure [GitHub access](#publish-changes-to-github).
 
 ## Add agents for more repositories
 
@@ -253,8 +248,13 @@ You can run several Claude and Codex agents on the same platform: a pair for the
 platform, another for your website, and another for your backend. Give each agent a
 unique ID and its own repository configuration.
 
-The included factories have fixed IDs, so keep one instance of each. For additional
-agents, configure a sandbox first, then create `agents/repositories.py`:
+The included factories have fixed IDs, so keep one instance of each. Configure a
+sandbox before adding more agents.
+
+<details>
+<summary>Example: one Claude/Codex pair per repository</summary>
+
+Create `agents/repositories.py`:
 
 ```python
 from agno.agents.claude import ClaudeAgent
@@ -310,36 +310,45 @@ This adds **Platform Claude**, **Platform Codex**, **Website Claude**, and **Web
 Remove either constructor if you only want one coding agent per repository. Add their
 suggested prompts to [app/config.yaml](../app/config.yaml), then format and redeploy.
 
-The pairs can share a sandbox provider and checkpoint store; each agent's conversations
-have their own sandbox state. They do not share an in-progress checkout, even when
-pointed at the same repository. Use Git commits and PRs to share work, and start a new
-conversation when changing an agent's repository. Separate agent IDs do not restrict
-which repositories a shared GitHub token can access; scope credentials accordingly.
+</details>
+
+Each conversation has its own checkout and sandbox state. Share work through Git
+commits and PRs. Scope GitHub credentials to the intended repositories; different
+agent IDs do not restrict a shared token's access.
 
 ## Publish changes to GitHub
 
-Supply `GH_TOKEN` through your environment settings, scoped to the repository with
-Contents and Pull requests read/write permissions. Never commit the token.
-The image includes Git. To install the GitHub CLI, add this to the Dockerfile's
-base stage before `FROM base AS sandbox`, then rebuild:
+Git and the GitHub CLI are included in both the API and sandbox images. Add `GH_TOKEN`
+to `.env` locally or your API host's environment settings. Scope it to the repositories
+the agents should use, with **Contents** and **Pull requests** read/write permissions.
 
-```dockerfile
-RUN apt-get update && apt-get install -y --no-install-recommends gh \
-    && rm -rf /var/lib/apt/lists/*
-```
+The template forwards the token to coding sandboxes and configures Git to authenticate
+through `gh`. The same token supports private checkout; set `GITHUB_READ_TOKEN` only
+if you want a separate checkout credential. No interactive GitHub login is needed.
 
-For a sandbox, pass `GH_TOKEN` through the provider's `env` mapping, reading it from
-your environment or secret store. Private checkout also needs `GITHUB_READ_TOKEN`.
-After changing the Dockerfile, run `scripts/aws.py apply` for
-AgentCore, or rebuild the local sandbox image. Updating only the API does not update
-the AgentCore image.
+Commits default to `AgentOS <agentos@localhost>`. To use your own identity, set
+`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and `GIT_COMMITTER_EMAIL`.
+These settings are also forwarded to sandboxes. For different repository credentials,
+pass overrides through the provider's `env` argument.
 
-Configure `gh auth setup-git --hostname github.com` in the execution environment
-and set the Git author identity. A sandbox already has the configured repository
-checkout. In direct mode, the deployed API image has no `.git` directory, so clone
-your repository into a separate writable directory. Ask the coding agent to make a
-small change on a feature branch, run checks, push and open a PR. Leave merging and
-deployment to you. Verify that PR before scheduling improvement work.
+Redeploy the API after changing environment settings and start a new coding conversation.
+When upgrading an older sandbox image, rebuild it locally or run `scripts/aws.py apply`
+for AgentCore once. Later token changes do not require rebuilding the image.
+
+Try:
+
+> Make a small improvement on a new branch, run the relevant checks, and open a pull
+> request. Do not merge it.
+
+Review the PR before scheduling improvement work. In direct mode, the deployed API
+image has no `.git` directory; ask the agent to clone the repository into a separate
+writable directory first. Sandbox sessions already have their repository checkout.
+
+## Company Tasks
+
+For Company Tasks, configure a Product with a saved Git Source matching the coding
+agent's repository URL. Keep the platform's local Source too. Registering an agent
+does not create these records; verify a Company Task completes separately from chat.
 
 ## Scaling
 

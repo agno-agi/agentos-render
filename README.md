@@ -62,6 +62,8 @@ Set `SANDBOX_ENABLED = True` and your repository in `app/sandbox.py` to enable s
 `SANDBOX_PROVIDER` selects `docker` locally or `agentcore` on your host, independently
 of JWT authorization. Configure the backend before deploying the enabled code.
 Local sandboxes use the same Compose API, with Docker daemon access through its socket.
+GitHub CLI is included. Set `GH_TOKEN` to enable repository access and PR publishing;
+see [GitHub access](docs/harnesses.md#publish-changes-to-github) for permissions and commit identity.
 
 ## Run locally
 

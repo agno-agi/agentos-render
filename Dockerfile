@@ -8,6 +8,13 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN uv pip sync requirements.txt --system
 
+# GitHub access is enabled by a runtime GH_TOKEN, never an image credential.
+RUN apt-get update && apt-get install -y --no-install-recommends gh \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system credential.https://github.com.helper '!gh auth git-credential' \
+    && git config --system user.name 'AgentOS' \
+    && git config --system user.email 'agentos@localhost'
+
 # ===========================================================================
 # Sandbox (Docker and AgentCore)
 # ===========================================================================
