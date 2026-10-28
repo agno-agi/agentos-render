@@ -112,9 +112,10 @@ sandbox owns its repository checkout; invalid configuration must fail rather tha
 back to server execution. Keep provider configuration in `app/sandbox.py` and agent
 declarations in `agents/engineers.py`.
 
-Select the provider by returning `None`, `docker_sandbox()`, or
-`agentcore_sandbox(runtime_arn="runtime-arn", checkpoint_bucket="checkpoint-bucket")` from `sandbox_provider()`.
-Sandbox selection, image and runtime ARN are code settings, not environment switches. Supply optional Bedrock
+Select the provider in `sandbox_provider()` by returning `None`, `docker_sandbox()`,
+or `agentcore_sandbox(...)`. Sandbox selection and image remain code settings.
+Read account-specific runtime ARNs and checkpoint settings from environment variables;
+never commit their values. Supply optional Bedrock
 settings or private-repository credentials explicitly through the provider's `env`;
 never put credential values in source. Agno forwards the harness model credentials.
 
