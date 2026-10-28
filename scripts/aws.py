@@ -23,10 +23,9 @@ from rich.text import Text
 
 ROOT = Path(__file__).resolve().parents[1]
 # Local setup settings stay out of Git. Exported variables take precedence.
-load_dotenv(ROOT / ".env.aws", override=False)
+load_dotenv(ROOT / ".env", override=False)
 AWS_PROFILE = os.getenv("AWS_PROFILE") or None
 AWS_REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or None
-EXPECTED_ACCOUNT_ID = os.getenv("EXPECTED_ACCOUNT_ID", "")
 DEPLOYMENT_NAME = os.getenv("DEPLOYMENT_NAME", "agentos-sandbox")
 BUCKET_NAME = os.getenv("BUCKET_NAME", "")
 CHECKPOINT_PREFIX = os.getenv("CHECKPOINT_PREFIX", "agentos/checkpoints/")
@@ -91,16 +90,15 @@ def runtime_name() -> str:
 def validate_settings() -> None:
     """Catch configuration mistakes before connecting to AWS or starting Docker."""
     settings = {
-        "EXPECTED_ACCOUNT_ID": (EXPECTED_ACCOUNT_ID, r"[0-9]{12}"),
         "AWS_REGION": (AWS_REGION or "", r"[a-z]{2}(?:-[a-z]+)+-[0-9]+"),
         "DEPLOYMENT_NAME": (DEPLOYMENT_NAME, r"[a-z][a-z0-9-]{0,31}"),
         "CHECKPOINT_PREFIX": (CHECKPOINT_PREFIX, r"[A-Za-z0-9][A-Za-z0-9_/-]*/"),
     }
     for name, (value, pattern) in settings.items():
-        if not value and name in {"EXPECTED_ACCOUNT_ID", "AWS_REGION"}:
+        if not value and name == "AWS_REGION":
             continue
         if not re.fullmatch(pattern, value):
-            raise ValueError(f"Set a valid {name} in .env.aws or your shell environment.")
+            raise ValueError(f"Set a valid {name} in .env or your shell environment.")
     validate_bucket(BUCKET_NAME)
     if not (ROOT / "Dockerfile").is_file():
         raise ValueError("The template Dockerfile must be present beside scripts/.")
@@ -110,7 +108,7 @@ def validate_bucket(name: str) -> None:
     if not name:
         return
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,61}[a-z0-9]", name):
-        raise ValueError("Set a valid BUCKET_NAME in .env.aws or your shell environment.")
+        raise ValueError("Set a valid BUCKET_NAME in .env or your shell environment.")
     if name.startswith(("xn--", "sthree-", "amzn-s3-demo-")) or name.endswith(("--x-s3", "--ol-s3", "--table-s3")):
         raise ValueError("BUCKET_NAME uses a reserved S3 prefix or suffix.")
 
@@ -123,8 +121,6 @@ class SandboxDeployment:
         self.profile = session.profile_name or "default credential chain"
         self.region = session.region_name or "us-east-1"
         self.account = session.client("sts", region_name=self.region).get_caller_identity()["Account"]
-        if EXPECTED_ACCOUNT_ID and self.account != EXPECTED_ACCOUNT_ID:
-            raise RuntimeError(f"Wrong AWS account: expected {EXPECTED_ACCOUNT_ID}, signed in to {self.account}.")
         self.bucket = BUCKET_NAME or f"{DEPLOYMENT_NAME}-{self.account}-{self.region}"
         validate_bucket(self.bucket)
         self.cloudformation = session.client("cloudformation", region_name=self.region)

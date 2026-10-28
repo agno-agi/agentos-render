@@ -191,8 +191,10 @@ manage CloudFormation, ECR, AgentCore, S3 and IAM in your account. If your organ
 uses IAM Identity Center, install [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 and run `aws configure sso` to set up the profile.
 
-Create `.env.aws` in the repository root. It is excluded from Git and Docker images.
-The script loads it automatically; exported environment variables take precedence.
+Use the existing `.env` in the repository root. If you have not created it yet, copy
+[example.env](../example.env) to `.env`. The AWS sandbox setup section lists the optional
+settings. `.env` is excluded from Git and Docker images; the script loads it automatically,
+with exported environment variables taking precedence.
 Select your local profile, or omit `AWS_PROFILE` to use boto3's default credentials:
 
 ```dotenv
@@ -201,11 +203,10 @@ AWS_PROFILE=your-profile
 
 The account ID is resolved through STS using those credentials. The region comes from
 `AWS_REGION`, `AWS_DEFAULT_REGION`, or your profile, falling back to `us-east-1`.
-You can also set these optional values in `.env.aws`:
+You can also set these optional values in `.env`:
 
 | Variable | Default |
 | --- | --- |
-| `EXPECTED_ACCOUNT_ID` | Unset. Set your 12-digit account ID to reject a different account. |
 | `DEPLOYMENT_NAME` | `agentos-sandbox` |
 | `BUCKET_NAME` | Derived from deployment name, resolved account and region. |
 | `CHECKPOINT_PREFIX` | `agentos/checkpoints/` |
@@ -275,7 +276,7 @@ explicitly through the provider's `env` mapping, read from your environment or s
 store. See [GitHub access](#publish-changes-to-github) for publishing changes.
 
 Commit the provider code and redeploy your API, preserving JWT authorization.
-Keep account-specific values in `.env.aws` and your host settings; do not commit them.
+Keep account-specific values in `.env` and your host settings; do not commit them.
 No API disk or Docker daemon is required on the host. Use the same checkpoint
 bucket/prefix on all replicas of this platform. Keep the bucket private and do not
 add a lifecycle rule that expires active checkpoints.
