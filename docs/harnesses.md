@@ -178,10 +178,18 @@ from your computer to prepare these resources:
 
 #### 1. Configure and preview
 
-Install Python 3, [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-with AgentCore support, and Docker with ARM64 build support. Configure an AWS profile
-with permission to manage CloudFormation, ECR, AgentCore, S3 and IAM in your account.
-If your organization uses IAM Identity Center, run `aws configure sso` to set up the profile.
+Install Docker with ARM64 build support, then prepare and activate the project's
+Python environment:
+
+```sh
+./scripts/venv_setup.sh
+source .venv/bin/activate
+```
+
+The script uses boto3 with your AWS profile. Configure a profile with permission to
+manage CloudFormation, ECR, AgentCore, S3 and IAM in your account. If your organization
+uses IAM Identity Center, install [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+and run `aws configure sso` to set up the profile.
 
 Edit the settings at the top of `scripts/aws.py`:
 

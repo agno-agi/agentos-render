@@ -9,10 +9,13 @@ authors = [{ name = "Agno", email = "hello@agno.com" }]
 
 dependencies = [
   "agno[os,mcp,slack,pgvector,psycopg,csv,excel,docx,pdf,reportlab,website,claude,codex,agentcore-sandbox]==3.1.11",
+  "boto3",
   "cel-python",
   "openai",
   "parallel-web",
   "python-dotenv",
+  "rich",
+  "typer",
 ]
 
 [project.optional-dependencies]
