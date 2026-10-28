@@ -206,8 +206,9 @@ for initial setup. Review the resources and billing, then choose **Deploy Bluepr
 Reuse the existing Blueprint for later updates, keeping `RUNTIME_ENV=prd` once secured.
 
 The Blueprint creates an **AgentOS** project with a **Production** environment,
-containing one always-on API instance and a managed PostgreSQL 18 database
-in **Virginia** (`region: virginia`). Confirm that region for both resources.
+containing one always-on API instance with 1 CPU and 2 GB RAM (`1c-2g`)
+and a managed PostgreSQL 18 database in **Virginia** (`region: virginia`).
+Confirm that region for both resources.
 Wait for the API service to become live and copy its public HTTPS URL.
 It initially runs without authentication. Continue directly to the next step to secure it.
 
