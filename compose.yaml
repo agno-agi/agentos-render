@@ -35,6 +35,7 @@ services:
         required: false
     environment:
       RUNTIME_ENV: dev
+      SANDBOX_PROVIDER: docker
       AGNO_DEBUG: "True"
       WAIT_FOR_DB: "True"
       AGENTOS_URL: http://127.0.0.1:8000
