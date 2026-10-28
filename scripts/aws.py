@@ -2,6 +2,7 @@
 """Provision AWS AgentCore sandboxes and S3 checkpoints for your agent platform."""
 
 import base64
+import os
 import re
 import subprocess
 import time
@@ -14,20 +15,22 @@ from uuid import uuid4
 import boto3  # type: ignore[import-untyped]
 import typer
 from botocore.exceptions import BotoCoreError, ClientError, WaiterError  # type: ignore[import-untyped]
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 
-# Your AWS account and resource names. Keep credentials in your AWS profile.
-AWS_PROFILE = "default"
-EXPECTED_ACCOUNT_ID = ""  # Set your 12-digit account ID before running the script.
-AWS_REGION = "us-east-1"
-DEPLOYMENT_NAME = "agentos-sandbox"
-BUCKET_NAME = ""  # Leave empty to derive a name from the deployment, account and region.
-CHECKPOINT_PREFIX = "agentos/checkpoints/"
-
 ROOT = Path(__file__).resolve().parents[1]
+# Local setup settings stay out of Git. Exported variables take precedence.
+load_dotenv(ROOT / ".env.aws", override=False)
+AWS_PROFILE = os.getenv("AWS_PROFILE") or None
+AWS_REGION = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION") or None
+EXPECTED_ACCOUNT_ID = os.getenv("EXPECTED_ACCOUNT_ID", "")
+DEPLOYMENT_NAME = os.getenv("DEPLOYMENT_NAME", "agentos-sandbox")
+BUCKET_NAME = os.getenv("BUCKET_NAME", "")
+CHECKPOINT_PREFIX = os.getenv("CHECKPOINT_PREFIX", "agentos/checkpoints/")
+
 OWNER = "agno-template-sandbox"
 console = Console()
 app = typer.Typer(
@@ -40,24 +43,25 @@ app = typer.Typer(
 
 @app.command()
 def plan() -> None:
-    """Preview the configuration without connecting to AWS."""
+    """Resolve your AWS account and preview the resources without creating them."""
     with report_errors():
         validate_settings()
+        deployment = SandboxDeployment()
         show_table(
             "AWS sandbox plan",
             {
-                "Profile": AWS_PROFILE,
-                "Account": EXPECTED_ACCOUNT_ID,
-                "Region": AWS_REGION,
+                "Profile": deployment.profile,
+                "Account": deployment.account,
+                "Region": deployment.region,
                 "Deployment": DEPLOYMENT_NAME,
-                "Checkpoint bucket": checkpoint_bucket(),
+                "Checkpoint bucket": deployment.bucket,
                 "Checkpoint prefix": CHECKPOINT_PREFIX,
                 "Image repository": DEPLOYMENT_NAME,
                 "Runtime": runtime_name(),
             },
         )
         console.print("Creates ECR, an AgentCore runtime, a private S3 bucket, and scoped IAM permissions.")
-        console.print("[dim]Offline preview. Apply creates billable resources; it does not create access keys.[/dim]")
+        console.print("[dim]Read-only preview. Apply creates billable resources; it does not create access keys.[/dim]")
 
 
 @app.command()
@@ -66,10 +70,9 @@ def apply() -> None:
     with report_errors():
         validate_settings()
         deployment = SandboxDeployment()
-        deployment.verify_account()
         deployment.check_existing_stacks()
         run_docker("info", quiet=True)
-        show_connection(deployment.provision())
+        show_connection(deployment.provision(), deployment.region)
 
 
 @app.command()
@@ -78,12 +81,7 @@ def status() -> None:
     with report_errors():
         validate_settings()
         deployment = SandboxDeployment()
-        deployment.verify_account()
-        show_connection(deployment.inspect())
-
-
-def checkpoint_bucket() -> str:
-    return BUCKET_NAME or f"{DEPLOYMENT_NAME}-{EXPECTED_ACCOUNT_ID}-{AWS_REGION}"
+        show_connection(deployment.inspect(), deployment.region)
 
 
 def runtime_name() -> str:
@@ -93,22 +91,28 @@ def runtime_name() -> str:
 def validate_settings() -> None:
     """Catch configuration mistakes before connecting to AWS or starting Docker."""
     settings = {
-        "AWS_PROFILE": (AWS_PROFILE, r"[\w.-]+"),
         "EXPECTED_ACCOUNT_ID": (EXPECTED_ACCOUNT_ID, r"[0-9]{12}"),
-        "AWS_REGION": (AWS_REGION, r"[a-z]{2}(?:-[a-z]+)+-[0-9]+"),
+        "AWS_REGION": (AWS_REGION or "", r"[a-z]{2}(?:-[a-z]+)+-[0-9]+"),
         "DEPLOYMENT_NAME": (DEPLOYMENT_NAME, r"[a-z][a-z0-9-]{0,31}"),
-        "BUCKET_NAME": (checkpoint_bucket(), r"[a-z0-9][a-z0-9-]{1,61}[a-z0-9]"),
         "CHECKPOINT_PREFIX": (CHECKPOINT_PREFIX, r"[A-Za-z0-9][A-Za-z0-9_/-]*/"),
     }
     for name, (value, pattern) in settings.items():
+        if not value and name in {"EXPECTED_ACCOUNT_ID", "AWS_REGION"}:
+            continue
         if not re.fullmatch(pattern, value):
-            raise ValueError(f"Set a valid {name} near the top of scripts/aws.py.")
-    if checkpoint_bucket().startswith(("xn--", "sthree-", "amzn-s3-demo-")) or checkpoint_bucket().endswith(
-        ("--x-s3", "--ol-s3", "--table-s3")
-    ):
-        raise ValueError("BUCKET_NAME uses a reserved S3 prefix or suffix.")
+            raise ValueError(f"Set a valid {name} in .env.aws or your shell environment.")
+    validate_bucket(BUCKET_NAME)
     if not (ROOT / "Dockerfile").is_file():
         raise ValueError("The template Dockerfile must be present beside scripts/.")
+
+
+def validate_bucket(name: str) -> None:
+    if not name:
+        return
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,61}[a-z0-9]", name):
+        raise ValueError("Set a valid BUCKET_NAME in .env.aws or your shell environment.")
+    if name.startswith(("xn--", "sthree-", "amzn-s3-demo-")) or name.endswith(("--x-s3", "--ol-s3", "--table-s3")):
+        raise ValueError("BUCKET_NAME uses a reserved S3 prefix or suffix.")
 
 
 class SandboxDeployment:
@@ -116,27 +120,28 @@ class SandboxDeployment:
 
     def __init__(self) -> None:
         session = boto3.Session(profile_name=AWS_PROFILE, region_name=AWS_REGION)
-        self.sts = session.client("sts")
-        self.cloudformation = session.client("cloudformation")
-        self.ecr = session.client("ecr")
-        self.agentcore = session.client("bedrock-agentcore-control")
+        self.profile = session.profile_name or "default credential chain"
+        self.region = session.region_name or "us-east-1"
+        self.account = session.client("sts", region_name=self.region).get_caller_identity()["Account"]
+        if EXPECTED_ACCOUNT_ID and self.account != EXPECTED_ACCOUNT_ID:
+            raise RuntimeError(f"Wrong AWS account: expected {EXPECTED_ACCOUNT_ID}, signed in to {self.account}.")
+        self.bucket = BUCKET_NAME or f"{DEPLOYMENT_NAME}-{self.account}-{self.region}"
+        validate_bucket(self.bucket)
+        self.cloudformation = session.client("cloudformation", region_name=self.region)
+        self.ecr = session.client("ecr", region_name=self.region)
+        self.agentcore = session.client("bedrock-agentcore-control", region_name=self.region)
         self.foundation_stack = f"{DEPLOYMENT_NAME}-foundation"
         self.runtime_stack = f"{DEPLOYMENT_NAME}-runtime"
         self.foundation_parameters = {
-            "BucketName": checkpoint_bucket(),
+            "BucketName": self.bucket,
             "RepositoryName": DEPLOYMENT_NAME,
             "RuntimeName": runtime_name(),
         }
         self.runtime_parameters = {
-            "BucketName": checkpoint_bucket(),
+            "BucketName": self.bucket,
             "CheckpointPrefix": CHECKPOINT_PREFIX,
             "RuntimeName": runtime_name(),
         }
-
-    def verify_account(self) -> None:
-        account = self.sts.get_caller_identity()["Account"]
-        if account != EXPECTED_ACCOUNT_ID:
-            raise RuntimeError(f"Wrong AWS account: expected {EXPECTED_ACCOUNT_ID}, signed in to {account}.")
 
     def get_stack(self, name: str) -> dict[str, Any] | None:
         try:
@@ -286,28 +291,40 @@ def show_table(title: str, values: dict[str, str]) -> None:
     console.print(table)
 
 
-def show_connection(values: dict[str, str]) -> None:
+def show_connection(values: dict[str, str], region: str) -> None:
     show_table("AWS sandbox", values)
     if not all(key in values for key in ("RuntimeArn", "CheckpointBucket", "CheckpointPrefix", "ApplicationUser")):
         console.print(
             "[yellow]Setup is incomplete. Run apply for a new setup, or inspect CloudFormation events.[/yellow]"
         )
         return
-    snippet = f"""def sandbox_provider() -> Sandbox | None:
+    snippet = """def sandbox_provider() -> Sandbox | None:
     return agentcore_sandbox(
-        runtime_arn={values["RuntimeArn"]!r},
-        checkpoint_bucket={values["CheckpointBucket"]!r},
-        checkpoint_prefix={values["CheckpointPrefix"]!r},
+        runtime_arn=os.environ["AGENTCORE_RUNTIME_ARN"],
+        checkpoint_bucket=os.environ["AGENTCORE_CHECKPOINT_BUCKET"],
+        checkpoint_prefix=os.environ.get("AGENTCORE_CHECKPOINT_PREFIX", "agentos/checkpoints/"),
     )"""
     console.print("\n[bold]Configure app/sandbox.py[/bold]")
-    console.print("Set REPOSITORY to your GitHub URL and branch, then use:")
-    width = max(len(line) for line in snippet.splitlines())
-    console.print(Syntax(snippet, "python", code_width=width, word_wrap=False), soft_wrap=True)
-    console.print(f"\nSet AWS_DEFAULT_REGION={AWS_REGION} on your API host.")
+    console.print("Add import os, set REPOSITORY to your GitHub URL and branch, then use:")
+    show_code(snippet, "python")
+    console.print("\n[bold]Set these in your API host's environment settings[/bold]")
+    environment = {
+        "AWS_DEFAULT_REGION": region,
+        "AGENTCORE_RUNTIME_ARN": values["RuntimeArn"],
+        "AGENTCORE_CHECKPOINT_BUCKET": values["CheckpointBucket"],
+        "AGENTCORE_CHECKPOINT_PREFIX": values["CheckpointPrefix"],
+    }
+    show_code("\n".join(f"{key}={value}" for key, value in environment.items()), "bash")
     console.print(
         "Create an access key for ApplicationUser in IAM and enter it directly in your host's secret settings."
     )
     console.print("[dim]Follow docs/harnesses.md to deploy the API, test checkpoint recovery, and clean up.[/dim]")
+
+
+def show_code(code: str, language: str) -> None:
+    # Preserve long ARNs when copying output from a narrow terminal.
+    width = max(len(line) for line in code.splitlines())
+    console.print(Syntax(code, language, code_width=width, word_wrap=False), soft_wrap=True)
 
 
 @contextmanager

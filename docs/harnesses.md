@@ -191,23 +191,34 @@ manage CloudFormation, ECR, AgentCore, S3 and IAM in your account. If your organ
 uses IAM Identity Center, install [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 and run `aws configure sso` to set up the profile.
 
-Edit the settings at the top of `scripts/aws.py`:
+Create `.env.aws` in the repository root. It is excluded from Git and Docker images.
+The script loads it automatically; exported environment variables take precedence.
+Select your local profile, or omit `AWS_PROFILE` to use boto3's default credentials:
 
-- `AWS_PROFILE`: your local AWS profile name.
-- `EXPECTED_ACCOUNT_ID`: your 12-digit AWS account ID. The script checks it before making changes.
-- `AWS_REGION`: defaults to `us-east-1` (Northern Virginia).
-- `DEPLOYMENT_NAME`: a stable name for this platform's sandbox resources.
-- `BUCKET_NAME`: a globally unique bucket name, or leave empty to derive one from the deployment, account and region.
-- `CHECKPOINT_PREFIX`: the path within the bucket for this platform's checkpoints.
+```dotenv
+AWS_PROFILE=your-profile
+```
 
-These settings contain resource names, never credentials. Preview them:
+The account ID is resolved through STS using those credentials. The region comes from
+`AWS_REGION`, `AWS_DEFAULT_REGION`, or your profile, falling back to `us-east-1`.
+You can also set these optional values in `.env.aws`:
+
+| Variable | Default |
+| --- | --- |
+| `EXPECTED_ACCOUNT_ID` | Unset. Set your 12-digit account ID to reject a different account. |
+| `DEPLOYMENT_NAME` | `agentos-sandbox` |
+| `BUCKET_NAME` | Derived from deployment name, resolved account and region. |
+| `CHECKPOINT_PREFIX` | `agentos/checkpoints/` |
+
+Keep credentials in your AWS profile. For SSO, sign in with
+`aws sso login --profile YOUR_PROFILE`, then preview the resolved configuration:
 
 ```sh
 scripts/aws.py plan
 ```
 
-This is an offline summary, not an AWS change set. It creates nothing.
-For an SSO profile, log in with `aws sso login --profile YOUR_PROFILE`.
+This calls STS to verify your identity and creates nothing. Check the displayed account,
+region and resource names before applying. It is a preview, not an AWS change set.
 
 #### 2. Create the resources
 
@@ -229,8 +240,9 @@ CloudFormation; a failed stack may need recovery before retrying.
 
 The script prints the runtime ARN, bucket, prefix, application user and a ready-to-paste
 `sandbox_provider()` function for [app/sandbox.py](../app/sandbox.py).
-Set `REPOSITORY` to your GitHub URL and branch, then paste the function. To retrieve
-the values again:
+Add `import os`, set `REPOSITORY` to your GitHub URL and branch, then paste the function.
+It reads the runtime ARN and checkpoint settings from environment variables, so those
+values stay out of your repository. To retrieve the values again:
 
 ```sh
 scripts/aws.py status
@@ -245,7 +257,10 @@ settings (`Environment` on Render):
 | --- | --- |
 | `AWS_ACCESS_KEY_ID` | The application's access key ID. |
 | `AWS_SECRET_ACCESS_KEY` | Its secret access key. |
-| `AWS_DEFAULT_REGION` | The region you selected above. |
+| `AWS_DEFAULT_REGION` | The region printed by the script. |
+| `AGENTCORE_RUNTIME_ARN` | The printed runtime ARN. |
+| `AGENTCORE_CHECKPOINT_BUCKET` | The printed checkpoint bucket. |
+| `AGENTCORE_CHECKPOINT_PREFIX` | The printed checkpoint prefix. |
 
 The script creates no access keys. Keep the provisioning profile's administrator
 credentials on your computer. IAM user keys do not need `AWS_SESSION_TOKEN`; remove
@@ -259,7 +274,8 @@ credentials to the coding agents. Private checkout needs `GITHUB_READ_TOKEN` sup
 explicitly through the provider's `env` mapping, read from your environment or secret
 store. See [GitHub access](#publish-changes-to-github) for publishing changes.
 
-Commit the configuration and redeploy your API, preserving JWT authorization.
+Commit the provider code and redeploy your API, preserving JWT authorization.
+Keep account-specific values in `.env.aws` and your host settings; do not commit them.
 No API disk or Docker daemon is required on the host. Use the same checkpoint
 bucket/prefix on all replicas of this platform. Keep the bucket private and do not
 add a lifecycle rule that expires active checkpoints.
