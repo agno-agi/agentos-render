@@ -122,7 +122,10 @@ never commit their values. Supply optional Bedrock
 settings or private-repository credentials explicitly through the provider's `env`;
 never put credential values in source. Agno forwards the harness model credentials.
 
-For Docker engineering, run the API on the host using the [sandbox setup guide](docs/harnesses.md#local-docker-sandbox).
+For local Docker sandboxes, keep the API in Compose using the [sandbox setup guide](docs/harnesses.md#local-docker-sandbox).
+The API image includes the Docker CLI; Compose mounts the daemon socket into the API
+only. Sandbox containers must not receive that socket. This grants the API daemon access
+and is intended for trusted local development.
 Build the sandbox with `docker build --target sandbox --load -t agno-sandbox:local .`.
 Development checkpoints use the absolute project `tmp/checkpoints` path and survive
 only while those files remain. Hosted AgentCore checkpoints use S3; no API disk is
