@@ -56,7 +56,11 @@ def agentcore_sandbox(
 
     return AgentCoreSandbox(
         runtime_arn=runtime_arn,
-        checkpoints=S3CheckpointStore(bucket=checkpoint_bucket, prefix=checkpoint_prefix),
+        checkpoints=S3CheckpointStore(
+            bucket=checkpoint_bucket,
+            prefix=checkpoint_prefix,
+            region=getenv("AWS_REGION") or getenv("AWS_DEFAULT_REGION"),
+        ),
         env=sandbox_env(env),
     )
 

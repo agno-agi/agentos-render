@@ -88,7 +88,7 @@ Add your profile to the existing `.env` (copy [example.env](../example.env) if n
 
 ```dotenv
 AWS_PROFILE=your-profile
-AWS_DEFAULT_REGION=us-east-1
+AWS_REGION=us-east-1
 ```
 
 For SSO, use [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
@@ -159,7 +159,7 @@ In your API host's environment settings (**Environment** on Render), add:
 | `SANDBOX_PROVIDER` | `agentcore` (already set by the Render Blueprint). |
 | `AWS_ACCESS_KEY_ID` | The application user's access key ID. |
 | `AWS_SECRET_ACCESS_KEY` | Its secret access key. |
-| `AWS_DEFAULT_REGION` | The region printed by the script. |
+| `AWS_REGION` | The region printed by the script. |
 | `AGENTCORE_RUNTIME_ARN` | The printed runtime ARN. |
 | `AGENTCORE_CHECKPOINT_BUCKET` | The printed checkpoint bucket. |
 | `AGENTCORE_CHECKPOINT_PREFIX` | The printed checkpoint prefix. |
