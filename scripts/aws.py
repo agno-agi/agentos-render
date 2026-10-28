@@ -1,336 +1,325 @@
 #!/usr/bin/env python3
-"""Prepare or provision an Agno sandbox. Uses Python's standard library, AWS CLI and Docker."""
+"""Provision AWS AgentCore sandboxes and S3 checkpoints for your agent platform."""
 
-import argparse
-import json
-import os
+import base64
 import re
 import subprocess
-import sys
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+from typing import Any
 from uuid import uuid4
 
-# Edit these non-secret settings before running plan or apply. Never put keys here.
+import boto3  # type: ignore[import-untyped]
+import typer
+from botocore.exceptions import BotoCoreError, ClientError, WaiterError  # type: ignore[import-untyped]
+from rich.console import Console
+from rich.syntax import Syntax
+from rich.table import Table
+from rich.text import Text
+
+# Your AWS account and resource names. Keep credentials in your AWS profile.
 AWS_PROFILE = "default"
-EXPECTED_ACCOUNT_ID = ""  # Your 12-digit AWS account ID; checked before any AWS changes.
+EXPECTED_ACCOUNT_ID = ""  # Set your 12-digit account ID before running the script.
 AWS_REGION = "us-east-1"
-DEPLOYMENT_NAME = "agentos-sandbox"  # Keep this stable when updating the image.
-BUCKET_NAME = ""  # Empty derives a name from the deployment, account and region.
+DEPLOYMENT_NAME = "agentos-sandbox"
+BUCKET_NAME = ""  # Leave empty to derive a name from the deployment, account and region.
 CHECKPOINT_PREFIX = "agentos/checkpoints/"
 
 ROOT = Path(__file__).resolve().parents[1]
 OWNER = "agno-template-sandbox"
+console = Console()
+app = typer.Typer(
+    help=__doc__,
+    no_args_is_help=True,
+    add_completion=False,
+    pretty_exceptions_show_locals=False,
+)
 
 
-def load_config():
-    config = {
-        "profile": AWS_PROFILE,
-        "account_id": EXPECTED_ACCOUNT_ID,
-        "region": AWS_REGION,
-        "stack_name": DEPLOYMENT_NAME,
-        "bucket_name": BUCKET_NAME or f"{DEPLOYMENT_NAME}-{EXPECTED_ACCOUNT_ID}-{AWS_REGION}",
-        "checkpoint_prefix": CHECKPOINT_PREFIX,
-        "ecr_repository": DEPLOYMENT_NAME,
-        "runtime_name": DEPLOYMENT_NAME.replace("-", "_"),
-        "source_dir": str(ROOT),
-    }
-    if not EXPECTED_ACCOUNT_ID:
-        raise ValueError("Set EXPECTED_ACCOUNT_ID and AWS_PROFILE near the top of scripts/aws.py first")
-    patterns = {
-        "profile": r"[\w.-]+",
-        "account_id": r"[0-9]{12}",
-        "region": r"[a-z]{2}(?:-[a-z]+)+-[0-9]+",
-        "stack_name": r"[a-z][a-z0-9-]{0,31}",
-        "bucket_name": r"[a-z0-9][a-z0-9-]{1,61}[a-z0-9]",
-        "checkpoint_prefix": r"[A-Za-z0-9][A-Za-z0-9_/-]*/",
-    }
-    for key, pattern in patterns.items():
-        if not isinstance(config[key], str) or not re.fullmatch(pattern, config[key]):
-            raise ValueError(f"Invalid {key}; check the settings at the top of scripts/aws.py")
-    if config["bucket_name"].startswith(("xn--", "sthree-", "amzn-s3-demo-")) or config["bucket_name"].endswith(
-        "--x-s3"
-    ):
-        raise ValueError("BUCKET_NAME uses a reserved S3 prefix or suffix")
-    if not (ROOT / "Dockerfile").is_file():
-        raise ValueError("Run this script from a template checkout containing its Dockerfile")
-    return config
-
-
-class Setup:
-    def __init__(self, config):
-        self.config = config
-        self.environment = dict(os.environ, AWS_PAGER="")
-        # The named profile, not ambient exported keys, must select the account.
-        for key in (
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "AWS_SESSION_TOKEN",
-            "AWS_SECURITY_TOKEN",
-        ):
-            self.environment.pop(key, None)
-        self.aws = [
-            "aws",
-            "--profile",
-            config["profile"],
-            "--region",
-            config["region"],
-            "--no-cli-pager",
-        ]
-
-    def read(self, *args):
-        result = subprocess.run(
-            [*self.aws, *args, "--output", "json"],
-            env=self.environment,
-            capture_output=True,
-            text=True,
-            check=False,
+@app.command()
+def plan() -> None:
+    """Preview the configuration without connecting to AWS."""
+    with report_errors():
+        validate_settings()
+        show_table(
+            "AWS sandbox plan",
+            {
+                "Profile": AWS_PROFILE,
+                "Account": EXPECTED_ACCOUNT_ID,
+                "Region": AWS_REGION,
+                "Deployment": DEPLOYMENT_NAME,
+                "Checkpoint bucket": checkpoint_bucket(),
+                "Checkpoint prefix": CHECKPOINT_PREFIX,
+                "Image repository": DEPLOYMENT_NAME,
+                "Runtime": runtime_name(),
+            },
         )
-        if result.returncode:
-            raise RuntimeError(result.stderr.strip())
-        return json.loads(result.stdout)
+        console.print("Creates ECR, an AgentCore runtime, a private S3 bucket, and scoped IAM permissions.")
+        console.print("[dim]Offline preview. Apply creates billable resources; it does not create access keys.[/dim]")
 
-    def verify_account(self):
-        identity = self.read("sts", "get-caller-identity")
-        if identity["Account"] != self.config["account_id"]:
-            raise RuntimeError(f"Wrong AWS account: expected {self.config['account_id']}, got {identity['Account']}")
 
-    def existing_stack(self, name):
+@app.command()
+def apply() -> None:
+    """Create or update the sandbox resources and upload the image."""
+    with report_errors():
+        validate_settings()
+        deployment = SandboxDeployment()
+        deployment.verify_account()
+        deployment.check_existing_stacks()
+        run_docker("info", quiet=True)
+        show_connection(deployment.provision())
+
+
+@app.command()
+def status() -> None:
+    """Show resource states and the configuration for your API."""
+    with report_errors():
+        validate_settings()
+        deployment = SandboxDeployment()
+        deployment.verify_account()
+        show_connection(deployment.inspect())
+
+
+def checkpoint_bucket() -> str:
+    return BUCKET_NAME or f"{DEPLOYMENT_NAME}-{EXPECTED_ACCOUNT_ID}-{AWS_REGION}"
+
+
+def runtime_name() -> str:
+    return DEPLOYMENT_NAME.replace("-", "_")
+
+
+def validate_settings() -> None:
+    """Catch configuration mistakes before connecting to AWS or starting Docker."""
+    settings = {
+        "AWS_PROFILE": (AWS_PROFILE, r"[\w.-]+"),
+        "EXPECTED_ACCOUNT_ID": (EXPECTED_ACCOUNT_ID, r"[0-9]{12}"),
+        "AWS_REGION": (AWS_REGION, r"[a-z]{2}(?:-[a-z]+)+-[0-9]+"),
+        "DEPLOYMENT_NAME": (DEPLOYMENT_NAME, r"[a-z][a-z0-9-]{0,31}"),
+        "BUCKET_NAME": (checkpoint_bucket(), r"[a-z0-9][a-z0-9-]{1,61}[a-z0-9]"),
+        "CHECKPOINT_PREFIX": (CHECKPOINT_PREFIX, r"[A-Za-z0-9][A-Za-z0-9_/-]*/"),
+    }
+    for name, (value, pattern) in settings.items():
+        if not re.fullmatch(pattern, value):
+            raise ValueError(f"Set a valid {name} near the top of scripts/aws.py.")
+    if checkpoint_bucket().startswith(("xn--", "sthree-", "amzn-s3-demo-")) or checkpoint_bucket().endswith(
+        ("--x-s3", "--ol-s3", "--table-s3")
+    ):
+        raise ValueError("BUCKET_NAME uses a reserved S3 prefix or suffix.")
+    if not (ROOT / "Dockerfile").is_file():
+        raise ValueError("The template Dockerfile must be present beside scripts/.")
+
+
+class SandboxDeployment:
+    """Manage the storage stack, sandbox image, and runtime stack in one AWS account."""
+
+    def __init__(self) -> None:
+        session = boto3.Session(profile_name=AWS_PROFILE, region_name=AWS_REGION)
+        self.sts = session.client("sts")
+        self.cloudformation = session.client("cloudformation")
+        self.ecr = session.client("ecr")
+        self.agentcore = session.client("bedrock-agentcore-control")
+        self.foundation_stack = f"{DEPLOYMENT_NAME}-foundation"
+        self.runtime_stack = f"{DEPLOYMENT_NAME}-runtime"
+        self.foundation_parameters = {
+            "BucketName": checkpoint_bucket(),
+            "RepositoryName": DEPLOYMENT_NAME,
+            "RuntimeName": runtime_name(),
+        }
+        self.runtime_parameters = {
+            "BucketName": checkpoint_bucket(),
+            "CheckpointPrefix": CHECKPOINT_PREFIX,
+            "RuntimeName": runtime_name(),
+        }
+
+    def verify_account(self) -> None:
+        account = self.sts.get_caller_identity()["Account"]
+        if account != EXPECTED_ACCOUNT_ID:
+            raise RuntimeError(f"Wrong AWS account: expected {EXPECTED_ACCOUNT_ID}, signed in to {account}.")
+
+    def get_stack(self, name: str) -> dict[str, Any] | None:
         try:
-            stack = self.read("cloudformation", "describe-stacks", "--stack-name", name)["Stacks"][0]
-        except RuntimeError as error:
-            if "ValidationError" in str(error) and "does not exist" in str(error):
+            stack = self.cloudformation.describe_stacks(StackName=name)["Stacks"][0]
+        except ClientError as error:
+            details = error.response["Error"]
+            if details["Code"] == "ValidationError" and "does not exist" in details["Message"]:
                 return None
             raise
-        tags = {t["Key"]: t["Value"] for t in stack.get("Tags", [])}
+        tags = {tag["Key"]: tag["Value"] for tag in stack.get("Tags", [])}
         if tags.get("ManagedBy") != OWNER:
-            raise RuntimeError(f"Refusing to change unrelated stack {name}")
+            raise RuntimeError(f"Refusing to change unrelated stack {name}.")
         return stack
 
-    def check_update(self, name, parameters):
-        stack = self.existing_stack(name)
-        if stack:
-            status = stack["StackStatus"]
-            if status not in {"CREATE_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE"}:
-                raise RuntimeError(f"Stack {name} is {status}; inspect its CloudFormation events before retrying")
-            old = {p["ParameterKey"]: p["ParameterValue"] for p in stack.get("Parameters", [])}
-            for key in ("BucketName", "RepositoryName", "RuntimeName", "CheckpointPrefix"):
-                if key in old and key in parameters and parameters[key] != old[key]:
-                    raise RuntimeError(f"Changing {key} on {name} needs a migration; use a new DEPLOYMENT_NAME")
+    def check_stack(self, name: str, parameters: dict[str, str]) -> dict[str, Any] | None:
+        stack = self.get_stack(name)
+        if stack is None:
+            return None
+        if stack["StackStatus"] not in {"CREATE_COMPLETE", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_COMPLETE"}:
+            raise RuntimeError(f"{name} is {stack['StackStatus']}. Inspect its CloudFormation events before retrying.")
+        existing = {item["ParameterKey"]: item["ParameterValue"] for item in stack.get("Parameters", [])}
+        for key in ("BucketName", "RepositoryName", "RuntimeName", "CheckpointPrefix"):
+            if key in existing and key in parameters and parameters[key] != existing[key]:
+                raise RuntimeError(f"Changing {key} needs a migration. Use a new DEPLOYMENT_NAME for a separate setup.")
+        return stack
 
-    def deploy_stack(self, name, template, parameters):
-        self.check_update(name, parameters)
-        with NamedTemporaryFile(mode="w", suffix=".yaml") as template_file:
-            template_file.write(template)
-            template_file.flush()
-            subprocess.run(
-                [
-                    *self.aws,
-                    "cloudformation",
-                    "deploy",
-                    "--stack-name",
-                    name,
-                    "--template-file",
-                    template_file.name,
-                    "--capabilities",
-                    "CAPABILITY_IAM",
-                    "--no-fail-on-empty-changeset",
-                    "--tags",
-                    f"ManagedBy={OWNER}",
-                    "--parameter-overrides",
-                    *(f"{k}={v}" for k, v in parameters.items()),
-                ],
-                env=self.environment,
-                check=True,
-            )
-        return self.outputs(name)
+    def check_existing_stacks(self) -> None:
+        self.check_stack(self.foundation_stack, self.foundation_parameters)
+        self.check_stack(self.runtime_stack, self.runtime_parameters)
 
-    def outputs(self, name):
-        stack = self.existing_stack(name)
-        if not stack:
-            raise RuntimeError(f"Stack {name} does not exist; run apply first")
-        return {o["OutputKey"]: o["OutputValue"] for o in stack.get("Outputs", [])}
+    def deploy_stack(self, name: str, template: str, parameters: dict[str, str]) -> dict[str, str]:
+        existing = self.check_stack(name, parameters)
+        request = {
+            "StackName": name,
+            "TemplateBody": template,
+            "Parameters": [{"ParameterKey": key, "ParameterValue": value} for key, value in parameters.items()],
+            "Capabilities": ["CAPABILITY_IAM"],
+            "Tags": [{"Key": "ManagedBy", "Value": OWNER}],
+        }
+        if existing:
+            try:
+                self.cloudformation.update_stack(**request)
+            except ClientError as error:
+                details = error.response["Error"]
+                if details["Code"] == "ValidationError" and "No updates are to be performed" in details["Message"]:
+                    console.print(f"[dim]{name} is already up to date.[/dim]")
+                    return stack_outputs(existing)
+                raise
+            waiter = self.cloudformation.get_waiter("stack_update_complete")
+        else:
+            self.cloudformation.create_stack(**request)
+            waiter = self.cloudformation.get_waiter("stack_create_complete")
+        with console.status(f"Waiting for {name}…"):
+            try:
+                waiter.wait(StackName=name, WaiterConfig={"Delay": 5, "MaxAttempts": 240})
+            except WaiterError as error:
+                raise RuntimeError(
+                    f"{name} did not complete. Inspect its CloudFormation events before retrying."
+                ) from error
+        return stack_outputs(self.get_stack(name))
 
-    def status(self):
-        name = self.config["stack_name"]
-        foundation = self.existing_stack(name + "-foundation")
-        runtime = self.existing_stack(name + "-runtime")
+    def publish_image(self, repository: str) -> str:
+        token = self.ecr.get_authorization_token()["authorizationData"][0]["authorizationToken"]
+        username, password = base64.b64decode(token).decode().split(":", 1)
+        run_docker(
+            "login", "--username", username, "--password-stdin", repository.split("/")[0], stdin=password, quiet=True
+        )
+        image = f"{repository}:build-{uuid4().hex[:12]}"
+        run_docker("build", "--platform", "linux/arm64", "--load", "--target", "sandbox", "--tag", image, str(ROOT))
+        run_docker("push", image)
+        return image
+
+    def runtime_states(self, runtime_id: str) -> dict[str, str]:
+        runtime = self.agentcore.get_agent_runtime(agentRuntimeId=runtime_id)
+        try:
+            endpoint = self.agentcore.get_agent_runtime_endpoint(agentRuntimeId=runtime_id, endpointName="DEFAULT")
+            endpoint_status = endpoint["status"]
+        except ClientError as error:
+            if error.response["Error"]["Code"] != "ResourceNotFoundException":
+                raise
+            endpoint_status = "NOT_CREATED"
+        return {"RuntimeStatus": runtime["status"], "EndpointStatus": endpoint_status}
+
+    def wait_for_runtime(self, runtime_id: str) -> None:
+        deadline = time.monotonic() + 1200
+        with console.status("Waiting for the AgentCore runtime…") as progress:
+            while time.monotonic() < deadline:
+                states = self.runtime_states(runtime_id)
+                if all(state == "READY" for state in states.values()):
+                    return
+                if any("FAILED" in state or state.startswith("DELET") for state in states.values()):
+                    raise RuntimeError(f"AgentCore did not become ready: {states}. Inspect the runtime in AWS.")
+                progress.update(f"Runtime: {states['RuntimeStatus']} · Endpoint: {states['EndpointStatus']}")
+                time.sleep(10)
+        raise RuntimeError("Timed out waiting for AgentCore. Resources remain available for inspection.")
+
+    def provision(self) -> dict[str, str]:
+        console.rule("1 · Create image and checkpoint storage")
+        foundation = self.deploy_stack(self.foundation_stack, FOUNDATION_TEMPLATE, self.foundation_parameters)
+        console.rule("2 · Build and publish the sandbox image")
+        image = self.publish_image(foundation["RepositoryUri"])
+        console.rule("3 · Create or update the AgentCore runtime")
+        runtime = self.deploy_stack(
+            self.runtime_stack,
+            RUNTIME_TEMPLATE,
+            {
+                **self.runtime_parameters,
+                "ImageUri": image,
+                "ExecutionRoleArn": foundation["ExecutionRoleArn"],
+            },
+        )
+        self.wait_for_runtime(runtime["RuntimeId"])
+        console.print("[green]Sandbox resources are ready.[/green]")
+        return runtime
+
+    def inspect(self) -> dict[str, str]:
+        foundation = self.get_stack(self.foundation_stack)
+        runtime = self.get_stack(self.runtime_stack)
         result = {
+            **stack_outputs(foundation),
+            **stack_outputs(runtime),
             "FoundationStackStatus": foundation["StackStatus"] if foundation else "NOT_CREATED",
             "RuntimeStackStatus": runtime["StackStatus"] if runtime else "NOT_CREATED",
         }
-        if runtime:
-            result.update({o["OutputKey"]: o["OutputValue"] for o in runtime.get("Outputs", [])})
         if "RuntimeId" in result:
-            result["RuntimeStatus"] = self.read(
-                "bedrock-agentcore-control", "get-agent-runtime", "--agent-runtime-id", result["RuntimeId"]
-            )["status"]
-            result["EndpointStatus"] = self.read(
-                "bedrock-agentcore-control",
-                "get-agent-runtime-endpoint",
-                "--agent-runtime-id",
-                result["RuntimeId"],
-                "--endpoint-name",
-                "DEFAULT",
-            )["status"]
-        return result
-
-    def wait_ready(self, runtime_id):
-        deadline = time.monotonic() + 1200
-        while time.monotonic() < deadline:
-            runtime = self.read(
-                "bedrock-agentcore-control",
-                "get-agent-runtime",
-                "--agent-runtime-id",
-                runtime_id,
-            )
-            endpoint = self.read(
-                "bedrock-agentcore-control",
-                "get-agent-runtime-endpoint",
-                "--agent-runtime-id",
-                runtime_id,
-                "--endpoint-name",
-                "DEFAULT",
-            )
-            states = (runtime["status"], endpoint["status"])
-            if states == ("READY", "READY"):
-                return
-            if any("FAILED" in state or state.startswith("DELET") for state in states):
-                raise RuntimeError(f"Runtime/endpoint failed: {states}; inspect AgentCore and CloudFormation events")
-            print(f"Runtime / DEFAULT endpoint: {states}; waiting...", flush=True)
-            time.sleep(10)
-        raise RuntimeError("Timed out waiting for runtime/endpoint readiness; resources were left for inspection")
-
-    def apply(self):
-        c = self.config
-        self.verify_account()
-        subprocess.run(["docker", "info"], check=True, capture_output=True)
-        # Validate both stacks before provisioning or uploading a new image.
-        self.check_update(
-            c["stack_name"] + "-runtime",
-            {
-                "RuntimeName": c["runtime_name"],
-                "BucketName": c["bucket_name"],
-                "CheckpointPrefix": c["checkpoint_prefix"],
-            },
-        )
-        self.check_update(
-            c["stack_name"] + "-foundation",
-            {
-                "RuntimeName": c["runtime_name"],
-                "BucketName": c["bucket_name"],
-                "RepositoryName": c["ecr_repository"],
-            },
-        )
-        foundation = self.deploy_stack(
-            c["stack_name"] + "-foundation",
-            FOUNDATION_TEMPLATE,
-            {
-                "BucketName": c["bucket_name"],
-                "RepositoryName": c["ecr_repository"],
-                "RuntimeName": c["runtime_name"],
-            },
-        )
-        repository = foundation["RepositoryUri"]
-        tag = f"build-{time.strftime('%Y%m%d%H%M%S', time.gmtime())}-{uuid4().hex[:8]}"
-        image = repository + ":" + tag
-        password = subprocess.run(
-            [*self.aws, "ecr", "get-login-password"],
-            env=self.environment,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout
-        # Use Docker's configured credential helper; the token travels over stdin.
-        subprocess.run(
-            [
-                "docker",
-                "login",
-                "--username",
-                "AWS",
-                "--password-stdin",
-                repository.split("/")[0],
-            ],
-            input=password,
-            text=True,
-            env=self.environment,
-            check=True,
-            capture_output=True,
-        )
-        subprocess.run(
-            [
-                "docker",
-                "build",
-                "--platform",
-                "linux/arm64",
-                "--load",
-                "--target",
-                "sandbox",
-                "--tag",
-                image,
-                c["source_dir"],
-            ],
-            env=self.environment,
-            check=True,
-        )
-        subprocess.run(["docker", "push", image], env=self.environment, check=True)
-        result = self.deploy_stack(
-            c["stack_name"] + "-runtime",
-            RUNTIME_TEMPLATE,
-            {
-                "RuntimeName": c["runtime_name"],
-                "ImageUri": image,
-                "ExecutionRoleArn": foundation["ExecutionRoleArn"],
-                "BucketName": c["bucket_name"],
-                "CheckpointPrefix": c["checkpoint_prefix"],
-            },
-        )
-        self.wait_ready(result["RuntimeId"])
+            result.update(self.runtime_states(result["RuntimeId"]))
         return result
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("plan", "apply", "status"))
-    args = parser.parse_args()
-    config = load_config()
-    if args.action == "plan":
-        print("Local configuration preview only; no AWS calls or resources created.")
-        print(json.dumps(config, indent=2))
-        print("Creates/updates two CloudFormation stacks: <stack_name>-foundation and <stack_name>-runtime.")
-        print(
-            "Resources: private checkpoint bucket, ECR repository, execution role, HTTP runtime, restricted IAM user."
+def stack_outputs(stack: dict[str, Any] | None) -> dict[str, str]:
+    return {item["OutputKey"]: item["OutputValue"] for item in (stack or {}).get("Outputs", [])}
+
+
+def run_docker(*args: str, stdin: str | None = None, quiet: bool = False) -> None:
+    """Leave build progress visible; send the ECR password only over stdin."""
+    result = subprocess.run(["docker", *args], input=stdin, text=True, capture_output=quiet, check=False)
+    if result.returncode:
+        raise RuntimeError(f"Docker {args[0]} failed (exit {result.returncode}). Check Docker and retry.")
+
+
+def show_table(title: str, values: dict[str, str]) -> None:
+    table = Table(title=title, show_header=False, title_style="bold cyan")
+    table.add_column("Setting", style="cyan", no_wrap=True)
+    table.add_column("Value", overflow="fold")
+    for label, value in values.items():
+        table.add_row(Text(label), Text(value))
+    console.print(table)
+
+
+def show_connection(values: dict[str, str]) -> None:
+    show_table("AWS sandbox", values)
+    if not all(key in values for key in ("RuntimeArn", "CheckpointBucket", "CheckpointPrefix", "ApplicationUser")):
+        console.print(
+            "[yellow]Setup is incomplete. Run apply for a new setup, or inspect CloudFormation events.[/yellow]"
         )
-        print("Builds the Dockerfile sandbox target for ARM64. Creates no access keys. AWS usage incurs charges.")
         return
-    setup = Setup(config)
-    if args.action == "apply":
-        result = setup.apply()
-    else:
-        setup.verify_account()
-        result = setup.status()
-    print(json.dumps(result, indent=2))
-    if not all(key in result for key in ("RuntimeArn", "CheckpointBucket", "CheckpointPrefix", "ApplicationUser")):
-        print("No complete runtime configuration yet. Run apply for a new setup, or inspect CloudFormation events.")
-        return
-    print("\nSet REPOSITORY to your GitHub URL and branch in app/sandbox.py, then use:")
-    print("def sandbox_provider() -> Sandbox | None:")
-    print("    return agentcore_sandbox(")
-    for argument, key in (
-        ("runtime_arn", "RuntimeArn"),
-        ("checkpoint_bucket", "CheckpointBucket"),
-        ("checkpoint_prefix", "CheckpointPrefix"),
-    ):
-        print(f"        {argument}={result[key]!r},")
-    print("    )")
-    print("Your API needs credentials for ApplicationUser and AWS_DEFAULT_REGION=" + config["region"])
-    print("Create the user access key in IAM and enter it directly in your API host's secret settings.")
-    print("See docs/harnesses.md for credentials, deployment, recovery testing and cleanup.")
-    print("No model execution or checkpoint recovery test has been performed.")
+    snippet = f"""def sandbox_provider() -> Sandbox | None:
+    return agentcore_sandbox(
+        runtime_arn={values["RuntimeArn"]!r},
+        checkpoint_bucket={values["CheckpointBucket"]!r},
+        checkpoint_prefix={values["CheckpointPrefix"]!r},
+    )"""
+    console.print("\n[bold]Configure app/sandbox.py[/bold]")
+    console.print("Set REPOSITORY to your GitHub URL and branch, then use:")
+    width = max(len(line) for line in snippet.splitlines())
+    console.print(Syntax(snippet, "python", code_width=width, word_wrap=False), soft_wrap=True)
+    console.print(f"\nSet AWS_DEFAULT_REGION={AWS_REGION} on your API host.")
+    console.print(
+        "Create an access key for ApplicationUser in IAM and enter it directly in your host's secret settings."
+    )
+    console.print("[dim]Follow docs/harnesses.md to deploy the API, test checkpoint recovery, and clean up.[/dim]")
 
 
-# CloudFormation owns the resources; keep templates here so setup is a single file.
+@contextmanager
+def report_errors() -> Iterator[None]:
+    try:
+        yield
+    except (BotoCoreError, ClientError, OSError, RuntimeError, ValueError) as error:
+        console.print(Text(str(error), style="bold red"))
+        raise typer.Exit(code=1) from None
+
+
+# CloudFormation owns the resources; keep the declarations here so setup is one file.
 FOUNDATION_TEMPLATE = """\
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Image storage, checkpoint storage and execution role for an Agno sandbox.
@@ -506,14 +495,4 @@ Outputs:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except (
-        ValueError,
-        KeyError,
-        OSError,
-        RuntimeError,
-        subprocess.CalledProcessError,
-    ) as error:
-        print(f"Error: {error}", file=sys.stderr)
-        sys.exit(1)
+    app()
