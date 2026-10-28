@@ -299,7 +299,7 @@ def show_connection(values: dict[str, str], region: str) -> None:
     console.print("\n[bold]Set these in your API host's environment settings[/bold]")
     environment = {
         "SANDBOX_PROVIDER": "agentcore",
-        "AWS_DEFAULT_REGION": region,
+        "AWS_REGION": region,
         "AGENTCORE_RUNTIME_ARN": values["RuntimeArn"],
         "AGENTCORE_CHECKPOINT_BUCKET": values["CheckpointBucket"],
         "AGENTCORE_CHECKPOINT_PREFIX": values["CheckpointPrefix"],
