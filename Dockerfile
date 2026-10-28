@@ -29,6 +29,9 @@ CMD []
 # ===========================================================================
 FROM base AS agentos
 
+# The local API uses the host Docker daemon to manage sibling sandboxes.
+COPY --from=docker:29-cli /usr/local/bin/docker /usr/local/bin/docker
+
 ENV PYTHONPATH=/app
 COPY . .
 

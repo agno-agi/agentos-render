@@ -51,18 +51,14 @@ report that Claude Engineer cannot run; do not present API startup as verificati
 
 For standard development, `docker compose up -d --build`, then poll http://localhost:8000/docs until 200 (first build takes minutes). If it never comes up, read `docker compose logs agentos-api`.
 
-For sandbox development, follow the host API commands in the
-[sandbox setup guide](../../../docs/harnesses.md#local-docker-sandbox).
-Set `SANDBOX_ENABLED = True` and `REPOSITORY` in `app/sandbox.py` for the target
-repository and branch. Use `SANDBOX_PROVIDER=docker` for this local host setup,
-and keep the Uvicorn process running in a persistent terminal. The host API
-uses Docker directly. Check `/health` and `/config`; Company should list its four tables,
-OS Manager, and the optional coding executors. Never start two APIs on the same port.
+For sandbox development, follow the [sandbox setup guide](../../../docs/harnesses.md#local-docker-sandbox).
+Set `SANDBOX_ENABLED = True` and `REPOSITORY` in `app/sandbox.py`, build the sandbox
+image, and use the same Compose API. Compose selects `SANDBOX_PROVIDER=docker` and
+mounts the daemon socket into the API only; do not mount it into coding sandboxes.
 The pinned framework admits sandbox HTTP runs through the durable PostgreSQL queue.
 Configuration and API startup do not prove execution: verify a coding agent HTTP run and
 Company Task acceptance/completion separately. Keep the Product repository Source aligned
 with `REPOSITORY.url`; never bypass a framework rejection.
-For this host path use `MCP_CHECK_HOST=1 ./scripts/mcp_check.sh` below.
 
 ## 4. Prove it
 

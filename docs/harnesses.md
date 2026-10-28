@@ -22,7 +22,7 @@ setup before enabling them.
 
 Try:
 
-> Read this project and suggest three improvements to its agents. Don't change any files yet.
+> Explain this project and suggest three improvements to its agents. Don't change any files yet.
 
 [agents/engineers.py](../agents/engineers.py) defines their models and harness options.
 To disable an agent, comment out its import and factory call and redeploy.
@@ -43,41 +43,33 @@ REPOSITORY = Repository("https://github.com/YOUR-ORG/YOUR-REPO", branch="main")
 
 `SANDBOX_PROVIDER` selects the backend: `docker` (the local default) or `agentcore`.
 The Render Blueprint sets `agentcore`. This is independent of `RUNTIME_ENV`, which
-controls JWT authorization. Set up the selected backend before deploying this change.
-An invalid provider or missing AgentCore ARN/bucket stops startup when coding agents
-are enabled; it never falls back to execution on the API host.
-
-Set `SANDBOX_ENABLED = False` to return enabled coding agents to direct execution
-on the API host. This does not disable the agents or delete their checkpoints.
+controls JWT authorization. Set up the selected backend before deploying SANDBOX_ENABLED = True.
 
 ### Local Docker sandbox
 
-Run the API on your computer so it can reach Docker. Install [uv](https://docs.astral.sh/uv/)
-and configure `.env` using the [local setup instructions](../README.md#run-locally).
-If a Python environment is active, run `deactivate` first.
+The API and PostgreSQL run in Docker Compose. The API uses Docker to create a separate
+container for each coding session. Configure `.env` using the
+[local setup instructions](../README.md#run-locally), then build the sandbox image and
+start the platform:
 
 ```sh
-docker compose up -d agentos-db
-./scripts/venv_setup.sh
 docker build --target sandbox --load -t agno-sandbox:local .
-docker compose stop agentos-api
-RUNTIME_ENV=dev SANDBOX_PROVIDER=docker DB_HOST=127.0.0.1 DB_PORT=5432 \
-  AGENTOS_URL=http://127.0.0.1:8000 \
-  uv run --no-project --env-file .env --with-requirements requirements.txt \
-  uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload \
-  --reload-dir agents --reload-dir app --reload-dir db --reload-dir evals
+docker compose up -d --build
+./scripts/mcp_check.sh
 ```
 
-Keep that terminal running. From another terminal, check the API's MCP connection:
+The first command builds the Dockerfile's `sandbox` stage and loads it into your local
+Docker image store. Agno starts containers from that image when coding sessions run.
+Rebuild it when you change its dependencies or Dockerfile.
 
-```sh
-MCP_CHECK_HOST=1 ./scripts/mcp_check.sh
-```
+Compose mounts the Docker socket into the API, giving it control of your local Docker
+daemon. Use this setup for trusted local development. The coding sandboxes do not
+receive the socket. Checkpoints are saved in `tmp/checkpoints` through the project mount,
+so they survive API container replacement while those files remain.
 
-Checkpoints are saved in `tmp/checkpoints`. Agno passes the coding agents' model credentials
-to the sandbox. For a private repository, also supply `GITHUB_READ_TOKEN` through the
-provider's `env` mapping. Read its value from your environment or secret store;
-never put the token itself in code. Git push credentials need separate configuration.
+Agno passes the coding agents' model credentials to the sandbox. For a private repository,
+also supply `GITHUB_READ_TOKEN` through the provider's `env` mapping, reading it from your
+environment. See [GitHub access](#publish-changes-to-github) for publishing changes.
 
 ### AWS AgentCore sandbox
 
