@@ -21,7 +21,7 @@ projects:
               - key: RUNTIME_ENV
                 sync: false  # Enter dev for setup, then set prd in the dashboard.
               - key: SANDBOX_PROVIDER
-                value: agentcore  # Used only when SANDBOX_ENABLED is True in code.
+                value: agentcore  # Used when SANDBOX_ENABLED is True in code.
               - key: WAIT_FOR_DB
                 value: "True"
               - key: DB_HOST
