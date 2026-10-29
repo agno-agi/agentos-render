@@ -45,7 +45,8 @@ the old application-owned manager/builder/engineer stack. OS, Company and queue 
 reuse `get_postgres_db()`; knowledge content adapters have distinct IDs.
 
 `app/company.py` defines the daily `agentos-maintenance` review, disabled by default.
-Users enable it in Company; proposed Tasks are not automatically accepted.
+To start it, enable it from the Company page in the AgentOS UI.
+Proposed Tasks are not automatically accepted.
 Check saved schedules and Studio references before renaming or removing components.
 Preserve historical sessions, notes and Company records.
 
