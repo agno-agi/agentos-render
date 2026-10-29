@@ -173,7 +173,7 @@ Future pushes go to your repository. You can still fetch updates from `upstream`
 and review them before merging.
 
 If you use sandboxes, also set the repository URL and branch in
-[the sandbox configuration](docs/harnesses.md#choose-your-repository).
+[the sandbox configuration](docs/harnesses.md#sandboxes-and-checkpoints).
 
 <a id="deploy-in-production"></a>
 
