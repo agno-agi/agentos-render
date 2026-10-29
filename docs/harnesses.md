@@ -77,7 +77,9 @@ It creates the runtime, image repository, checkpoint bucket, and required IAM id
 #### 1. Configure AWS
 
 You need Docker with ARM64 build support and an AWS profile that can manage
-CloudFormation, ECR, AgentCore, S3, and IAM. Prepare your Python environment:
+CloudFormation, ECR, AgentCore, S3, IAM, CloudWatch Logs, and X-Ray. These provisioning
+permissions stay on your computer; the hosted API uses separate credentials.
+Prepare your Python environment:
 
 ```sh
 ./scripts/venv_setup.sh
@@ -104,7 +106,8 @@ Preview the account, region, and resource names:
 scripts/aws.py plan
 ```
 
-`plan` verifies your AWS identity and creates nothing. Check the output before continuing.
+`plan` verifies your AWS identity and shows the current tracing configuration without
+changing anything. Check the account and region before continuing.
 
 <details>
 <summary>Optional setup settings</summary>
@@ -130,7 +133,11 @@ scripts/aws.py apply
 ```
 
 This creates two CloudFormation stacks, builds and uploads the ARM64 sandbox image,
-and waits for the runtime and endpoint to be ready. These resources incur AWS charges.
+and waits for the runtime and endpoint to be ready. It also configures runtime trace
+delivery and enables [CloudWatch Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html)
+if needed. Transaction Search is shared by the AWS account and region; existing
+indexing settings and configured runtime trace delivery are preserved.
+Resources and telemetry incur AWS charges.
 
 Wait for **Sandbox resources are ready**, then keep the printed settings for the
 next steps. To retrieve them again, run `scripts/aws.py status`.
@@ -186,6 +193,21 @@ Repeat for each enabled agent. If it fails, inspect the run error and API logs;
 runtime startup errors are in CloudWatch. A healthy API alone does not prove execution.
 
 <details>
+<summary>View runtime traces</summary>
+
+After running a coding session, open **AgentCore → Observability** in the same AWS
+region and select your sandbox runtime. After first enabling Transaction Search,
+allow about 10 minutes for traces to become searchable.
+
+`scripts/aws.py status` shows whether Transaction Search is active and runtime trace
+delivery is configured. This confirms configuration, not that traces have arrived.
+Use CloudWatch for runtime logs and metrics, and AgentOS for your agent's runs.
+These AWS traces describe runtime activity; model calls and coding-tool spans need
+additional instrumentation and are not enabled by this script.
+
+</details>
+
+<details>
 <summary>Verify checkpoint recovery</summary>
 
 After the test turn finishes and its checkpoint is saved, replace the API instance
@@ -224,7 +246,10 @@ in IAM, then delete the `<DEPLOYMENT_NAME>-runtime` stack followed by
 `<DEPLOYMENT_NAME>-foundation` in CloudFormation.
 
 S3 checkpoints and ECR images are retained. Empty and delete them separately when no
-longer needed; CloudWatch logs may also remain. Retained resources can incur charges.
+longer needed; CloudWatch logs may also remain. The runtime stack deletes trace
+resources it created. Existing external trace delivery and the shared Transaction
+Search setting and log policy are left in place because other workloads may use them.
+Retained resources and telemetry can incur charges.
 
 </details>
 
@@ -244,9 +269,22 @@ For private repositories, configure [GitHub access](#publish-changes-to-github).
 
 ## Publish changes to GitHub
 
-Git and the GitHub CLI are included in both the API and sandbox images. Add `GH_TOKEN`
-to `.env` locally or your API host's environment settings. Scope it to the repositories
-the agents should use, with **Contents** and **Pull requests** read/write permissions.
+Git and the GitHub CLI are included in both the API and sandbox images. Create a
+[fine-grained personal access token](https://github.com/settings/personal-access-tokens/new):
+
+1. Give it a name such as **AgentOS** and choose an expiration date.
+2. Set **Resource owner** to the user or organization that owns the repository.
+3. Under **Repository access**, choose **Only select repositories** and select the
+   repositories your coding agents should work on.
+4. Under **Repository permissions**, set **Contents** and **Pull requests** to
+   **Read and write**. Leave other permissions at their defaults.
+5. Generate the token. If the organization requires approval, have an owner approve
+   it before using it for private access or publishing.
+6. Copy it into `GH_TOKEN` in `.env` locally or your API host's environment settings.
+   Keep it out of source code and agent prompts.
+
+The token acts as your GitHub user and cannot grant access you don't already have.
+If the agent must edit `.github/workflows`, also grant **Workflows: Read and write**.
 
 The template forwards the token to coding sandboxes and configures Git to authenticate
 through `gh`. The same token supports private checkout; set `GITHUB_READ_TOKEN` only

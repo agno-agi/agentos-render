@@ -2,6 +2,7 @@
 """Provision AWS AgentCore sandboxes and S3 checkpoints for your agent platform."""
 
 import base64
+import json
 import os
 import re
 import subprocess
@@ -59,7 +60,13 @@ def plan() -> None:
                 "Runtime": runtime_name(),
             },
         )
+        runtime = stack_outputs(deployment.get_stack(deployment.runtime_stack))
+        show_table("Runtime observability", deployment.observability_status(runtime.get("RuntimeArn")))
         console.print("Creates ECR, an AgentCore runtime, a private S3 bucket, and scoped IAM permissions.")
+        console.print("Enables runtime trace delivery and CloudWatch Transaction Search if needed.")
+        console.print(
+            "Transaction Search is shared by this account and region; existing indexing settings are preserved."
+        )
         console.print("[dim]Read-only preview. Apply creates billable resources; it does not create access keys.[/dim]")
 
 
@@ -120,12 +127,15 @@ class SandboxDeployment:
         session = boto3.Session(profile_name=AWS_PROFILE, region_name=AWS_REGION)
         self.profile = session.profile_name or "default credential chain"
         self.region = session.region_name or "us-east-1"
+        self.partition = session.get_partition_for_region(self.region)
         self.account = session.client("sts", region_name=self.region).get_caller_identity()["Account"]
         self.bucket = BUCKET_NAME or f"{DEPLOYMENT_NAME}-{self.account}-{self.region}"
         validate_bucket(self.bucket)
         self.cloudformation = session.client("cloudformation", region_name=self.region)
         self.ecr = session.client("ecr", region_name=self.region)
         self.agentcore = session.client("bedrock-agentcore-control", region_name=self.region)
+        self.logs = session.client("logs", region_name=self.region)
+        self.xray = session.client("xray", region_name=self.region)
         self.foundation_stack = f"{DEPLOYMENT_NAME}-foundation"
         self.runtime_stack = f"{DEPLOYMENT_NAME}-runtime"
         self.foundation_parameters = {
@@ -234,7 +244,100 @@ class SandboxDeployment:
                 time.sleep(10)
         raise RuntimeError("Timed out waiting for AgentCore. Resources remain available for inspection.")
 
+    def runtime_tracing(self, runtime_arn: str | None) -> str:
+        """Inspect trace delivery configuration without claiming telemetry has arrived."""
+        if not runtime_arn:
+            return "NOT_CONFIGURED"
+        sources = self.logs.get_paginator("describe_delivery_sources")
+        found_source = False
+        for page in sources.paginate(resourceArns=[runtime_arn]):
+            for source in page.get("deliverySources", []):
+                if source["logType"] != "TRACES" or runtime_arn not in source["resourceArns"]:
+                    continue
+                found_source = True
+                if source.get("status") == "INACTIVE":
+                    continue
+                deliveries = self.logs.get_paginator("describe_deliveries")
+                for delivery_page in deliveries.paginate(deliverySourceNames=[source["name"]]):
+                    if any(
+                        item["deliveryDestinationType"] == "XRAY" and item["deliverySourceName"] == source["name"]
+                        for item in delivery_page.get("deliveries", [])
+                    ):
+                        return "CONFIGURED"
+        return "INCOMPLETE" if found_source else "NOT_CONFIGURED"
+
+    def observability_status(self, runtime_arn: str | None) -> dict[str, str]:
+        destination = self.xray.get_trace_segment_destination()
+        state = destination["Status"] if destination["Destination"] == "CloudWatchLogs" else "NOT_ENABLED"
+        return {
+            "TransactionSearch": state,
+            "RuntimeTraceDelivery": self.runtime_tracing(runtime_arn),
+            "CloudWatch": f"https://{self.region}.console.aws.amazon.com/cloudwatch/home?region={self.region}",
+        }
+
+    def enable_transaction_search(self) -> None:
+        """Enable the shared destination without changing existing sampling or policies."""
+        destination = self.xray.get_trace_segment_destination()
+        if destination["Destination"] != "CloudWatchLogs":
+            if destination["Status"] == "PENDING":
+                raise RuntimeError("The X-Ray destination is changing. Wait for it to settle, then run apply again.")
+            policy_name = "agno-agentcore-transaction-search"
+            arn = f"arn:{self.partition}"
+            policy = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "TransactionSearchXRayAccess",
+                        "Effect": "Allow",
+                        "Principal": {"Service": "xray.amazonaws.com"},
+                        "Action": "logs:PutLogEvents",
+                        "Resource": [
+                            f"{arn}:logs:{self.region}:{self.account}:log-group:aws/spans:*",
+                            f"{arn}:logs:{self.region}:{self.account}:log-group:/aws/application-signals/data:*",
+                        ],
+                        "Condition": {
+                            "ArnLike": {"aws:SourceArn": f"{arn}:xray:{self.region}:{self.account}:*"},
+                            "StringEquals": {"aws:SourceAccount": self.account},
+                        },
+                    }
+                ],
+            }
+            existing = None
+            for page in self.logs.get_paginator("describe_resource_policies").paginate():
+                for item in page.get("resourcePolicies", []):
+                    if item["policyName"] == policy_name:
+                        existing = json.loads(item["policyDocument"])
+            if existing is not None and existing != policy:
+                raise RuntimeError(f"{policy_name} already has different permissions. Review it before retrying.")
+            if existing is None:
+                self.logs.put_resource_policy(policyName=policy_name, policyDocument=json.dumps(policy))
+            self.xray.update_trace_segment_destination(Destination="CloudWatchLogs")
+
+        deadline = time.monotonic() + 600
+        with console.status("Waiting for CloudWatch Transaction Search…"):
+            while time.monotonic() < deadline:
+                destination = self.xray.get_trace_segment_destination()
+                if destination["Destination"] == "CloudWatchLogs" and destination["Status"] == "ACTIVE":
+                    return
+                time.sleep(5)
+        raise RuntimeError("Transaction Search is still pending. Wait, then run apply again; settings are retained.")
+
+    def manage_trace_delivery(self) -> str:
+        """Keep stack-owned tracing managed; reuse an existing external delivery."""
+        runtime = stack_outputs(self.get_stack(self.runtime_stack))
+        if "TraceDeliveryArn" in runtime:
+            return "true"
+        state = self.runtime_tracing(runtime.get("RuntimeArn"))
+        if state == "INCOMPLETE":
+            raise RuntimeError(
+                "Existing runtime tracing is incomplete. Repair its CloudWatch delivery before applying."
+            )
+        return "false" if state == "CONFIGURED" else "true"
+
     def provision(self) -> dict[str, str]:
+        manage_traces = self.manage_trace_delivery()
+        console.rule("Enable runtime observability")
+        self.enable_transaction_search()
         console.rule("1 · Create image and checkpoint storage")
         foundation = self.deploy_stack(self.foundation_stack, FOUNDATION_TEMPLATE, self.foundation_parameters)
         console.rule("2 · Build and publish the sandbox image")
@@ -247,9 +350,11 @@ class SandboxDeployment:
                 **self.runtime_parameters,
                 "ImageUri": image,
                 "ExecutionRoleArn": foundation["ExecutionRoleArn"],
+                "CreateTraceDelivery": manage_traces,
             },
         )
         self.wait_for_runtime(runtime["RuntimeId"])
+        runtime.update(self.observability_status(runtime["RuntimeArn"]))
         console.print("[green]Sandbox resources are ready.[/green]")
         return runtime
 
@@ -264,6 +369,7 @@ class SandboxDeployment:
         }
         if "RuntimeId" in result:
             result.update(self.runtime_states(result["RuntimeId"]))
+        result.update(self.observability_status(result.get("RuntimeArn")))
         return result
 
 
@@ -289,6 +395,11 @@ def show_table(title: str, values: dict[str, str]) -> None:
 
 def show_connection(values: dict[str, str], region: str) -> None:
     show_table("AWS sandbox", values)
+    console.print(
+        "[dim]Trace delivery status describes configuration, not received data. "
+        "Run a sandbox session, then inspect AgentCore Observability or CloudWatch; "
+        "new traces can take about 10 minutes to appear.[/dim]"
+    )
     if not all(key in values for key in ("RuntimeArn", "CheckpointBucket", "CheckpointPrefix", "ApplicationUser")):
         console.print(
             "[yellow]Setup is incomplete. Run apply for a new setup, or inspect CloudFormation events.[/yellow]"
@@ -326,7 +437,7 @@ def report_errors() -> Iterator[None]:
         raise typer.Exit(code=1) from None
 
 
-# CloudFormation owns the resources; keep the declarations here so setup is one file.
+# CloudFormation owns deployment resources; Transaction Search is shared account state.
 FOUNDATION_TEMPLATE = """\
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Image storage, checkpoint storage and execution role for an Agno sandbox.
@@ -448,6 +559,12 @@ Parameters:
     Type: String
   CheckpointPrefix:
     Type: String
+  CreateTraceDelivery:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+Conditions:
+  ManageTraceDelivery: !Equals [!Ref CreateTraceDelivery, 'true']
 Resources:
   Runtime:
     Type: AWS::BedrockAgentCore::Runtime
@@ -463,6 +580,26 @@ Resources:
       LifecycleConfiguration:
         IdleRuntimeSessionTimeout: 900
         MaxLifetime: 3600
+  RuntimeTraceSource:
+    Type: AWS::Logs::DeliverySource
+    Condition: ManageTraceDelivery
+    Properties:
+      Name: !Sub '${RuntimeName}-traces'
+      LogType: TRACES
+      ResourceArn: !GetAtt Runtime.AgentRuntimeArn
+  RuntimeTraceDestination:
+    Type: AWS::Logs::DeliveryDestination
+    Condition: ManageTraceDelivery
+    Properties:
+      Name: !Sub '${RuntimeName}-xray'
+      DeliveryDestinationType: XRAY
+  RuntimeTraceDelivery:
+    Type: AWS::Logs::Delivery
+    Condition: ManageTraceDelivery
+    DependsOn: RuntimeTraceSource
+    Properties:
+      DeliverySourceName: !Sub '${RuntimeName}-traces'
+      DeliveryDestinationArn: !GetAtt RuntimeTraceDestination.Arn
   ApplicationCaller:
     Type: AWS::IAM::User
     Properties:
@@ -486,6 +623,9 @@ Resources:
                 Action: s3:ListBucket
                 Resource: !Sub 'arn:${AWS::Partition}:s3:::${BucketName}'
 Outputs:
+  TraceDeliveryArn:
+    Condition: ManageTraceDelivery
+    Value: !GetAtt RuntimeTraceDelivery.Arn
   RuntimeArn:
     Value: !GetAtt Runtime.AgentRuntimeArn
   RuntimeId:
