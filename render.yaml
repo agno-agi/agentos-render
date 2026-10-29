@@ -9,7 +9,7 @@ projects:
             type: web
             runtime: docker
             region: virginia
-            plan: starter  # Always-on for scheduled work and MCP connections.
+            plan: 1c-2g  # 1 CPU, 2 GB RAM; always-on for scheduled work and MCP.
             numInstances: 1
             dockerfilePath: ./Dockerfile
             dockerContext: .
@@ -20,6 +20,8 @@ projects:
                 sync: false
               - key: RUNTIME_ENV
                 sync: false  # Enter dev for setup, then set prd in the dashboard.
+              - key: SANDBOX_PROVIDER
+                value: agentcore  # Used when SANDBOX_ENABLED is True in code.
               - key: WAIT_FOR_DB
                 value: "True"
               - key: DB_HOST

@@ -39,7 +39,8 @@ For a new deployment, guide the user through [Render](https://dashboard.render.c
 4. Review the resources and billing, then choose **Deploy Blueprint**.
 5. Wait for the API to become live and copy its public HTTPS URL.
 
-Start with the Blueprint's one always-on API instance and PostgreSQL 18 database.
+Start with the Blueprint's one always-on API instance with 1 CPU and 2 GB RAM
+(`1c-2g`) and PostgreSQL 18 database.
 Confirm both use **Virginia** (`region: virginia`) before deploying.
 Preserve the database references. Initial setup runs without authentication;
 continue directly to securing the application below. For an existing secured
@@ -100,5 +101,5 @@ settings in **Environment** and save and deploy. Keep infrastructure changes in
 `render.yaml`; Blueprint sync can overwrite conflicting dashboard settings.
 Preserve the database and saved application state during updates.
 
-When requested, follow [sandboxes](../../../docs/sandboxes.md) for hosted engineer
+When requested, follow [sandboxes](../../../docs/harnesses.md) for hosted coding agent
 execution and durable checkpoints, or [scaling](../../../docs/scaling.md) for replicas.
