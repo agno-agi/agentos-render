@@ -242,6 +242,34 @@ Start a new conversation after changing repositories. Without a sandbox, the age
 work in the API's project directory; this URL alone does not change that directory.
 For private repositories, configure [GitHub access](#publish-changes-to-github).
 
+## Publish changes to GitHub
+
+Git and the GitHub CLI are included in both the API and sandbox images. Add `GH_TOKEN`
+to `.env` locally or your API host's environment settings. Scope it to the repositories
+the agents should use, with **Contents** and **Pull requests** read/write permissions.
+
+The template forwards the token to coding sandboxes and configures Git to authenticate
+through `gh`. The same token supports private checkout; set `GITHUB_READ_TOKEN` only
+if you want a separate checkout credential. No interactive GitHub login is needed.
+
+Commits default to `AgentOS <agentos@localhost>`. To use your own identity, set
+`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and `GIT_COMMITTER_EMAIL`.
+These settings are also forwarded to sandboxes. For different repository credentials,
+pass overrides through the provider's `env` argument.
+
+Redeploy the API after changing environment settings and start a new coding conversation.
+When upgrading an older sandbox image, rebuild it locally or run `scripts/aws.py apply`
+for AgentCore once. Later token changes do not require rebuilding the image.
+
+Try:
+
+> Make a small improvement on a new branch, run the relevant checks, and open a pull
+> request. Do not merge it.
+
+Review the PR before scheduling improvement work. In direct mode, the deployed API
+image has no `.git` directory; ask the agent to clone the repository into a separate
+writable directory first. Sandbox sessions already have their repository checkout.
+
 ## Add agents for more repositories
 
 You can run several Claude and Codex agents on the same platform: a pair for the
@@ -315,40 +343,6 @@ suggested prompts to [app/config.yaml](../app/config.yaml), then format and rede
 Each conversation has its own checkout and sandbox state. Share work through Git
 commits and PRs. Scope GitHub credentials to the intended repositories; different
 agent IDs do not restrict a shared token's access.
-
-## Publish changes to GitHub
-
-Git and the GitHub CLI are included in both the API and sandbox images. Add `GH_TOKEN`
-to `.env` locally or your API host's environment settings. Scope it to the repositories
-the agents should use, with **Contents** and **Pull requests** read/write permissions.
-
-The template forwards the token to coding sandboxes and configures Git to authenticate
-through `gh`. The same token supports private checkout; set `GITHUB_READ_TOKEN` only
-if you want a separate checkout credential. No interactive GitHub login is needed.
-
-Commits default to `AgentOS <agentos@localhost>`. To use your own identity, set
-`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and `GIT_COMMITTER_EMAIL`.
-These settings are also forwarded to sandboxes. For different repository credentials,
-pass overrides through the provider's `env` argument.
-
-Redeploy the API after changing environment settings and start a new coding conversation.
-When upgrading an older sandbox image, rebuild it locally or run `scripts/aws.py apply`
-for AgentCore once. Later token changes do not require rebuilding the image.
-
-Try:
-
-> Make a small improvement on a new branch, run the relevant checks, and open a pull
-> request. Do not merge it.
-
-Review the PR before scheduling improvement work. In direct mode, the deployed API
-image has no `.git` directory; ask the agent to clone the repository into a separate
-writable directory first. Sandbox sessions already have their repository checkout.
-
-## Company Tasks
-
-For Company Tasks, configure a Product with a saved Git Source matching the coding
-agent's repository URL. Keep the platform's local Source too. Registering an agent
-does not create these records; verify a Company Task completes separately from chat.
 
 ## Scaling
 
