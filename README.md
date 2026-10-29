@@ -1,29 +1,29 @@
-# AgentOS: The Agent Platform That Builds Itself
+# AgentOS: The self-driving agent platform
 
-AgentOS is a durable agent runtime that serves agents over API, MCP, and chat interfaces like Slack.
-Build agents for your product, your team, or yourself. Run them in your own cloud,
-keep their data in your own database, and manage them from [AgentOS](https://os.agno.com).
+Build agents for your product, your company, or your customers. Run them as durable
+services on AgentOS. Put them to work automating company operations.
+
+- **Build** agents with the Agno, Claude Agent, or Codex SDKs. Combine agents into
+  teams and workflows.
+- **Run** agents as durable services with built-in API and MCP. AgentOS handles
+  authentication, role-based access, human approvals, scheduling, and durable execution.
+- **Automate** company operations with Company OS. Give agents responsibilities,
+  organize work into projects and tasks, and configure recurring routines. People set
+  direction and review results; agents own and execute.
 
 Built with [Agno](https://github.com/agno-agi/agno), this template gives you a working
 agent platform that you can run locally or deploy to Render.
 
-**Three ways to build agents.**
+Use your agents in:
 
-1. **Use a coding agent.** Open the repo in Claude Code, Codex, or Cursor. The included
-   skills help it create, test, and improve your agents.
-2. **Describe what you need.** Chat with OS Manager, the built-in agent that helps you
-   manage the platform and build new agents.
-3. **Use Studio.** Build agents visually in [AgentOS Studio](https://os.agno.com).
+1. **Your product:** call them through the REST API.
+2. **Claude and ChatGPT:** connect through the MCP server.
+3. **Slack:** connect a Slack app to talk to OS Manager from your workspace.
 
-**Three ways to use your agents.**
-
-1. **In your product.** Call your agents through the REST API.
-2. **In AI apps.** Connect apps such as Claude and ChatGPT through MCP.
-3. **In Slack.** Connect a Slack app to talk to OS Manager from your workspace.
-
-The AgentOS UI lets you chat with your agents, review past conversations, and see
-the steps an agent took. Your PostgreSQL database stores conversations, memories,
-and Company work.
+Run your platform in your own cloud and keep your data in your own PostgreSQL database.
+Use the [AgentOS UI](https://os.agno.com) to review conversations, inspect traces,
+manage knowledge, and track your agents' work. Build agents with code, use Studio,
+or chat with OS Manager.
 
 ## Get started
 
