@@ -35,12 +35,17 @@ A sandbox gives each coding session its own environment and repository checkout.
 Checkpoints save its files and native coding session for recovery.
 Choose **Docker for local development** or **AgentCore for a hosted platform**.
 
-In [app/sandbox.py](../app/sandbox.py), enable sandboxes and set the repository:
+In [app/sandbox.py](../app/sandbox.py), enable sandboxes and set the repository and
+branch. Use your copy of this platform or another project:
 
 ```python
 SANDBOX_ENABLED = True
 REPOSITORY = Repository("https://github.com/YOUR-ORG/YOUR-REPO", branch="main")
 ```
+
+Both included coding agents use this repository. Start a new conversation after
+changing it. For private repositories, configure [GitHub access](#publish-changes-to-github).
+The repository setting only applies when sandboxes are enabled.
 
 Complete the backend setup below before deploying this change. Compose selects
 `SANDBOX_PROVIDER=docker`; the Render Blueprint selects `agentcore`.
@@ -79,7 +84,8 @@ It creates the runtime, image repository, checkpoint bucket, and required IAM id
 You need Docker with ARM64 build support and an AWS profile that can manage
 CloudFormation, ECR, AgentCore, S3, IAM, CloudWatch Logs, and X-Ray. These provisioning
 permissions stay on your computer; the hosted API uses separate credentials.
-Prepare your Python environment:
+Prepare your Python environment. If this repository's `.venv` is already active,
+skip these commands. If another environment is active, run `deactivate` first:
 
 ```sh
 ./scripts/venv_setup.sh
@@ -252,20 +258,6 @@ Search setting and log policy are left in place because other workloads may use 
 Retained resources and telemetry can incur charges.
 
 </details>
-
-## Choose your repository
-
-With sandboxes enabled, both included agents use `REPOSITORY` in
-[app/sandbox.py](../app/sandbox.py). Point it at your copy of this platform or another
-project:
-
-```python
-REPOSITORY = Repository("https://github.com/YOUR-ORG/website", branch="main")
-```
-
-Start a new conversation after changing repositories. Without a sandbox, the agents
-work in the API's project directory; this URL alone does not change that directory.
-For private repositories, configure [GitHub access](#publish-changes-to-github).
 
 ## Publish changes to GitHub
 
