@@ -77,7 +77,9 @@ It creates the runtime, image repository, checkpoint bucket, and required IAM id
 #### 1. Configure AWS
 
 You need Docker with ARM64 build support and an AWS profile that can manage
-CloudFormation, ECR, AgentCore, S3, and IAM. Prepare your Python environment:
+CloudFormation, ECR, AgentCore, S3, IAM, CloudWatch Logs, and X-Ray. These provisioning
+permissions stay on your computer; the hosted API uses separate credentials.
+Prepare your Python environment:
 
 ```sh
 ./scripts/venv_setup.sh
@@ -104,7 +106,8 @@ Preview the account, region, and resource names:
 scripts/aws.py plan
 ```
 
-`plan` verifies your AWS identity and creates nothing. Check the output before continuing.
+`plan` verifies your AWS identity and shows the current tracing configuration without
+changing anything. Check the account and region before continuing.
 
 <details>
 <summary>Optional setup settings</summary>
@@ -130,7 +133,11 @@ scripts/aws.py apply
 ```
 
 This creates two CloudFormation stacks, builds and uploads the ARM64 sandbox image,
-and waits for the runtime and endpoint to be ready. These resources incur AWS charges.
+and waits for the runtime and endpoint to be ready. It also configures runtime trace
+delivery and enables [CloudWatch Transaction Search](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Enable-TransactionSearch.html)
+if needed. Transaction Search is shared by the AWS account and region; existing
+indexing settings and configured runtime trace delivery are preserved.
+Resources and telemetry incur AWS charges.
 
 Wait for **Sandbox resources are ready**, then keep the printed settings for the
 next steps. To retrieve them again, run `scripts/aws.py status`.
@@ -186,6 +193,21 @@ Repeat for each enabled agent. If it fails, inspect the run error and API logs;
 runtime startup errors are in CloudWatch. A healthy API alone does not prove execution.
 
 <details>
+<summary>View runtime traces</summary>
+
+After running a coding session, open **AgentCore → Observability** in the same AWS
+region and select your sandbox runtime. After first enabling Transaction Search,
+allow about 10 minutes for traces to become searchable.
+
+`scripts/aws.py status` shows whether Transaction Search is active and runtime trace
+delivery is configured. This confirms configuration, not that traces have arrived.
+Use CloudWatch for runtime logs and metrics, and AgentOS for your agent's runs.
+These AWS traces describe runtime activity; model calls and coding-tool spans need
+additional instrumentation and are not enabled by this script.
+
+</details>
+
+<details>
 <summary>Verify checkpoint recovery</summary>
 
 After the test turn finishes and its checkpoint is saved, replace the API instance
@@ -224,7 +246,10 @@ in IAM, then delete the `<DEPLOYMENT_NAME>-runtime` stack followed by
 `<DEPLOYMENT_NAME>-foundation` in CloudFormation.
 
 S3 checkpoints and ECR images are retained. Empty and delete them separately when no
-longer needed; CloudWatch logs may also remain. Retained resources can incur charges.
+longer needed; CloudWatch logs may also remain. The runtime stack deletes trace
+resources it created. Existing external trace delivery and the shared Transaction
+Search setting and log policy are left in place because other workloads may use them.
+Retained resources and telemetry can incur charges.
 
 </details>
 
@@ -241,6 +266,47 @@ REPOSITORY = Repository("https://github.com/YOUR-ORG/website", branch="main")
 Start a new conversation after changing repositories. Without a sandbox, the agents
 work in the API's project directory; this URL alone does not change that directory.
 For private repositories, configure [GitHub access](#publish-changes-to-github).
+
+## Publish changes to GitHub
+
+Git and the GitHub CLI are included in both the API and sandbox images. Create a
+[fine-grained personal access token](https://github.com/settings/personal-access-tokens/new):
+
+1. Give it a name such as **AgentOS** and choose an expiration date.
+2. Set **Resource owner** to the user or organization that owns the repository.
+3. Under **Repository access**, choose **Only select repositories** and select the
+   repositories your coding agents should work on.
+4. Under **Repository permissions**, set **Contents** and **Pull requests** to
+   **Read and write**. Leave other permissions at their defaults.
+5. Generate the token. If the organization requires approval, have an owner approve
+   it before using it for private access or publishing.
+6. Copy it into `GH_TOKEN` in `.env` locally or your API host's environment settings.
+   Keep it out of source code and agent prompts.
+
+The token acts as your GitHub user and cannot grant access you don't already have.
+If the agent must edit `.github/workflows`, also grant **Workflows: Read and write**.
+
+The template forwards the token to coding sandboxes and configures Git to authenticate
+through `gh`. The same token supports private checkout; set `GITHUB_READ_TOKEN` only
+if you want a separate checkout credential. No interactive GitHub login is needed.
+
+Commits default to `AgentOS <agentos@localhost>`. To use your own identity, set
+`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and `GIT_COMMITTER_EMAIL`.
+These settings are also forwarded to sandboxes. For different repository credentials,
+pass overrides through the provider's `env` argument.
+
+Redeploy the API after changing environment settings and start a new coding conversation.
+When upgrading an older sandbox image, rebuild it locally or run `scripts/aws.py apply`
+for AgentCore once. Later token changes do not require rebuilding the image.
+
+Try:
+
+> Make a small improvement on a new branch, run the relevant checks, and open a pull
+> request. Do not merge it.
+
+Review the PR before scheduling improvement work. In direct mode, the deployed API
+image has no `.git` directory; ask the agent to clone the repository into a separate
+writable directory first. Sandbox sessions already have their repository checkout.
 
 ## Add agents for more repositories
 
@@ -315,40 +381,6 @@ suggested prompts to [app/config.yaml](../app/config.yaml), then format and rede
 Each conversation has its own checkout and sandbox state. Share work through Git
 commits and PRs. Scope GitHub credentials to the intended repositories; different
 agent IDs do not restrict a shared token's access.
-
-## Publish changes to GitHub
-
-Git and the GitHub CLI are included in both the API and sandbox images. Add `GH_TOKEN`
-to `.env` locally or your API host's environment settings. Scope it to the repositories
-the agents should use, with **Contents** and **Pull requests** read/write permissions.
-
-The template forwards the token to coding sandboxes and configures Git to authenticate
-through `gh`. The same token supports private checkout; set `GITHUB_READ_TOKEN` only
-if you want a separate checkout credential. No interactive GitHub login is needed.
-
-Commits default to `AgentOS <agentos@localhost>`. To use your own identity, set
-`GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and `GIT_COMMITTER_EMAIL`.
-These settings are also forwarded to sandboxes. For different repository credentials,
-pass overrides through the provider's `env` argument.
-
-Redeploy the API after changing environment settings and start a new coding conversation.
-When upgrading an older sandbox image, rebuild it locally or run `scripts/aws.py apply`
-for AgentCore once. Later token changes do not require rebuilding the image.
-
-Try:
-
-> Make a small improvement on a new branch, run the relevant checks, and open a pull
-> request. Do not merge it.
-
-Review the PR before scheduling improvement work. In direct mode, the deployed API
-image has no `.git` directory; ask the agent to clone the repository into a separate
-writable directory first. Sandbox sessions already have their repository checkout.
-
-## Company Tasks
-
-For Company Tasks, configure a Product with a saved Git Source matching the coding
-agent's repository URL. Keep the platform's local Source too. Registering an agent
-does not create these records; verify a Company Task completes separately from chat.
 
 ## Scaling
 
