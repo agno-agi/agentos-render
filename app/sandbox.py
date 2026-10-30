@@ -8,9 +8,9 @@ from agno.sandbox import Repository, Sandbox
 from agno.sandbox.checkpoint import FileCheckpointStore
 from agno.sandbox.docker import DockerSandbox
 
-SANDBOX_ENABLED = False
+SANDBOX_ENABLED = True
 # Set your repository and branch before enabling sandboxes.
-REPOSITORY: Repository | None = None
+REPOSITORY: Repository | None = Repository(url="https://github.com/agno-agi/agentos-render", branch="template-demo")
 LOCAL_CHECKPOINTS = Path(__file__).resolve().parents[1] / "tmp" / "checkpoints"
 
 

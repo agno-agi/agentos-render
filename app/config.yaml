@@ -1,4 +1,10 @@
 manifest:
+  daily-brief:
+    description: "A three-minute daily edition on agent frameworks, model and coding-agent releases, and agents in production."
+    quick_prompts:
+      - "Write today's edition."
+      - "What did the last edition cover, and what has changed since?"
+      - "What preferences have you saved for me, and how do they shape the edition?"
   os-manager-internal:
     description: "Build agents, check platform health, and coordinate work across this AgentOS."
     quick_prompts:
