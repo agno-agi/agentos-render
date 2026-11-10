@@ -41,9 +41,9 @@ Confirm the slug is code, not a Studio-built component:
 curl -s http://localhost:8000/agents | jq -r '.[] | "\(.id)\tis_component=\(.is_component)"'
 ```
 
-`is_component=true` has no source file — route the change through OS Manager (`edit_agent` / `edit_team` / `edit_workflow`, then `publish_component`). Never create `agents/<slug>.py` under that id: code wins on resolution and silently shadows the built component.
+`is_component=true` has no source file — route the change through Super Agent (`edit_agent` / `edit_team` / `edit_workflow`, then `publish_component`). Never create `agents/<slug>.py` under that id: code wins on resolution and silently shadows the built component.
 
-Open the user's `agents/<slug>.py`. For OS Manager (`os-manager-internal`), inspect its `OSManager(...)` configuration in [`app/main.py`](../../../app/main.py) and the installed framework source; its members are framework-owned. Capture purpose, tools, learning, knowledge and model. Do not recreate the internal agents in this template.
+Open the user's `agents/<slug>.py`. For Super Agent (`superagent`), inspect its `OSManager(...)` configuration in [`app/main.py`](../../../app/main.py) and the installed framework source; Platform Builder, its only member, is framework-owned. Capture purpose, tools, learning, knowledge and model. Do not recreate the internal agents in this template.
 
 ## 2. Resolve the requested change
 
@@ -86,7 +86,7 @@ Repo-specific rules per branch:
   runtime. Verify name collisions and the Studio-visible catalog rather than assuming a
   successfully imported toolkit is buildable. MCP toolkits (such as `parallel_tools`) register
   their functions only after connecting, so an empty function list from a fresh Python process
-  is expected for them; confirm those with the OS Manager `list_tools` check in Step 6.
+  is expected for them; confirm those with the Super Agent `list_tools` check in Step 6.
 
 
 - **Refine instructions** — propose a minimal diff; narrow ("on recent-events questions, follow up with a `web_fetch`") rather than forbid.
@@ -116,7 +116,7 @@ if startup fails. Confirm the intended code and component IDs are served before 
 Use `--form-string` for literal fields so semicolons and leading `@` in user input
 are sent unchanged. Check the saved input when a response seems to ignore part of the request.
 
-Pick a prompt that exercises the change. Use `/agents/<id>/runs` for agents or `/teams/<id>/runs` for the actual target team (OS Manager is `os-manager-internal`). The example assumes the local development endpoint:
+Pick a prompt that exercises the change. Use `/agents/<id>/runs` for agents or `/teams/<id>/runs` for the actual target team (Super Agent is `superagent`). The example assumes the local development endpoint:
 
 ```bash
 curl -sS -X POST http://localhost:8000/agents/<slug>/runs \
@@ -129,9 +129,9 @@ jq -r '.content // .' < /tmp/extend-out.json
 
 Inspect the run status, answer, tool results and matching runtime logs; HTTP 200 alone is not success. Use the configured endpoint/authentication when different from the example.
 
-A registry change gets one check first — ask `os-manager-internal`: *"Call list_tools and show the row for <tool> exactly as returned — name, buildable, source. Do not create anything."* `buildable: true`, `source: declared` means it landed; `discovered` means it came from boot discovery and a build will refuse it.
+A registry change gets one check first — ask `superagent`: *"Call list_tools and show the row for <tool> exactly as returned — name, buildable, source. Do not create anything."* `buildable: true`, `source: declared` means it landed; `discovered` means it came from boot discovery and a build will refuse it.
 
-**Side effects.** `os-manager-internal` creates and publishes real components on "build me…" prompts, and learning components (`os-manager-internal`, anything with `learning=`) file what they're told into shared stores. Cases run through `python -m evals` against the application's configured database, where sessions and results persist for the UI. Use explicitly owned fixtures for mutating cases and never sweep shared data after probes. Verify HTTP availability separately from model behavior.
+**Side effects.** `superagent` creates and publishes real components on "build me…" prompts, and learning components (`superagent`, anything with `learning=`) file what they're told into shared stores. Cases run through `python -m evals` against the application's configured database, where sessions and results persist for the UI. Use explicitly owned fixtures for mutating cases and never sweep shared data after probes. Verify HTTP availability separately from model behavior.
 
 Did the change land? Yes → Step 7. Almost → one more pass, at most 2–3, then ask how to proceed. Worse → show `git diff` and offer to revert only your patch.
 

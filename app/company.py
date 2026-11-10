@@ -9,6 +9,10 @@ from agno.company import Product, Routine, Source
 
 from app.sandbox import REPOSITORY
 
+# Seed the company record. Edits made in AgentOS replace these and survive restarts.
+COMPANY_NAME = "Company"
+COMPANY_DESCRIPTION: str | None = None
+
 MAINTENANCE = """\
 Create Projects and Tasks to improve this AgentOS. Read the Product context, existing work
 and AGENTS.md, then review Agno releases since the pinned version and this codebase.
@@ -30,10 +34,9 @@ products = [
             *([Source(type="git", reference=REPOSITORY.url)] if REPOSITORY is not None else []),
         ],
         routines=[
+            # No executor: the Routine runs on Agno's default Routine executor.
             Routine(
                 name="agentos-maintenance",
-                executor_type="agent",
-                executor_id="company-manager-internal",
                 cron_expr="0 9 * * *",
                 instructions=MAINTENANCE,
                 enabled=False,

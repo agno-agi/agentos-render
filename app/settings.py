@@ -14,5 +14,5 @@ def default_model() -> OpenAIResponses:
 
 
 def manager_model() -> OpenAIResponses:
-    """Model for OS Manager and Company Product Manager."""
+    """Model for Super Agent and Mini Agent, which runs Company Routines."""
     return OpenAIResponses(id="gpt-6.1-sol")

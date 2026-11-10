@@ -18,7 +18,7 @@ Preconditions: configured PostgreSQL reachable, venv active (`source .venv/bin/a
 The user's choice, or the least-covered component — almost always one of theirs. Source components have a file under `agents/` or `teams/`. Studio-built components have none: `Agent.load("<id>", db=get_postgres_db(), registry=registry, published_only=True)` (or `Team.load`) rehydrates the published config at import time; it returns `None` for an archived or unpublished component, and a `Case` with neither field set raises — guard the load or the whole suite fails at import. Workflows cannot be case targets.
 
 Before cases that use MCP, inspect `evals/__main__.py`: it currently collects MCP tools
-from OS Manager. Ensure the target's required MCP tools are connected in the eval loop;
+from Super Agent. Ensure the target's required MCP tools are connected in the eval loop;
 API-side connections do not carry into a separate CLI process. Use the pinned framework
 collection helpers in the existing entrypoint when additional target tools are needed.
 

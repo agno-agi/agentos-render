@@ -1,18 +1,11 @@
 manifest:
-  os-manager-internal:
-    description: "Build agents, check platform health, and coordinate work across this AgentOS."
+  superagent:
+    description: "Ask for what you need. Super Agent plans the work, builds agents, teams and workflows, and checks the platform."
     quick_prompts:
-      - "Show me the available agents and explain when to use each one."
-      - "Check platform health and explain any issues that need my attention."
-      - "Create and publish an agent that turns pasted meeting notes into decisions, action items, and open questions. Use the default model and no tools."
-      - "Summarize the Projects and Tasks for AgentOS, highlighting blockers and decisions awaiting review."
-  company-manager-internal:
-    description: "Review Sources, plan work across Products and Projects, and propose improvements for human review."
-    quick_prompts:
-      - "Summarize the latest maintenance review for AgentOS and any proposed work. If no review has run, say so."
-      - "Review the configured Sources for AgentOS. Explain relevant changes and their impact without creating work."
-      - "Propose up to three improvements for AgentOS with evidence, expected impact, and acceptance criteria. Check for duplicates first; leave proposals for review without accepting or executing them."
-      - "Review existing Projects and Tasks for AgentOS. Identify overlaps, missing evidence, and unclear acceptance criteria without changing them."
+      - "Ask me what my company does and what I'm working on."
+      - "What work is in progress, and what needs my decision?"
+      - "Build an agent that turns meeting notes into decisions, action items and open questions."
+      - "Check platform health and tell me what needs attention."
   claude-engineer:
     description: "Explain, review, and improve repository code using Claude."
     quick_prompts:

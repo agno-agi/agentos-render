@@ -172,7 +172,7 @@ scenario and rubric, relevant knowledge versions, observed results and run/eval 
 the responsible layer: knowledge, instructions, tools, code or workflow. Keep each change
 specific to the evidence, and correct expectations only when they are demonstrably wrong.
 
-OS Manager, Company Manager, their internal members and generic behavior belong to Agno.
+Super Agent, Platform Builder, Mini Agent and generic behavior belong to Agno.
 For a framework defect, report the reproducer and required upstream change; do not recreate
 internal agents, weaken authorization or add template prompt workarounds. Database/schema,
 deployment and new-capability work must fit the user's scope. For Studio components, use

@@ -40,7 +40,7 @@ report the runtime verification gap.
 
 Do not register every file found under `agents/` or invent manifest entries for internal
 components: determine whether it is an intended public component, a helper or framework-owned.
-OS Manager, its members and Company Manager are framework-owned; do not restore
+Super Agent, Platform Builder and Mini Agent are framework-owned; do not restore
 the old application-owned manager/builder/engineer stack. OS, Company and queue storage
 reuse `get_postgres_db()`; knowledge content adapters have distinct IDs.
 

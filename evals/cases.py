@@ -8,10 +8,10 @@ CASES = (
     Case(
         name="manager_explains_application",
         team=agent_os.manager,
-        input="Read README.md. Explain how to start this application, talk to OS Manager and add an agent. "
+        input="Read README.md. Explain how to start this application, talk to Super Agent and add an agent. "
         "Do not create or change anything.",
         criteria="Give actionable startup instructions grounded in README.md, including .env and OPENAI_API_KEY "
-        "configuration, the startup command, a documented way to chat with OS Manager, and how to add an agent. "
+        "configuration, the startup command, a documented way to chat with Super Agent, and how to add an agent. "
         "Do not claim to have started the application or created an agent.",
         expected_tool_calls=("read_file",),
         tags=("smoke",),

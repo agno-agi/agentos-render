@@ -17,7 +17,7 @@ Take the user from a fresh clone to a running platform with their first agent li
 Kicking off /setup-platform. Here's the map:
 
 1. Docker — confirm it's installed and running
-2. Environment — .env and your OpenAI key
+2. Environment — .env, your OpenAI key and your company
 3. Boot — build and start the platform containers
 4. Prove it — MCP handshake and tools; an optional agent answer
 5. Connect the UI — os.agno.com, one click
@@ -40,6 +40,9 @@ If `.env` does not exist, `cp example.env .env`, then set `OPENAI_API_KEY`:
 
 - Already in their shell → copy the credentials across without displaying or logging their values.
 - Otherwise open `.env` in their editor (`cursor`, `code`) and ask them to paste it. Never open a terminal editor from your shell — it hangs the session.
+
+Ask what the company is called and, in a sentence, what it does. Set `COMPANY_NAME` and
+`COMPANY_DESCRIPTION` in [`app/company.py`](../../../app/company.py). Super Agent reads them on every run.
 
 Coding agents are opt-in; see [harness setup](../../../docs/harnesses.md).
 If enabled, Claude Engineer needs its own credentials. If the user chooses Claude Code OAuth, remove
@@ -94,7 +97,7 @@ A product name or URL is context; it does not by itself request a documentation 
 Follow create-agent through its smoke test, then land where the agent now lives, in the same breath as its first answer:
 
 - **In the UI** — **Refresh** puts it in the Agents list. Show its knowledge base only if one was created.
-- **On OS Manager's roster** — registering in `app/main.py` lets OS Manager run it by name ("OS Manager, ask the <agent name>…" through the `os_manager` MCP tool) from the UI or an MCP client; Slack when configured.
+- **On Super Agent's roster** — registering in `app/main.py` lets Super Agent run it by name ("Super Agent, ask the <agent name>…" through the `super_agent` MCP tool) from the UI or an MCP client; Slack when configured.
 - **Ready to serve** — REST inside their product and MCP now; claude.ai and ChatGPT once deployed (Step 8).
 
 Stop before create-agent's own closing — Steps 7 and 8 replace it. If they push back or want to stop, adapt and carry on.

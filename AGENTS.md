@@ -7,8 +7,8 @@ generic manager behavior belongs in Agno. `CLAUDE.md` links to this file.
 
 - Read the relevant source and inspect `git status` before editing. Preserve unrelated
   changes and keep work within the requested scope.
-- Agno owns OS Manager (`os-manager-internal`), its members, source tools, Studio,
-  Company Manager (`company-manager-internal`), authorization, durable execution and sandbox lifecycle.
+- Agno owns Super Agent (`superagent`), Platform Builder, Mini Agent (`miniagent`), source tools,
+  Studio, authorization, durable execution and sandbox lifecycle.
   Configure `OSManager(root=agentos_root)` in `app/main.py`; do not recreate these components
   or add application-owned queues, lifecycle code or Company state machines.
 - Check framework behavior against the Agno version pinned in `pyproject.toml`.
@@ -33,9 +33,9 @@ workflows in `.agents/skills/`; `.claude/skills` links to that directory.
 
 ## Where changes belong
 
-- `app/main.py`: AgentOS registration, shared database, OS Manager, Company and queue.
-- `app/interfaces.py`: MCP OAuth, `os_manager` and built-in MCP tools, optional Slack.
-- `app/company.py`: Product and Source declarations. `app/config.yaml`: component
+- `app/main.py`: AgentOS registration, shared database, Super Agent, Company and queue.
+- `app/interfaces.py`: MCP OAuth, `super_agent` and built-in MCP tools, optional Slack.
+- `app/company.py`: company name and description, Product and Source declarations. `app/config.yaml`: component
   descriptions, prompts and optional additional Products.
 - `app/registry.py`: Studio palette, web tools, shared knowledge, learning and notes.
   `app/settings.py`: application model factories.
@@ -87,8 +87,8 @@ Knowledge content adapters need distinct IDs; never create a second adapter with
 
 Company Products contain Projects and Routines; Tasks belong to Projects. On the current
 pin, Product metadata PATCH replaces the whole dictionary. Preserve existing metadata.
-`app/company.py` declares `agentos-maintenance` for every day at 09:00 UTC, executed by
-Company Manager (`company-manager-internal`, executor type `agent`). It reviews Agno
+`app/company.py` declares `agentos-maintenance` for every day at 09:00 UTC. It names no
+executor, so it runs on Agno's default Routine executor, Mini Agent. It reviews Agno
 releases and this codebase and proposes up to three Backlog Tasks, reusing existing
 proposals. The routine is disabled by default (`enabled=False`);
 enable it from the Company page in the AgentOS UI.
@@ -100,10 +100,12 @@ Company writes are governed by permission scopes, not record ownership; `user_id
 records the creator. Task run sessions retain their ownership checks. Manual triggers
 for auto-accept Routines require the acceptance grantor.
 
-The current pin permits Company Manager as a Routine executor; OS Manager and its
-specialists remain excluded. Before adding a Routine, verify executor support and
-the caller's authorization. Do not register internal manager members to bypass
-executor restrictions.
+Declare Routines without `executor_type` and `executor_id` so they follow Agno's default
+executor as it changes. Name an executor only when a registered application agent, team or
+workflow should run the Routine. Agno refuses Super Agent and Platform Builder as Routine
+executors. Before adding a Routine, verify the caller's authorization; Mini Agent Routines
+need `agents:miniagent:run`. Do not register internal framework agents to bypass executor
+restrictions.
 
 ## Coding agents and sandboxes
 

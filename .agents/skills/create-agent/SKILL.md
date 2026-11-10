@@ -31,7 +31,7 @@ wait and inspect logs on failure. For MCP checks use `scripts/mcp_check.sh` with
 
 **Be self-driving: ask only what needs a human, decide the rest, say what you decided.** Two exchanges is the target. Use the harness's structured choice control for choice-shaped questions, plain prompts for free-form ones.
 
-This skill builds lane 1 — a source file in `agents/`, governed by git. Lane 2 is a component OS Manager composes at runtime; it can't touch the repo, so anything needing a code change (a toolkit the registry lacks, custom Python, a dependency, growing [`app/registry.py`](../../../app/registry.py)) is yours.
+This skill builds lane 1 — a source file in `agents/`, governed by git. Lane 2 is a component Super Agent composes at runtime; it can't touch the repo, so anything needing a code change (a toolkit the registry lacks, custom Python, a dependency, growing [`app/registry.py`](../../../app/registry.py)) is yours.
 
 **Check the id is free first** — both lanes share one id space and code silently wins, hiding a Studio-built component under your file:
 
@@ -137,7 +137,7 @@ How you <work>:
 )
 ```
 
-- No `offload_tool_results` — that's for the OS Manager and its internal members only.
+- No `offload_tool_results` — that's for Super Agent and Platform Builder only.
 - Drop `learning=`/`user_id` only for a stated reason. Company knowledge belongs in Company wiki. For a notebook, import `shared_notes` from `app.registry` and add `shared_notes.tools()` to `tools`. User scoping follows AgentOS user isolation; keep personal profiles in per-user learning.
 - **Every line ≤120 characters, `INSTRUCTIONS` included** — the repo lints `E501` and ruff won't reflow string literals. Wrap long bullets with a two-space hanging indent.
 
@@ -186,7 +186,7 @@ Step 7: three probes, not one — a covered question (details plus a Source URL)
 Import the new agent and insert it into the existing `agents` list. Preserve every existing
 agent; do not replace the list with a starter example. Preserve
 the `teams`, `workflows`, `knowledge`, manager and Company wiring too. Check both code and
-Studio IDs before registration. AgentOS makes registered agents discoverable to OS Manager.
+Studio IDs before registration. AgentOS makes registered agents discoverable to Super Agent.
 
 For example, adding a new agent when another already exists is an insertion:
 
@@ -240,4 +240,4 @@ Iterate 2–3 times, then ask.
 
 ## 9. Done
 
-Lead with the smoke-test answer. Then where it lives: `https://os.agno.com/?ref=render-template` (**Refresh**, Agents list) or `http://localhost:8000`; `/mcp` (`run_agent`); OS Manager's roster, so the `os_manager` MCP tool runs it by name — say that one out loud. Then the loop: [`/extend-agent`](../extend-agent/SKILL.md) (a specific change), [`/improve`](../improve/SKILL.md) (harden the agent with simulations), [`/create-evals`](../create-evals/SKILL.md) (offer to persist the smoke test as the first case). Report the checks performed, any ingestion or scheduling results when applicable, and verification still outstanding.
+Lead with the smoke-test answer. Then where it lives: `https://os.agno.com/?ref=render-template` (**Refresh**, Agents list) or `http://localhost:8000`; `/mcp` (`run_agent`); Super Agent's roster, so the `super_agent` MCP tool runs it by name — say that one out loud. Then the loop: [`/extend-agent`](../extend-agent/SKILL.md) (a specific change), [`/improve`](../improve/SKILL.md) (harden the agent with simulations), [`/create-evals`](../create-evals/SKILL.md) (offer to persist the smoke test as the first case). Report the checks performed, any ingestion or scheduling results when applicable, and verification still outstanding.
