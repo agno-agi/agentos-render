@@ -9,8 +9,7 @@ from pathlib import Path
 from agno.job_queue import QueueConfig
 from agno.os import AgentOS, CompanyConfig, OSManager
 
-# from agents.engineers import create_claude_engineer
-# from agents.engineers import create_codex_engineer
+from agents.engineers import create_claude_engineer, create_codex_engineer
 from app.company import products
 from app.interfaces import attach_interfaces, mcp_auth
 from app.registry import registry, shared_knowledge, shared_learning
@@ -44,8 +43,8 @@ agent_os = AgentOS(
     queue=QueueConfig(durable=True, db=db),
     knowledge=[shared_knowledge],
     agents=[
-        # create_claude_engineer(),
-        # create_codex_engineer(),
+        create_claude_engineer(),
+        create_codex_engineer(),
     ],
     registry=registry,
     config=str(agentos_root / "app" / "config.yaml"),
