@@ -1,20 +1,20 @@
 manifest:
   superagent:
-    description: "Ask for what you need. Super Agent plans the work, builds agents, teams and workflows, and checks the platform."
+    description: "Super Agent manages your agent platform for you. It builds agents, runs them and organizes work into Products and Projects."
     quick_prompts:
       - "Ask me what my company does and what I'm working on."
-      - "What work is in progress, and what needs my decision?"
-      - "Build an agent that turns meeting notes into decisions, action items and open questions."
-      - "Check platform health and tell me what needs attention."
+      - "What needs my decision?"
+      - "Build an agent that turns meeting notes into decisions and action items."
+      - "Is the platform healthy?"
   claude-engineer:
-    description: "Explain, review, and improve repository code using Claude."
+    description: "Claude Code, running on this repository. Ask it to explain, review or change the code."
     quick_prompts:
-      - "Explain how this repository starts AgentOS and connects its agents, database, and sandboxes. Point me to the relevant files."
-      - "Review the repository for concrete bugs and setup problems. Prioritize findings with file references; do not change files."
-      - "Run the documented local checks and fix the first reproducible failure with the smallest change. Report what you changed and verified."
+      - "What does this repository do? Answer in five lines."
+      - "Which branch and commit are you on?"
+      - "Find one thing worth fixing and show me the diff. Don't change any files."
   codex-engineer:
-    description: "Investigate bugs, implement focused changes, and run repository checks using Codex."
+    description: "Codex, running on this repository. Ask it to explain, review or change the code."
     quick_prompts:
-      - "Inspect the repository and summarize its setup, validation, and test commands without changing files."
-      - "Review the development scripts for broken assumptions and unnecessary complexity. Recommend focused fixes without editing files."
-      - "Run the documented local checks and fix the first reproducible failure with the smallest change. Report what you changed and verified."
+      - "Summarize the last five commits."
+      - "How do I add a new agent here? Point me to the files."
+      - "Find one thing worth fixing and show me the diff. Don't change any files."

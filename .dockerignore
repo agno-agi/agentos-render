@@ -22,7 +22,6 @@
 # ignore virtualenvs
 .venv
 venv*
-aienv*
 
 .ipynb_checkpoints
 
@@ -34,8 +33,3 @@ aienv*
 tmp/
 .claude/
 .codex/
-
-# Node (local deploy-tooling installs — not part of the image)
-node_modules
-package.json
-package-lock.json

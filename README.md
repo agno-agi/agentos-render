@@ -55,7 +55,8 @@ Once enabled, chat with a coding agent in AgentOS or ask Super Agent to use one:
 
 Without a sandbox, coding agents run on the API host with its file and credential
 access. For isolation and checkpoint recovery, set up a
-[Docker or AgentCore sandbox](docs/harnesses.md#sandboxes-and-checkpoints).
+[sandbox](docs/harnesses.md#sandboxes-and-checkpoints): Docker locally, AgentCore
+with S3 when deployed.
 
 ## Run locally
 
@@ -133,13 +134,13 @@ area of responsibility, a Project groups related work toward a goal, and a Task
 describes a specific job to complete. Routines give agents instructions to carry
 out on a schedule.
 
-This template includes an `AgentOS` Product for improving the platform itself,
-with a daily review routine scheduled for 09:00 UTC. It is disabled by default;
-enable it from the Company page in the AgentOS UI. Routines run on Mini Agent, a
-restricted agent that can only propose work. It reads the code and Agno release
-notes, then proposes up to three Tasks for you to review. Approve a proposed
-Project before you accept its Tasks.
-The review is instructed to suggest work and leave approval and execution to you.
+This template includes an `AgentOS` Product for keeping the platform current,
+secure and working, with a review Routine scheduled for Mondays at 09:00 UTC. It is
+disabled by default; enable it from the Company page in the AgentOS UI. Routines run
+on Mini Agent, a restricted agent that can only propose work. It reads the code and
+Agno release notes, then proposes Projects and Tasks for upgrades, security problems
+and inconsistencies. Most runs propose nothing. Approve a proposed Project before you
+accept its Tasks.
 
 Scheduled reviews use your model API keys and incur usage costs. Check the saved
 schedule and run history in Company to see when a review will run and what it did.
@@ -234,13 +235,6 @@ uvx agno connect --url https://YOUR-DOMAIN
 
 Try asking Super Agent about the platform to check that the connection works.
 
-### Open your project
-
-Once the application is live, open the project created by the Blueprint and
-verify that its **Production** environment contains the API service and
-PostgreSQL database. The Blueprint manages the project, environment, and
-resources together.
-
 ### Update or remove the deployment
 
 - **Code:** push to the connected branch and check the resulting deployment.
@@ -248,6 +242,7 @@ resources together.
 - **Settings:** edit **Environment** and save and deploy.
 - **Infrastructure:** update `render.yaml` and sync the Blueprint. A sync can
   overwrite conflicting dashboard settings.
+- **Scale:** read [Scaling](docs/scaling.md) before adding API replicas.
 - **Removal:** disconnect the Blueprint, then delete its API service and database
   in the dashboard. Disconnecting alone leaves resources running; deleting the
   database destroys its contents. Verify that both resources are gone.
@@ -264,13 +259,6 @@ Routines run on Mini Agent (`miniagent`). After you deploy this version:
   needs `agents:miniagent:run`; reading its runs needs `agents:miniagent:read`.
 - Reconnect MCP clients; the `os_manager` tool is now `super_agent`.
 - Earlier sessions stay under their old IDs.
-
-### Sandbox storage
-
-For isolated coding sessions and recovery across container replacements, follow
-[the harness setup guide](docs/harnesses.md#aws-agentcore-sandbox) to configure
-AgentCore and S3. The API needs no attached checkpoint disk.
-See [Scaling](docs/scaling.md) before adding API replicas.
 
 ## Verify and develop
 
@@ -293,7 +281,6 @@ PostgreSQL must be running, even when you only want to list the tests.
 Add your own cases in [evals/cases.py](evals/cases.py), or use
 [/create-evals](.agents/skills/create-evals/SKILL.md). To save a report, add
 `--json-output tmp/evals.json`. To run one case, use `--name CASE_NAME`.
-Evals use your application's database and workspace; agents can call tools during a test.
 
 Change dependencies in `pyproject.toml`, then run `./scripts/generate_requirements.sh`.
 Commit the updated `requirements.txt` and rebuild the API and any sandbox image you use.

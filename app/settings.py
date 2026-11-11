@@ -13,6 +13,6 @@ def default_model() -> OpenAIResponses:
     return OpenAIResponses(id="gpt-6.1-sol")
 
 
-def manager_model() -> OpenAIResponses:
+def super_agent_model() -> OpenAIResponses:
     """Model for Super Agent and Mini Agent, which runs Company Routines."""
     return OpenAIResponses(id="gpt-6.1-sol")
