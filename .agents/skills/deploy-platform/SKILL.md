@@ -18,14 +18,13 @@ if one exists. Otherwise, establish the GitHub owner, repository name, and visib
 then help create it using the available GitHub integration or `gh repo create`.
 Use a private repository unless the user wants it public.
 
-Preserve the template remote as `upstream` when making the user's repository
-`origin`. Review the files to publish, exclude credentials and local artifacts,
-commit the application, and push the intended deployment branch. Verify that the
-pushed branch includes the user's agents, `Dockerfile`, and root `render.yaml`.
-Help the user grant Render's GitHub connection access to this repository.
-The Blueprint creates an **AgentOS** project and **Production** environment.
-Set `projects[0].name` to the user's application name before pushing if they want
-a different project name.
+Keep the template remote as `upstream` and make the user's repository `origin`.
+Commit the application without credentials or local artifacts and push the
+deployment branch; it must include the user's agents, `Dockerfile` and root
+`render.yaml`. Help the user give Render's GitHub connection access to the repository.
+
+The Blueprint creates an **AgentOS** project with a **Production** environment.
+To use another project name, set `projects[0].name` in `render.yaml` before pushing.
 
 ## 2. Deploy the Blueprint
 
@@ -39,11 +38,9 @@ For a new deployment, guide the user through [Render](https://dashboard.render.c
 4. Review the resources and billing, then choose **Deploy Blueprint**.
 5. Wait for the API to become live and copy its public HTTPS URL.
 
-Start with the Blueprint's one always-on API instance with 1 CPU and 2 GB RAM
-(`1c-2g`) and PostgreSQL 18 database.
-Confirm both use **Virginia** (`region: virginia`) before deploying.
-Preserve the database references. Initial setup runs without authentication;
-continue directly to securing the application below. For an existing secured
+The Blueprint starts one always-on API instance (`1c-2g`: 1 CPU, 2 GB RAM) and a
+PostgreSQL 18 database, both in **Virginia**. Initial setup runs without
+authentication, so go straight on to securing it. On an existing secured
 deployment, keep `RUNTIME_ENV=prd`.
 
 ## 3. Configure access
@@ -81,17 +78,14 @@ Complete setup only after the production redeploy passes these checks:
 - If MCP is configured, an unauthenticated initialization POST rejects access and
   the intended client connects with authentication. A plain `GET /mcp` is not an auth test.
 
-Production has its own database. Ingest any required documents there before testing
-knowledge-dependent agents. Claim success only for behavior actually verified.
+Production has its own database, so add any documents an agent needs there before
+testing it. Claim success only for what you verified.
 
-## 5. Confirm the project and hand over
+## 5. Hand over
 
-Open the project created by the Blueprint and verify that its **Production**
-environment contains both the API service and PostgreSQL database. The Blueprint
-manages the project, environment, and resources together.
-
-Hand over the live URL, project/environment, Blueprint link, and verification
-results so the user knows where to manage the application.
+Check that the Blueprint's project shows the API service and the PostgreSQL database
+in its **Production** environment. Give the user the live URL, the project and
+Blueprint links, and the verification results.
 
 ## Updating the application
 
