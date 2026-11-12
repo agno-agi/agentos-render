@@ -1,15 +1,18 @@
-# AgentOS: The self-driving agent platform
+# AgentOS: The self-managing agent platform
 
-Build agents for your company, product, or customers. Run them as durable
-services on AgentOS. Put them to work automating company operations.
+The open-source agent platform that runs in your cloud and comes with a super agent
+that runs it for you.
 
-- **Build** agents with the Agno, Claude Agent, or Codex SDKs. Combine agents into
-  teams and workflows.
-- **Run** agents as durable services with built-in API and MCP. AgentOS handles
-  authentication, role-based access, human approvals, scheduling, and durable execution.
-- **Automate** company operations with CompanyOS. Give agents responsibilities,
-  organize work into projects and tasks, and configure recurring routines. People set
-  direction and review results; agents own and execute.
+**Super Agent** is the primary agent on your AgentOS. Tell it what you need. It does
+the work itself:
+
+- **Runs** your agents, teams, and workflows.
+- **Inspects** the platform: runs, schedules, health, and source.
+- **Organizes** larger work as Products, Projects, and Tasks.
+- **Builds** agents, teams, and workflows with Platform Builder.
+
+Underneath, AgentOS provides sessions, storage, permissions, human approvals,
+scheduling, an API, and MCP. People set direction and review results.
 
 Built with [Agno](https://github.com/agno-agi/agno), this template gives you a working
 agent platform that you can run locally or deploy to Render.
@@ -18,12 +21,12 @@ Use your agents in:
 
 1. **Your product:** call them through the REST API.
 2. **Claude and ChatGPT:** connect through the MCP server.
-3. **Slack:** connect a Slack app to talk to OS Manager from your workspace.
+3. **Slack:** connect a Slack app to talk to Super Agent from your workspace.
 
 Run your platform in your own cloud and keep your data in your own PostgreSQL database.
 Use the [AgentOS UI](https://os.agno.com) to review conversations, inspect traces,
 manage knowledge, and track your agents' work. Build agents with code, use Studio,
-or chat with OS Manager.
+or chat with Super Agent.
 
 ## Get started
 
@@ -46,13 +49,17 @@ The platform includes **Claude Engineer** and **Codex Engineer**, disabled by de
 They can read code, make changes, and run commands. Enable them in `app/main.py`.
 Follow the [harness setup guide](docs/harnesses.md) for the steps.
 
-Once enabled, chat with a coding agent in AgentOS or ask OS Manager to use one:
+Once enabled, chat with a coding agent in AgentOS or ask Super Agent to use one:
 
 > Ask Codex Engineer to review this project and suggest improvements. Don't change any files yet.
 
+For Company work, a person accepts a Task on an engineer: "Accept it for Codex Engineer."
+Mini Agent will not run a sandboxed engineer.
+
 Without a sandbox, coding agents run on the API host with its file and credential
 access. For isolation and checkpoint recovery, set up a
-[Docker or AgentCore sandbox](docs/harnesses.md#sandboxes-and-checkpoints).
+[sandbox](docs/harnesses.md#sandboxes-and-checkpoints): Docker locally, AgentCore
+with S3 when deployed.
 
 ## Run locally
 
@@ -88,21 +95,23 @@ The check should report `9 tools; required tools available`.
 
 1. Open [os.agno.com](https://os.agno.com) and sign in.
 2. Choose **Connect OS**, select a local connection, and enter `http://localhost:8000`.
-3. Name it **Local AgentOS**, then open the chat for **OS Manager**.
+3. Name it **Local AgentOS**, then open the chat for **Super Agent**.
 
-### 3. Build your first agent
+### 3. Put Super Agent to work
 
-Tell OS Manager what you want to build. For example:
+Tell Super Agent what your company does and what you are working on, then ask for
+something. For example:
 
-> Help me build a daily briefing agent about the companies and topics I follow. Here's what I care about: …
+> Build an agent that turns meeting notes into decisions and action items, then run it on these notes: …
 
-Review what it proposes, then ask it to build and publish the agent.
-Refresh the Agents list and try it out. You can chat with your new agent directly
-or ask OS Manager to run it for you.
+Super Agent answers directly, runs the agents you have, and builds one when none fits.
+Refresh the Agents list to see what it built. For a larger outcome, ask it to plan the
+work as a Project and Tasks. You approve, accept and review them in the chat, each with
+one confirmation, or on the **Company** page.
 
 ## Build and improve your agents
 
-You can keep working through OS Manager, use Studio, or edit Python files in this repo.
+You can keep working through Super Agent, use Studio, or edit Python files in this repo.
 The repo includes instructions, called skills, for common coding tasks.
 Ask your coding agent to follow the relevant skill:
 
@@ -129,11 +138,31 @@ area of responsibility, a Project groups related work toward a goal, and a Task
 describes a specific job to complete. Routines give agents instructions to carry
 out on a schedule.
 
-This template includes an `AgentOS` Product for improving the platform itself,
-with a daily review routine scheduled for 09:00 UTC. It is disabled by default;
-enable it from the Company page in the AgentOS UI. Company Manager reads the
-code and Agno release notes, then proposes up to three Tasks for you to review.
-The review is instructed to suggest work and leave approval and execution to you.
+Agents propose work and you decide. Ask Super Agent to approve a Project, accept a
+Task, complete it or send it back. Each decision asks you for one confirmation. The
+**Company** page in the AgentOS UI shows the same work.
+
+- **Who does the work:** a Task you accept without naming an agent runs on Mini Agent,
+  a built-in agent that only runs Company Tasks and Routines. A Routine only proposes work.
+- **When it starts:** an accepted Task starts when you ask Super Agent to start it, or at
+  the next hourly automation run, whichever comes first.
+- **Changing finished work:** to change a finished Task, reply in the chat where it was
+  started, or name the Task. One confirmation sends it back and restarts it.
+- **Files:** Super Agent keeps what the company knows in one file tree: `wiki/` for agreed
+  direction, `products/` for each Product's brief and status, `tasks/` for what each Task
+  was given and produced, and `notes/` for its own notes. Everyone who uses this AgentOS
+  shares `notes/`. A change to `wiki/` asks you for a confirmation.
+
+This template includes an `AgentOS` Product for keeping the platform current,
+secure and working, with a review Routine scheduled for Mondays at 09:00 UTC. The
+Routine is disabled by default, with auto-accept off; enable it from the Company page
+in the AgentOS UI. It reads the code and Agno release notes, then proposes Projects and
+Tasks for upgrades, security problems and inconsistencies. Most runs propose nothing.
+Approve a proposed Project before you accept its Tasks.
+
+With auto-accept on, the hourly automation run approves the Routine's Projects, accepts
+and runs their Tasks, and leaves the finished work for you to review. Ask Super Agent to
+turn auto-accept on or off for a Routine.
 
 Scheduled reviews use your model API keys and incur usage costs. Check the saved
 schedule and run history in Company to see when a review will run and what it did.
@@ -226,14 +255,7 @@ For a supported coding client, run:
 uvx agno connect --url https://YOUR-DOMAIN
 ```
 
-Try asking OS Manager about the platform to check that the connection works.
-
-### Open your project
-
-Once the application is live, open the project created by the Blueprint and
-verify that its **Production** environment contains the API service and
-PostgreSQL database. The Blueprint manages the project, environment, and
-resources together.
+Try asking Super Agent about the platform to check that the connection works.
 
 ### Update or remove the deployment
 
@@ -242,16 +264,27 @@ resources together.
 - **Settings:** edit **Environment** and save and deploy.
 - **Infrastructure:** update `render.yaml` and sync the Blueprint. A sync can
   overwrite conflicting dashboard settings.
+- **Scale:** read [Scaling](docs/scaling.md) before adding API replicas.
 - **Removal:** disconnect the Blueprint, then delete its API service and database
   in the dashboard. Disconnecting alone leaves resources running; deleting the
   database destroys its contents. Verify that both resources are gone.
 
-### Sandbox storage
+### Upgrade from Agno 3.1
 
-For isolated coding sessions and recovery across container replacements, follow
-[the harness setup guide](docs/harnesses.md#aws-agentcore-sandbox) to configure
-AgentCore and S3. The API needs no attached checkpoint disk.
-See [Scaling](docs/scaling.md) before adding API replicas.
+Agno 3.2 replaces the built-in managers with Super Agent (`superagent`). Company
+Routines run on Mini Agent (`miniagent`). After you deploy this version:
+
+- Update each saved Routine that ran on a built-in manager, or it fails:
+  `PATCH /company/routines/{id}` with `{"executor_type": "agent", "executor_id": "miniagent"}`.
+- A saved `agentos-maintenance` Routine also keeps its old schedule and instructions.
+  Put in the new ones from [app/company.py](app/company.py) on the Company page or with
+  the same `PATCH`.
+- Update roles, token scopes, and API clients that name an old ID. Startup stops if a
+  stored role policy still uses one. Creating, triggering, or cancelling a Routine, or
+  accepting a Task with no named executor, needs `agents:miniagent:run`; reading its
+  runs needs `agents:miniagent:read`.
+- Reconnect MCP clients; the `os_manager` tool is now `super_agent`.
+- Earlier sessions stay under their old IDs.
 
 ## Verify and develop
 
@@ -267,14 +300,13 @@ python -m evals --tag smoke
 ```
 
 `validate.sh` checks Python formatting, lint rules, and types. The smoke tests ask
-OS Manager to explain setup, check platform health, and explain agent memory.
+Super Agent to explain setup, check platform health, and explain agent memory.
 They use your model API keys and save results in the database for review in the UI.
 PostgreSQL must be running, even when you only want to list the tests.
 
 Add your own cases in [evals/cases.py](evals/cases.py), or use
 [/create-evals](.agents/skills/create-evals/SKILL.md). To save a report, add
 `--json-output tmp/evals.json`. To run one case, use `--name CASE_NAME`.
-Evals use your application's database and workspace; agents can call tools during a test.
 
 Change dependencies in `pyproject.toml`, then run `./scripts/generate_requirements.sh`.
 Commit the updated `requirements.txt` and rebuild the API and any sandbox image you use.
@@ -287,9 +319,9 @@ add the others when you need them. Use `.env` locally and Render's **Environment
 
 | Setting | What it's for |
 | --- | --- |
-| `OPENAI_API_KEY` | OS Manager, embeddings, and Codex Engineer. |
+| `OPENAI_API_KEY` | Super Agent, embeddings, and Codex Engineer. |
 | `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` | Claude Engineer. |
-| `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` | Connect OS Manager to Slack. Set both. |
+| `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` | Connect Super Agent to Slack. Set both. |
 | `PARALLEL_API_KEY` | Optional web search key. Without it, search uses Parallel's MCP server without an API key. |
 | `JWT_VERIFICATION_KEY` or `JWT_JWKS_FILE` | Check login tokens in production. A JWKS file must be available on the server. |
 | `AGENTOS_URL` | Public URL used by scheduled jobs and MCP. Set it in Render. |

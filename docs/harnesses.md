@@ -339,7 +339,7 @@ def create_repository_agents(slug: str, url: str, branch: str = "main"):
             sandbox=sandbox,
             repository=repository,
             system_prompt={"type": "preset", "preset": "claude_code"},
-            permission_mode="acceptEdits",
+            permission_mode="auto",
         ),
         CodexAgent(
             id=f"{slug}-codex",
@@ -349,6 +349,7 @@ def create_repository_agents(slug: str, url: str, branch: str = "main"):
             sandbox=sandbox,
             repository=repository,
             sandbox_mode="workspace-write",
+            approval_mode="auto_review",
         ),
     ]
 ```
