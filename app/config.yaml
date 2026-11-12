@@ -1,20 +1,20 @@
 manifest:
   superagent:
-    description: "Super Agent manages your agent platform for you. It builds agents, runs them and organizes work into Products and Projects."
+    description: "Super Agent learns your company, then helps you build products, plan projects and run agents."
     quick_prompts:
-      - "Ask me what my company does and what I'm working on."
+      - "Ask me about my company and what I'm working on."
+      - "Set up my first Product and plan its first Project."
+      - "Build an agent that turns meeting notes into action items."
       - "What needs my decision?"
-      - "Build an agent that turns meeting notes into decisions and action items."
-      - "Is the platform healthy?"
   claude-engineer:
     description: "Claude Code, running on this repository. Ask it to explain, review or change the code."
     quick_prompts:
       - "What does this repository do? Answer in five lines."
-      - "Which branch and commit are you on?"
-      - "Find one thing worth fixing and show me the diff. Don't change any files."
+      - "Which files do I change to add a new agent?"
+      - "Find one thing worth fixing and show me the diff."
   codex-engineer:
     description: "Codex, running on this repository. Ask it to explain, review or change the code."
     quick_prompts:
-      - "Summarize the last five commits."
-      - "How do I add a new agent here? Point me to the files."
-      - "Find one thing worth fixing and show me the diff. Don't change any files."
+      - "What does this repository do? Answer in five lines."
+      - "Which files do I change to add a new agent?"
+      - "Find one thing worth fixing and show me the diff."

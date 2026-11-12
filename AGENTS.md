@@ -33,7 +33,7 @@ Read the matching skill in `.agents/skills/` before starting; `.claude/skills` l
 | --- | --- |
 | `app/main.py` | The AgentOS: database, Super Agent, Company, queue and registered agents. |
 | `app/company.py` | Product, Source and Routine declarations. |
-| `app/config.yaml` | Descriptions and quick prompts shown in the UI. |
+| `app/config.yaml` | Descriptions and quick prompts shown in the UI. Every quick prompt is ten words or fewer. |
 | `app/registry.py` | What Studio can build with, plus web tools, shared knowledge, learning and notes. |
 | `app/settings.py` | Model factories. |
 | `app/interfaces.py` | MCP tools and OAuth; optional Slack. |
