@@ -79,6 +79,8 @@ Dependencies are declared in `pyproject.toml`. After changing them, run
 - Declare Routines without `executor_type` and `executor_id` so they run on Agno's default
   executor, Mini Agent, as it changes. Name an executor only for a registered application
   agent, team or workflow.
+- A Task accepted with no executor also runs on Mini Agent. Mini Agent refuses to run a
+  sandboxed agent, so a person accepts the Task on Claude Engineer or Codex Engineer.
 
 ## Coding agents and sandboxes
 

@@ -53,6 +53,9 @@ Once enabled, chat with a coding agent in AgentOS or ask Super Agent to use one:
 
 > Ask Codex Engineer to review this project and suggest improvements. Don't change any files yet.
 
+For Company work, a person accepts a Task on an engineer: "Accept it for Codex Engineer."
+Mini Agent will not run a sandboxed engineer.
+
 Without a sandbox, coding agents run on the API host with its file and credential
 access. For isolation and checkpoint recovery, set up a
 [sandbox](docs/harnesses.md#sandboxes-and-checkpoints): Docker locally, AgentCore
