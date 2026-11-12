@@ -14,5 +14,5 @@ def default_model() -> OpenAIResponses:
 
 
 def super_agent_model() -> OpenAIResponses:
-    """Model for Super Agent and Mini Agent, which runs Company Routines."""
+    """Model for Super Agent and Mini Agent, which runs Company Routines and Tasks."""
     return OpenAIResponses(id="gpt-6.1-sol")

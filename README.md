@@ -103,7 +103,8 @@ something. For example:
 
 Super Agent answers directly, runs the agents you have, and builds one when none fits.
 Refresh the Agents list to see what it built. For a larger outcome, ask it to plan the
-work; you review the Project and Tasks on the **Company** page.
+work as a Project and Tasks. You approve, accept and review them in the chat, each with
+one confirmation, or on the **Company** page.
 
 ## Build and improve your agents
 
@@ -134,13 +135,31 @@ area of responsibility, a Project groups related work toward a goal, and a Task
 describes a specific job to complete. Routines give agents instructions to carry
 out on a schedule.
 
+Agents propose work and you decide. Ask Super Agent to approve a Project, accept a
+Task, complete it or send it back. Each decision asks you for one confirmation. The
+**Company** page in the AgentOS UI shows the same work.
+
+- **Who does the work:** a Task you accept without naming an agent runs on Mini Agent,
+  a built-in agent that only runs Company Tasks and Routines. A Routine only proposes work.
+- **When it starts:** an accepted Task starts when you ask Super Agent to start it, or at
+  the next hourly automation run, whichever comes first.
+- **Changing finished work:** to change a finished Task, reply in the chat where it was
+  started, or name the Task. One confirmation sends it back and restarts it.
+- **Files:** Super Agent keeps what the company knows in one file tree: `wiki/` for agreed
+  direction, `products/` for each Product's brief and status, `tasks/` for what each Task
+  was given and produced, and `notes/` for its own notes. Everyone who uses this AgentOS
+  shares `notes/`. A change to `wiki/` asks you for a confirmation.
+
 This template includes an `AgentOS` Product for keeping the platform current,
-secure and working, with a review Routine scheduled for Mondays at 09:00 UTC. It is
-disabled by default; enable it from the Company page in the AgentOS UI. Routines run
-on Mini Agent, a restricted agent that can only propose work. It reads the code and
-Agno release notes, then proposes Projects and Tasks for upgrades, security problems
-and inconsistencies. Most runs propose nothing. Approve a proposed Project before you
-accept its Tasks.
+secure and working, with a review Routine scheduled for Mondays at 09:00 UTC. The
+Routine is disabled by default, with auto-accept off; enable it from the Company page
+in the AgentOS UI. It reads the code and Agno release notes, then proposes Projects and
+Tasks for upgrades, security problems and inconsistencies. Most runs propose nothing.
+Approve a proposed Project before you accept its Tasks.
+
+With auto-accept on, the hourly automation run approves the Routine's Projects, accepts
+and runs their Tasks, and leaves the finished work for you to review. Ask Super Agent to
+turn auto-accept on or off for a Routine.
 
 Scheduled reviews use your model API keys and incur usage costs. Check the saved
 schedule and run history in Company to see when a review will run and what it did.
