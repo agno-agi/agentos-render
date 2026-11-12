@@ -8,8 +8,8 @@ license-files = ["LICENSE"]
 authors = [{ name = "Agno", email = "hello@agno.com" }]
 
 dependencies = [
-  # TEMPORARY: Agno 3.2 from main until it is released. Replace with agno[...]==3.2.0.
-  "agno[anthropic,cel,claude,codex,csv,docx,excel,mcp,openai,os,pdf,pgvector,psycopg,reportlab,slack,website,agentcore-sandbox] @ git+https://github.com/agno-agi/agno@main#subdirectory=libs/agno",
+  # TEMPORARY: Agno main at 70be8704e1 until 3.2 is released. At release this becomes agno[...]==3.2.0.
+  "agno[anthropic,cel,claude,codex,csv,docx,excel,mcp,openai,os,pdf,pgvector,psycopg,reportlab,slack,website,agentcore-sandbox] @ git+https://github.com/agno-agi/agno@70be8704e1776f9369106030f976112754cc06ac#subdirectory=libs/agno",
   "parallel-web",
   "python-dotenv",
 ]
