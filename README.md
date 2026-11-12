@@ -276,9 +276,13 @@ Routines run on Mini Agent (`miniagent`). After you deploy this version:
 
 - Update each saved Routine that ran on a built-in manager, or it fails:
   `PATCH /company/routines/{id}` with `{"executor_type": "agent", "executor_id": "miniagent"}`.
+- A saved `agentos-maintenance` Routine also keeps its old schedule and instructions.
+  Put in the new ones from [app/company.py](app/company.py) on the Company page or with
+  the same `PATCH`.
 - Update roles, token scopes, and API clients that name an old ID. Startup stops if a
-  stored role policy still uses one. Creating, triggering, or cancelling a Routine
-  needs `agents:miniagent:run`; reading its runs needs `agents:miniagent:read`.
+  stored role policy still uses one. Creating, triggering, or cancelling a Routine, or
+  accepting a Task with no named executor, needs `agents:miniagent:run`; reading its
+  runs needs `agents:miniagent:read`.
 - Reconnect MCP clients; the `os_manager` tool is now `super_agent`.
 - Earlier sessions stay under their old IDs.
 
