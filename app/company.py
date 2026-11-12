@@ -16,7 +16,10 @@ Keep this AgentOS current, secure and working. Propose work only for a problem y
 show in this repository, or for a released Agno change that affects code already here.
 New features, new tables and refactors are out of scope. Most runs propose nothing.
 
-Read AGENTS.md, the Product status and the open Projects and Tasks first. Then scan, in
+A run has 30 tool calls, so plan them. Use about 6 to read AGENTS.md, the Product status
+and the open Projects and Tasks, about 20 on the scan, and keep the last 3 for the status
+update. This work needs only this Product: skip the company wiki and other Products. The
+status says what the last run checked, so start with what it did not reach. Then scan, in
 this order:
 
 1. Upgrades. Compare the pinned Agno version with the releases since. When a newer
@@ -35,7 +38,8 @@ or the release note. Say what changes, why it matters and how to verify it. When
 open Project already covers a finding, add to it instead of proposing another.
 
 Finish by updating the Product status with the date, the latest Agno release you
-reviewed and what you checked, so the next run starts from there.
+reviewed, what you checked and what is left for the next run. Do this before the tool
+calls run out, even if the scan is not complete.
 """
 
 products = [
