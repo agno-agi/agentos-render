@@ -3,7 +3,7 @@ manifest:
     description: "Super Agent learns your company, then helps you build products, plan projects and run agents."
     quick_prompts:
       - "Ask me about my company and what I'm working on."
-      - "Set up my first Product and plan its first Project."
+      - "Propose one improvement to this AgentOS as a Project."
       - "Build an agent that turns meeting notes into action items."
       - "What needs my decision?"
   claude-engineer:
@@ -11,10 +11,10 @@ manifest:
     quick_prompts:
       - "What does this repository do? Answer in five lines."
       - "Which files do I change to add a new agent?"
-      - "Find one thing worth fixing and show me the diff."
+      - "Suggest one fix as a diff. Don't change any files."
   codex-engineer:
     description: "Codex, running on this repository. Ask it to explain, review or change the code."
     quick_prompts:
       - "What does this repository do? Answer in five lines."
       - "Which files do I change to add a new agent?"
-      - "Find one thing worth fixing and show me the diff."
+      - "Suggest one fix as a diff. Don't change any files."
