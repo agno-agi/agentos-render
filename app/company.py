@@ -12,42 +12,31 @@ from app.sandbox import REPOSITORY
 # Recommended: enable an engineer in app/main.py, then add a line to these instructions
 # naming it as the executor for code changes, for example: "Use codex-engineer for code changes."
 MAINTENANCE = """\
-Keep this AgentOS current, secure and working. Propose work only for a problem you can
-show in this repository, or for a released Agno change that affects code already here.
-New features, new tables and refactors are out of scope. Most runs propose nothing.
+Keep this AgentOS current, secure and working. Propose only demonstrated problems or
+released Agno changes affecting this repository. No new features, tables or refactors.
+Most runs should propose nothing.
 
-A run has 30 tool calls, so plan them. Use about 6 to read AGENTS.md, the Product status
-and the open Projects and Tasks, about 20 on the scan, and keep the last 3 for the status
-update. This work needs only this Product: skip the company wiki and other Products. The
-status says what the last run checked, so start with what it did not reach. Then scan, in
-this order:
+Read AGENTS.md, the Product status and open Projects and Tasks. Resume unfinished
+checks, then scan upgrades, security and quality. Stay within this Product; skip the
+company wiki. You have 30 tool calls: reserve the last 3 for updating status.
 
-1. Upgrades. Compare the pinned Agno version with the releases since. When a newer
-   release exists, propose the upgrade to that version: the changes that touch code in
-   this repository, anything that breaks, and the checks that must pass.
-2. Security. Look for secrets in the repository, authorization turned off or widened,
-   agents holding tools they do not need, and dependencies with known advisories.
-3. Quality. Look for agent instructions, tools or configuration that contradict
-   AGENTS.md or each other, settings that no longer have any effect, and checks that
-   fail or are missing.
+- Upgrades: compare the Agno pin with newer releases; propose relevant upgrades with
+  breaking changes and required checks.
+- Security: exposed secrets, weakened authorization, unnecessary tools and dependency
+  advisories.
+- Quality: conflicting instructions or configuration, ineffective settings and missing
+  or failing checks.
 
-When code and documentation disagree, establish the intended behavior from the
-Product context, recorded decisions, tests and repository history where available.
-Do not assume either side is right. Preserve established protections and tests:
-never propose changing the documentation just to match a missing or weaker
-protection, check or test. If the intended behavior is unclear, especially for a
-feature, enabled component or schedule, flag the decision for a person in the
-Product status instead of proposing a code change based on a guess.
+Resolve code/docs disagreements using Product context, decisions, tests and history.
+Never rewrite docs to excuse weakened protections or tests. Record unclear decisions
+in Product status for a person; do not guess.
 
-For each finding, propose one Project with a small, bounded outcome, named for what is
-true when it is done, such as "Upgrade Agno to 3.2.1". Under it, propose one Task for
-each pull request the work needs. Most Projects have one Task. Cite the file and line,
-or the release note. Say what changes, why it matters and how to verify it. When an
-open Project already covers a finding, add to it instead of proposing another.
+Propose one bounded Project per finding, named for its outcome, with one Task per PR.
+Reuse existing Projects. Cite file/line or release-note evidence, explain the change
+and why it matters, and say how to verify it.
 
-Finish by updating the Product status with the date, the latest Agno release you
-reviewed, what you checked and what is left for the next run. Do this before the tool
-calls run out, even if the scan is not complete.
+Always update Product status before the tool limit: date, latest Agno release reviewed,
+checks completed and what to check next, even if the scan is incomplete.
 """
 
 products = [
