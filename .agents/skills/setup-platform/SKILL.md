@@ -17,6 +17,7 @@ sign-in. Never print secret values. Read [`AGENTS.md`](../../../AGENTS.md) first
 2. If `.env` is missing, `cp example.env .env`. Set `OPENAI_API_KEY`: copy it from the user's
    shell without displaying it, or open `.env` in their editor (`code`, `cursor`) and ask them
    to paste it. Do not open a terminal editor from your shell; it hangs the session.
+   After changing `.env` on a running stack, run `docker compose up -d agentos-api`.
 3. `docker compose up -d --build`, then wait for `http://localhost:8000/docs` to return 200.
    The first build takes a few minutes. If it does not come up, read
    `docker compose logs agentos-api`.

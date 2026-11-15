@@ -31,6 +31,14 @@ this order:
    AGENTS.md or each other, settings that no longer have any effect, and checks that
    fail or are missing.
 
+When code and documentation disagree, establish the intended behavior from the
+Product context, recorded decisions, tests and repository history where available.
+Do not assume either side is right. Preserve established protections and tests:
+never propose changing the documentation just to match a missing or weaker
+protection, check or test. If the intended behavior is unclear, especially for a
+feature, enabled component or schedule, flag the decision for a person in the
+Product status instead of proposing a code change based on a guess.
+
 For each finding, propose one Project with a small, bounded outcome, named for what is
 true when it is done, such as "Upgrade Agno to 3.2.1". Under it, propose one Task for
 each pull request the work needs. Most Projects have one Task. Cite the file and line,

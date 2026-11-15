@@ -272,17 +272,41 @@ Try asking Super Agent about the platform to check that the connection works.
 ### Upgrade from Agno 3.1
 
 Agno 3.2 replaces the built-in managers with Super Agent (`superagent`). Company
-Routines run on Mini Agent (`miniagent`). After you deploy this version:
+Routines run on Mini Agent (`miniagent`). Back up the database before upgrading.
+
+**Before starting 3.2**, if you use managed roles, migrate stored policies that name
+old manager IDs. Startup refuses these policies; they cannot be repaired through
+the new API after deployment. Keep the existing allow/deny effects and actions,
+and update the scope prefix:
+
+| Old component ID | New scope prefix |
+| --- | --- |
+| `os-manager-internal` | `teams:superagent` |
+| `platform-manager-internal` | `teams:superagent` |
+| `company-manager-internal` | `teams:superagent`; also `agents:miniagent` for Routine execution |
+| `platform-builder-internal` | `agents:platform-builder` |
+
+Prepare the policy changes on the existing deployment and apply them during the
+upgrade maintenance window, before starting the new API. Use the existing
+`/authz/roles/{slug}/scopes` API or `Authorization.set_role_scopes` in a maintenance
+script. Review overlapping rules: several former managers now share Super Agent.
+Update token scopes and API clients too: Super Agent uses `teams:superagent:run`,
+while creating, triggering or cancelling a Routine, or accepting a Task with no named executor, needs
+`agents:miniagent:run`; reading its runs needs `agents:miniagent:read`.
+
+**Slack on 3.2.0:** production authorization requires an explicit `Slack(users=...)`
+principal mapping. The template's `resolve_user_identity=True` alone does not satisfy
+it, so a production deployment with Slack configured will not start. Automatic
+identity resolution with authorization is pending an Agno fix; do not disable
+authorization to bypass this requirement.
+
+**After deployment:**
 
 - Update each saved Routine that ran on a built-in manager, or it fails:
   `PATCH /company/routines/{id}` with `{"executor_type": "agent", "executor_id": "miniagent"}`.
 - A saved `agentos-maintenance` Routine also keeps its old schedule and instructions.
   Put in the new ones from [app/company.py](app/company.py) on the Company page or with
   the same `PATCH`.
-- Update roles, token scopes, and API clients that name an old ID. Startup stops if a
-  stored role policy still uses one. Creating, triggering, or cancelling a Routine, or
-  accepting a Task with no named executor, needs `agents:miniagent:run`; reading its
-  runs needs `agents:miniagent:read`.
 - Reconnect MCP clients; the `os_manager` tool is now `super_agent`.
 - Earlier sessions stay under their old IDs.
 

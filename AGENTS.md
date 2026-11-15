@@ -93,7 +93,8 @@ Setup is in [docs/harnesses.md](docs/harnesses.md). When changing this code:
   must be set.
 - `SANDBOX_PROVIDER` selects `docker` (local) or `agentcore` (hosted). A wrong provider or
   missing AgentCore settings must stop startup, never fall back to running on the host.
-- Compose mounts the Docker socket into the API only. Sandboxes must not receive it.
+- The Docker socket mount is off by default. Enable it only for local Docker sandboxes,
+  in the API container; sandboxes must not receive it.
 - Runtime ARNs, buckets and tokens come from the environment and are never committed.
   Checkpoints go to `tmp/checkpoints` locally and S3 when hosted, not PostgreSQL.
 - Company declares a Git Source for `REPOSITORY` when it is set. Keep the two the same;

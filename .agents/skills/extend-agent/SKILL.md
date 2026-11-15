@@ -44,8 +44,10 @@ already declared by another toolkit. Check the names first.
 
 ## 3. Verify
 
-Python changes reload on their own. Restart the API after editing YAML or `.env`:
-`docker compose restart agentos-api`. Then run a prompt that exercises the change:
+Python changes reload on their own. After editing YAML, run
+`docker compose restart agentos-api`. After editing `.env`, run
+`docker compose up -d agentos-api` to recreate the container with the new environment.
+Then run a prompt that exercises the change:
 
 ```bash
 curl -sS -X POST http://localhost:8000/agents/<slug>/runs \
