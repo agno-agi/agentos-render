@@ -47,9 +47,11 @@ failure is before changing anything:
 ## 4. Fix and verify
 
 Change the layer that caused the failure and keep the change small. Then rerun the scenarios
-that failed, a few new ones like them, and the existing evals, each in a fresh session. Stop
-when the failures you chose are fixed, or when another change would only be tuning a prompt
-to pass one test. Change an agent built in Studio through Super Agent, not with a file.
+that failed, a few new ones like them, and the existing evals, each in a fresh session.
+Use fresh test user IDs when learned memories could affect the comparison; a new session
+does not reset per-user learning. Stop when the failures you chose are fixed, or when another
+change would only be tuning a prompt to pass one test. Change an agent built in Studio through
+Super Agent, not with a file.
 
 ## 5. Report
 
