@@ -1,8 +1,8 @@
 # AgentOS Render template
 
 This is a thin application over Agno. Application wiring and policy live here. Super Agent
-(`superagent`), Platform Builder, Mini Agent (`miniagent`), Studio, authorization, the durable
-queue and sandbox lifecycle belong to Agno. `CLAUDE.md` links to this file.
+(`superagent`), Platform Builder, Studio, authorization, the durable queue and sandbox
+lifecycle belong to Agno. `CLAUDE.md` links to this file.
 
 ## Working rules
 
@@ -76,11 +76,9 @@ Dependencies are declared in `pyproject.toml`. After changing them, run
   It is enabled from the Company page in the AgentOS UI, and each run spends model calls.
 - Declarations seed the database once. Saved Products, Sources and Routines keep later edits,
   so change saved records through the UI or API, not only in code.
-- Declare Routines without `executor_type` and `executor_id` so they run on Agno's default
-  executor, Mini Agent, as it changes. Name an executor only for a registered application
-  agent, team or workflow.
-- A Task accepted with no executor also runs on Mini Agent. Mini Agent refuses to run a
-  sandboxed agent, so a person accepts the Task on Claude Engineer or Codex Engineer.
+- Leave Routine executors unset to use Agno's default. Explicit executors must be registered
+  application agents, teams or workflows.
+- Assign sandboxed coding Tasks explicitly to Claude Engineer or Codex Engineer.
 
 ## Coding agents and sandboxes
 
