@@ -9,7 +9,7 @@ projects:
             type: web
             runtime: docker
             region: virginia
-            plan: 1c-2g  # 1 CPU, 2 GB RAM; always-on for scheduled work and MCP.
+            plan: free  # TEST ONLY: Hobby workspace without payment info
             numInstances: 1
             dockerfilePath: ./Dockerfile
             dockerContext: .
@@ -49,7 +49,7 @@ projects:
           - name: agentos-db
             ipAllowList: []  # Internal connections only.
             region: virginia
-            plan: basic-256mb
+            plan: free  # TEST ONLY
             postgresMajorVersion: "18"
             databaseName: ai
             user: ai
