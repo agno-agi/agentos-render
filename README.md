@@ -1,10 +1,6 @@
 # AgentOS: The self-managing agent platform
 
-The open-source agent platform that runs in your cloud.
-
-**Super Agent** coordinates your agents to deliver outcomes. Ask it to run an agent,
-build a new one, investigate a failed run, or organize larger work into Projects
-and Tasks. You set direction, approve work, and review results.
+AgentOS is an open-source agent platform that runs in your cloud. It comes with a **Super Agent** that builds agents, coordinates their work, and helps you manage the platform. Ask it to run an agent, create a workflow, or break a larger goal into Projects and Tasks.
 
 Built with [Agno](https://github.com/agno-agi/agno), AgentOS brings together:
 
@@ -28,11 +24,11 @@ cd into it, and follow .agents/skills/setup-platform/SKILL.md.
 ```
 
 It checks Docker, helps you configure your API key, starts the platform, and builds
-an agent with you. Already cloned the repo? Ask it to follow `/setup-platform`.
+an agent with you. If you've already cloned the repo, ask it to run `/setup-platform`.
 
 ### Or run it yourself
 
-You'll need Git, Docker with Compose, and an OpenAI API key.
+You'll need Git, Docker, and an OpenAI API key.
 
 ```sh
 git clone https://github.com/agno-agi/agentos-render agent-platform
@@ -63,7 +59,7 @@ appear in the Agents list and are available through the API and MCP.
 
 For ongoing work, ask it to create a Project:
 
-> Propose a Project to improve our customer support agent. Break it into Tasks for my review.
+> Propose a Project to build a customer support agent. Break it into Tasks for my review.
 
 The **Company** page keeps track of Products, Projects, Tasks, and scheduled Routines.
 You can approve work, assign it, review results, and request changes there or through
@@ -72,13 +68,12 @@ specific work; Routines run on a schedule.
 
 This template includes a weekly maintenance Routine that reviews the platform for
 relevant Agno updates, security issues, and quality problems. It is **disabled by
-default**. Enable it from the Company page to receive proposals for review; automatic
-acceptance is off. Scheduled runs use your model API keys.
+default**. Enable it from the Company page to receive proposals for review.
 
-## Build and improve agents
+## Skills
 
-Build through Super Agent or Studio, or keep your agents in Python. For code changes,
-ask your coding agent to follow a skill:
+This repo includes skills for building and managing your agent platform. Ask your
+coding agent to follow the relevant skill:
 
 | Task | Skill |
 | --- | --- |
@@ -88,27 +83,22 @@ ask your coding agent to follow a skill:
 | Find weaknesses and improve reliability | [/improve](.agents/skills/improve/SKILL.md) |
 | Review the repository before release | [/review-and-improve](.agents/skills/review-and-improve/SKILL.md) |
 
-Python agents go in `agents/` and are registered in [app/main.py](app/main.py).
-Set descriptions and quick prompts in [app/config.yaml](app/config.yaml).
-[app/registry.py](app/registry.py) supplies tools, models, knowledge, and memory for
-agents built in Studio.
+## Coding agents
 
-### Coding agents
+This repo comes with **Claude Code** and **Codex** agents. Work with them directly in AgentOS or ask Super Agent to delegate work to them.
 
-**Claude Engineer** and **Codex Engineer** can read code, make changes, and run commands.
-They are off by default. Follow the [harness setup guide](docs/harnesses.md) to enable
-them and configure credentials and sandboxes.
+They're **off by default**. Follow the [harness setup guide](docs/harnesses.md) to
+enable them and configure credentials and sandboxes.
 
 Once enabled, ask Super Agent:
 
 > Ask Codex Engineer to review this project and suggest improvements. Don't change any files yet.
 
-Assign Company Tasks to an engineer explicitly when you want it to do the coding.
 Without a sandbox, engineers run on the API host with its file and credential access.
 [Sandboxes](docs/harnesses.md#sandboxes-and-checkpoints) provide isolated execution
 and checkpoint recovery.
 
-## Make it yours
+## Make this platform yours
 
 Create an empty private GitHub repository, then point this checkout at it:
 
@@ -150,10 +140,9 @@ Add any other credentials your agents need directly in Render. Production has it
 own database, so add their documents there too. See [example.env](example.env) for
 settings and [scaling](docs/scaling.md) before adding API replicas.
 
-### Connect Claude, ChatGPT, and coding clients
+## Connect to Claude, ChatGPT, and coding clients
 
-For browser MCP clients, set `MCP_CONNECT_SECRET` to a random secret in Render and
-redeploy. Connect the client to `https://YOUR-DOMAIN/mcp` and enter the secret on
+For MCP clients like Claude and ChatGPT, set `MCP_CONNECT_SECRET` to a random secret in Render and redeploy. Connect the client to `https://YOUR-DOMAIN/mcp` and enter the secret on
 the consent page.
 
 For supported coding clients:
@@ -162,21 +151,33 @@ For supported coding clients:
 uvx agno connect --url https://YOUR-DOMAIN
 ```
 
-## Check your changes
+## Local development
 
-With PostgreSQL running, install [uv](https://docs.astral.sh/uv/) and run:
+Install [uv](https://docs.astral.sh/uv/), then create and activate a virtual environment
+from the repository root. If another environment is active, run `deactivate` first.
 
 ```sh
 ./scripts/venv_setup.sh
 source .venv/bin/activate
+```
+
+The setup script installs the application and development dependencies into `.venv`.
+After making changes, format your code and check formatting, lint, and types:
+
+```sh
+./scripts/format.sh
 ./scripts/validate.sh
+```
+
+With PostgreSQL running, test Super Agent with the smoke evals. These spend model
+calls and save results in the database:
+
+```sh
 python -m evals --tag smoke
 ```
 
-Validation checks formatting, lint, and types. Smoke evals exercise Super Agent,
-spend model calls, and save results in the database. Add cases in
-[evals/cases.py](evals/cases.py). Use `./scripts/mcp_check.sh` to check the running
-MCP server without a model call.
+Add cases in [evals/cases.py](evals/cases.py). Use `./scripts/mcp_check.sh` to check
+the running MCP server without a model call.
 
 See [AGENTS.md](AGENTS.md) for development conventions and
 [Agno documentation](https://docs.agno.com) for framework guides.

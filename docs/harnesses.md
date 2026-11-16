@@ -53,7 +53,7 @@ Complete the backend setup below before deploying this change. Compose selects
 
 ### Local Docker sandbox
 
-Configure `.env` using the [local setup instructions](../README.md#run-locally).
+Configure `.env` using the [local setup instructions](../README.md#or-run-it-yourself).
 Uncomment the `/var/run/docker.sock` mount under `agentos-api.volumes` in
 `compose.yaml`. From the repository root, build the sandbox image and start the platform:
 

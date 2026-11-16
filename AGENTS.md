@@ -2,7 +2,7 @@
 
 This is a thin application over Agno. Application wiring and policy live here. Super Agent
 (`superagent`), Platform Builder, Studio, authorization, the durable queue and sandbox
-lifecycle belong to Agno. `CLAUDE.md` links to this file.
+lifecycle belong in the Agno SDK. `CLAUDE.md` links to this file.
 
 ## Working rules
 
