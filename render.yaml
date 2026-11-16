@@ -47,6 +47,7 @@ projects:
 
         databases:
           - name: agentos-db
+            ipAllowList: []  # Internal connections only.
             region: virginia
             plan: basic-256mb
             postgresMajorVersion: "18"

@@ -1,8 +1,8 @@
 # AgentOS Render template
 
 This is a thin application over Agno. Application wiring and policy live here. Super Agent
-(`superagent`), Platform Builder, Mini Agent (`miniagent`), Studio, authorization, the durable
-queue and sandbox lifecycle belong to Agno. `CLAUDE.md` links to this file.
+(`superagent`), Platform Builder, Studio, authorization, the durable queue and sandbox
+lifecycle belong in the Agno SDK. `CLAUDE.md` links to this file.
 
 ## Working rules
 
@@ -76,11 +76,9 @@ Dependencies are declared in `pyproject.toml`. After changing them, run
   It is enabled from the Company page in the AgentOS UI, and each run spends model calls.
 - Declarations seed the database once. Saved Products, Sources and Routines keep later edits,
   so change saved records through the UI or API, not only in code.
-- Declare Routines without `executor_type` and `executor_id` so they run on Agno's default
-  executor, Mini Agent, as it changes. Name an executor only for a registered application
-  agent, team or workflow.
-- A Task accepted with no executor also runs on Mini Agent. Mini Agent refuses to run a
-  sandboxed agent, so a person accepts the Task on Claude Engineer or Codex Engineer.
+- Leave Routine executors unset to use Agno's default. Explicit executors must be registered
+  application agents, teams or workflows.
+- Assign sandboxed coding Tasks explicitly to Claude Engineer or Codex Engineer.
 
 ## Coding agents and sandboxes
 
@@ -93,7 +91,8 @@ Setup is in [docs/harnesses.md](docs/harnesses.md). When changing this code:
   must be set.
 - `SANDBOX_PROVIDER` selects `docker` (local) or `agentcore` (hosted). A wrong provider or
   missing AgentCore settings must stop startup, never fall back to running on the host.
-- Compose mounts the Docker socket into the API only. Sandboxes must not receive it.
+- The Docker socket mount is off by default. Enable it only for local Docker sandboxes,
+  in the API container; sandboxes must not receive it.
 - Runtime ARNs, buckets and tokens come from the environment and are never committed.
   Checkpoints go to `tmp/checkpoints` locally and S3 when hosted, not PostgreSQL.
 - Company declares a Git Source for `REPOSITORY` when it is set. Keep the two the same;

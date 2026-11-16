@@ -30,7 +30,8 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - .:/app
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Uncomment only when setting up local Docker sandboxes (docs/harnesses.md).
+      # - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - path: .env
         required: false

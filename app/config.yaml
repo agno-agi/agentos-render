@@ -1,20 +1,19 @@
 manifest:
   superagent:
-    description: "Super Agent learns your company, then helps you build products, plan projects and run agents."
+    description: "Super-agent coordinates your agents to deliver outcomes."
     quick_prompts:
       - "Ask me about my company and what I'm working on."
       - "Propose one improvement to this AgentOS as a Project."
       - "Build an agent that turns meeting notes into action items."
-      - "What needs my decision?"
   claude-engineer:
-    description: "Claude Code, running on this repository. Ask it to explain, review or change the code."
+    description: "Claude Code, running on this repository."
     quick_prompts:
+      - "How do I build a new agent?"
+      - "What's the difference between an agent and a workflow."
       - "What does this repository do? Answer in five lines."
-      - "Which files do I change to add a new agent?"
-      - "Suggest one fix as a diff. Don't change any files."
   codex-engineer:
-    description: "Codex, running on this repository. Ask it to explain, review or change the code."
+    description: "Codex, running on this repository."
     quick_prompts:
+      - "How do I build a new agent?"
+      - "What's the difference between an agent and a workflow."
       - "What does this repository do? Answer in five lines."
-      - "Which files do I change to add a new agent?"
-      - "Suggest one fix as a diff. Don't change any files."

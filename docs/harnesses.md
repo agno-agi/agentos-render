@@ -53,8 +53,9 @@ Complete the backend setup below before deploying this change. Compose selects
 
 ### Local Docker sandbox
 
-Configure `.env` using the [local setup instructions](../README.md#run-locally).
-From the repository root, build the sandbox image and start the platform:
+Configure `.env` using the [local setup instructions](../README.md#or-run-it-yourself).
+Uncomment the `/var/run/docker.sock` mount under `agentos-api.volumes` in
+`compose.yaml`. From the repository root, build the sandbox image and start the platform:
 
 ```sh
 docker build --target sandbox --load -t agno-sandbox:local .
@@ -66,9 +67,10 @@ The first command builds and loads the Dockerfile's `sandbox` stage. The API run
 Compose and starts separate containers from that image for coding sessions.
 Rebuild the sandbox image when its dependencies or Dockerfile change.
 
-Compose gives the API access to your Docker daemon through its socket. Use this for
+The enabled mount gives the API access to your Docker daemon through its socket. Use this for
 trusted local development; coding sandboxes receive no socket. Checkpoints persist
-in the project's `tmp/checkpoints` folder while those files remain.
+in the project's `tmp/checkpoints` folder while those files remain. Comment the mount
+out again when disabling Docker sandboxes and run `docker compose up -d agentos-api`.
 
 Model credentials are forwarded automatically. For private repositories and publishing,
 configure [GitHub access](#publish-changes-to-github).

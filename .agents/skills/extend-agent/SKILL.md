@@ -39,19 +39,23 @@ because `app/main.py` imports every agent and one bad import stops the platform:
 docker compose exec -T agentos-api python -c "from agno.tools.<module> import <Toolkit>"
 ```
 
-In `app/registry.py`, a toolkit is dropped without an error when one of its tool names is
-already declared by another toolkit. Check the names first.
+Check tool names in `app/registry.py` before adding a toolkit. Distinct toolkits can share
+function names, but unqualified references can become ambiguous; prefer distinct names.
 
 ## 3. Verify
 
-Python changes reload on their own. Restart the API after editing YAML or `.env`:
-`docker compose restart agentos-api`. Then run a prompt that exercises the change:
+Python changes reload on their own. After editing YAML, run
+`docker compose restart agentos-api`. After editing `.env`, run
+`docker compose up -d agentos-api` to recreate the container with the new environment.
+Then run a prompt that exercises the change:
 
 ```bash
+mkdir -p tmp
 curl -sS -X POST http://localhost:8000/agents/<slug>/runs \
   --form-string "message=<a prompt that exercises the change>" \
   --form-string "user_id=extend-agent-check" \
-  --form-string "stream=false" | jq -r '.status, .content'
+  --form-string "stream=false" --output tmp/extend-agent-run.json
+jq '{status, content, tools}' tmp/extend-agent-run.json
 ```
 
 Use `/teams/superagent/runs` for Super Agent. Read the answer and the tool calls; a 200 alone

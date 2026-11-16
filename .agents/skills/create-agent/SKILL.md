@@ -75,10 +75,12 @@ Python changes reload on their own. Restart the API after editing YAML:
 ## 3. Run it
 
 ```bash
+mkdir -p tmp
 curl -sS -X POST http://localhost:8000/agents/<slug>/runs \
   --form-string "message=<one of the quick prompts>" \
   --form-string "user_id=create-agent-check" \
-  --form-string "stream=false" | jq -r '.status, .content'
+  --form-string "stream=false" --output tmp/create-agent-run.json
+jq '{status, content, tools}' tmp/create-agent-run.json
 ```
 
 Read the answer and the tool calls; a 200 alone is not a pass. If the run fails, read
