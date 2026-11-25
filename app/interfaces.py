@@ -38,6 +38,7 @@ def attach_interfaces(agent_os: AgentOS) -> None:
                 token=token,
                 streaming=True,
                 signing_secret=secret,
+                authorize_senders=True,
                 resolve_user_identity=True,
                 loading_text="Pulling the thread...",
             )
