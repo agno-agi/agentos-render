@@ -42,7 +42,7 @@ checks completed and what to check next, even if the scan is incomplete.
 goals = [
     Goal(
         id="this-agentos",
-        name="AgentOS",
+        name="AgentOS maintenance",
         objective="Keep this AgentOS current, secure and working.",
         sources=[
             Source(type="website", reference="https://github.com/agno-agi/agno/releases"),
