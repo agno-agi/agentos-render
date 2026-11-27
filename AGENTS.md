@@ -32,7 +32,7 @@ Read the matching skill in `.agents/skills/` before starting; `.claude/skills` l
 | Path | What it holds |
 | --- | --- |
 | `app/main.py` | The AgentOS: database, Super Agent, Company, queue and registered agents. |
-| `app/company.py` | Product, Source and Routine declarations. |
+| `app/company.py` | Goal, Source and Routine declarations. |
 | `app/config.yaml` | Descriptions and quick prompts shown in the UI. Every quick prompt is ten words or fewer. |
 | `app/registry.py` | What Studio can build with, plus web tools, shared knowledge, learning and notes. |
 | `app/settings.py` | Model factories. |
@@ -71,10 +71,10 @@ Dependencies are declared in `pyproject.toml`. After changing them, run
 
 ## Company
 
-- `app/company.py` declares the `AgentOS` Product and its `agentos-maintenance` Routine:
+- `app/company.py` declares the `AgentOS` Goal and its `agentos-maintenance` Routine:
   Mondays at 09:00 UTC, disabled by default, proposing work and accepting nothing.
   It is enabled from the Company page in the AgentOS UI, and each run spends model calls.
-- Declarations seed the database once. Saved Products, Sources and Routines keep later edits,
+- Declarations seed the database once. Saved Goals, Sources and Routines keep later edits,
   so change saved records through the UI or API, not only in code.
 - Leave Routine executors unset to use Agno's default. Explicit executors must be registered
   application agents, teams or workflows.

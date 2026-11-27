@@ -15,4 +15,4 @@ def default_model() -> OpenAIResponses:
 
 def super_agent_model() -> OpenAIResponses:
     """Model for Super Agent and Company work."""
-    return OpenAIResponses(id="gpt-6.1-sol")
+    return OpenAIResponses(id="gpt-6.1-terra")
