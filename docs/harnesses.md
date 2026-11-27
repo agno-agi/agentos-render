@@ -261,28 +261,50 @@ Retained resources and telemetry can incur charges.
 
 </details>
 
-## Publish changes to GitHub
+<a id="publish-changes-to-github"></a>
 
-Git and the GitHub CLI are included in both the API and sandbox images. Create a
-[fine-grained personal access token](https://github.com/settings/personal-access-tokens/new):
+## GitHub access for engineers
 
-1. Give it a name such as **AgentOS** and choose an expiration date.
-2. Set **Resource owner** to the user or organization that owns the repository.
-3. Under **Repository access**, choose **Only select repositories** and select the
-   repositories your coding agents should work on.
-4. Under **Repository permissions**, set **Contents** and **Pull requests** to
-   **Read and write**. Leave other permissions at their defaults.
-5. Generate the token. If the organization requires approval, have an owner approve
-   it before using it for private access or publishing.
-6. Copy it into `GH_TOKEN` in `.env` locally or your API host's environment settings.
-   Keep it out of source code and agent prompts.
+Git and the GitHub CLI are included in both the API and sandbox images. A sandbox is
+given one of two tokens, and which one decides what an engineer can do on GitHub.
 
-The token acts as your GitHub user and cannot grant access you don't already have.
-If the agent must edit `.github/workflows`, also grant **Workflows: Read and write**.
+### Read-only, the default
 
-The template forwards the token to coding sandboxes and configures Git to authenticate
-through `gh`. The same token supports private checkout; set `GITHUB_READ_TOKEN` only
-if you want a separate checkout credential. No interactive GitHub login is needed.
+Set `GITHUB_READ_TOKEN` to a
+[fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
+with **Contents: Read-only** and **Pull requests: Read-only** on the repositories your
+engineers work on. Sandboxes get this token and no other. Engineers can clone a private
+repository, fetch branches and read pull requests. They cannot push, comment or open a
+pull request. A public repository needs no token at all.
+
+### Letting engineers push
+
+Pushing is off unless you turn it on with two settings together:
+
+1. `GH_TOKEN`: a fine-grained token with **Contents** and **Pull requests** set to
+   **Read and write** on the same repositories. Add **Workflows: Read and write** only if
+   an engineer must edit `.github/workflows`.
+2. `ENGINEERS_CAN_PUSH=true`.
+
+`GH_TOKEN` reaches a sandbox only when `ENGINEERS_CAN_PUSH` is `true`. With any other
+value the sandbox keeps the read-only token, even when `GH_TOKEN` is set.
+
+**What turning it on means.** Nothing asks a person before an engineer pushes. Anyone who
+can chat with Super Agent can make an engineer push or open a pull request, with no
+confirmation: by asking in chat, in a background run, in a Company Task, or through a team
+or a workflow that has an engineer in it. The token acts as the GitHub user who created
+it. Turn it on only when everyone who can reach this AgentOS may push to those
+repositories, and scope the token to them.
+
+If you set only `GH_TOKEN` and leave `ENGINEERS_CAN_PUSH` off, sandboxes get no token: a
+private repository cannot be cloned until you add `GITHUB_READ_TOKEN`.
+
+This setting covers sandboxes. Without a sandbox an engineer runs on the API host with
+every credential in its environment, `GH_TOKEN` included.
+
+Keep tokens in `.env` locally or in your API host's environment settings, out of source
+code and agent prompts. If your organization requires approval for fine-grained tokens,
+have an owner approve them first. No interactive GitHub login is needed.
 
 Commits default to `AgentOS <agentos@localhost>`. To use your own identity, set
 `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and `GIT_COMMITTER_EMAIL`.

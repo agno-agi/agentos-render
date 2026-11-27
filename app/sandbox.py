@@ -66,18 +66,35 @@ def agentcore_sandbox(
 
 
 def sandbox_env(overrides: Mapping[str, str] | None = None) -> dict[str, str]:
-    """Pass GitHub access and commit identity to coding sessions."""
+    """Pass GitHub access and commit identity to coding sessions.
+
+    By default a sandbox gets the read-only token, GITHUB_READ_TOKEN, and nothing that can push:
+    Git and the GitHub CLI inside it authenticate with that token, so an engineer can clone the
+    repository and read pull requests and cannot write to GitHub.
+
+    GH_TOKEN, the token that can push, reaches a sandbox only when ENGINEERS_CAN_PUSH is "true".
+    Nothing asks a person before an engineer pushes, so with it on anyone who can chat with
+    Super Agent can have an engineer push.
+    """
     names = (
-        "GH_TOKEN",
-        "GITHUB_READ_TOKEN",
         "GIT_AUTHOR_NAME",
         "GIT_AUTHOR_EMAIL",
         "GIT_COMMITTER_NAME",
         "GIT_COMMITTER_EMAIL",
     )
     values = {name: value for name in names if (value := getenv(name))}
+    read_token = getenv("GITHUB_READ_TOKEN")
+    push_token = getenv("GH_TOKEN") if engineers_can_push() else None
+    # Cloning uses GITHUB_READ_TOKEN. Git and gh inside the sandbox use GH_TOKEN, which is the
+    # read-only token unless pushing is switched on.
+    if checkout_token := read_token or push_token:
+        values["GITHUB_READ_TOKEN"] = checkout_token
+    if session_token := push_token or read_token:
+        values["GH_TOKEN"] = session_token
     values.update(overrides or {})
-
-    if values.get("GH_TOKEN") and not values.get("GITHUB_READ_TOKEN"):
-        values["GITHUB_READ_TOKEN"] = values["GH_TOKEN"]
     return values
+
+
+def engineers_can_push() -> bool:
+    """Whether the deployer has switched on GitHub write access for sandboxed engineers."""
+    return getenv("ENGINEERS_CAN_PUSH", "").strip().lower() == "true"

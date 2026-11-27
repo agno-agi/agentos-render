@@ -112,6 +112,12 @@ Your work now goes to your repository; `upstream` keeps the template available f
 updates. If you use sandboxes, also set your repository URL and branch in the
 [harness configuration](docs/harnesses.md#sandboxes-and-checkpoints).
 
+Sandboxed engineers read GitHub and cannot push. Set `GITHUB_READ_TOKEN` for a private
+repository. To let them push, set `GH_TOKEN` and `ENGINEERS_CAN_PUSH=true`. Nothing asks a
+person before a push, so with that on anyone who can chat with Super Agent can make an
+engineer push, in chat, a background run, a Task, a team or a workflow. See
+[GitHub access for engineers](docs/harnesses.md#github-access-for-engineers).
+
 ## Deploy to Render
 
 Ask your coding agent to follow
