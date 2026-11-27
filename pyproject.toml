@@ -8,7 +8,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "Agno", email = "hello@agno.com" }]
 
 dependencies = [
-  "agno[anthropic,cel,claude,codex,csv,docx,excel,mcp,openai,os,pdf,pgvector,psycopg,reportlab,slack,website,agentcore-sandbox] @ git+https://github.com/agno-agi/agno.git@9279764ce6ae43fc2ec367990d71a4974b9dbf76#subdirectory=libs/agno",
+  "agno[anthropic,cel,claude,codex,csv,docx,excel,mcp,openai,os,pdf,pgvector,psycopg,reportlab,slack,website,agentcore-sandbox] @ git+https://github.com/agno-agi/agno.git@5620b635fe74aa3521bc3631a9dce93c3f01c50a#subdirectory=libs/agno",
   "parallel-web",
   "python-dotenv",
 ]
