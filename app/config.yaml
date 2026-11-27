@@ -17,3 +17,7 @@ manifest:
       - "How do I build a new agent?"
       - "What's the difference between an agent and a workflow."
       - "What does this repository do? Answer in five lines."
+  pr-to-merge-ready:
+    description: "Two engineers review a pull request, triage keeps the real problems, one fixes them. Never pushes."
+    quick_prompts:
+      - "Get this PR to merge-ready: <pull request URL>"

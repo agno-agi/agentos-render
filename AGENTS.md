@@ -39,6 +39,7 @@ Read the matching skill in `.agents/skills/` before starting; `.claude/skills` l
 | `app/interfaces.py` | MCP tools and OAuth; optional Slack. |
 | `app/sandbox.py` | Sandbox switch, provider, repository and checkpoints. |
 | `agents/` | Application agents, including the Claude and Codex coding agents. |
+| `workflows/` | Application workflows. `merge_ready.py` is "PR to merge-ready", registered only when both engineers are enabled and sandboxed. |
 | `db/` | The shared PostgreSQL database and knowledge creation. |
 | `evals/` | Eval cases and the CLI entrypoint. |
 | `scripts/` | Setup, validation, image build and the AWS sandbox helper. |
