@@ -86,7 +86,7 @@ Setup is in [docs/harnesses.md](docs/harnesses.md). When changing this code:
 
 - The engineers `claude-1` and `codex-1` are declared in `agents/engineers.py` and stay off until
   their factories are enabled in `app/main.py`. Keep their IDs. Each is one worker with one
-  sign-in: `CLAUDE_1_PLAN_TOKEN` and `CODEX_1_PLAN_LOGIN` put them on plans, and an engineer on
+  sign-in: `CLAUDE_1_OAUTH_TOKEN` and `CODEX_1_PLAN_LOGIN` put them on plans, and an engineer on
   a plan must never be given the API key. `codex-1` on a plan runs one piece of work at a time.
 - Without a sandbox they run in the project root on the API host. With `SANDBOX_ENABLED = True`
   in `app/sandbox.py` they run in a sandbox with their own checkout of `REPOSITORY`, which

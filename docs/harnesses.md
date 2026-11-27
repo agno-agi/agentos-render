@@ -14,7 +14,7 @@ The included agents are disabled by default. For a public deployment, complete J
 setup before enabling them.
 
 1. Give the engineer a sign-in, in `.env` locally or your hosted environment settings.
-   To run on your plans, set `CLAUDE_1_PLAN_TOKEN` for `claude-1` or `CODEX_1_PLAN_LOGIN`
+   To run on your plans, set `CLAUDE_1_OAUTH_TOKEN` for `claude-1` or `CODEX_1_PLAN_LOGIN`
    for `codex-1`; [the README](../README.md#run-the-engineers-on-your-plans) shows how to
    make each one. To run on API keys instead, set `ANTHROPIC_API_KEY` for Claude or
    `OPENAI_API_KEY` for Codex. An engineer with a plan credential is never given the API key.

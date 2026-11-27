@@ -105,15 +105,17 @@ own. Give an engineer a plan credential and its work is billed to that plan, not
 API key. Set the credentials in `.env` locally, or in your API host's environment
 settings, and restart.
 
-**`claude-1`: `CLAUDE_1_PLAN_TOKEN`.** On a computer with a browser, run:
+**`claude-1`: `CLAUDE_1_OAUTH_TOKEN`.** On a computer with a browser, run:
 
 ```sh
 claude setup-token
 ```
 
-Approve it with the account whose Claude plan the engineer should use. Copy the token it
-prints into `CLAUDE_1_PLAN_TOKEN`. The token lasts one year and Claude Code does not save
-it anywhere, so keep it in your secret store.
+Approve it in the browser with the account whose Claude plan the engineer should use, and
+paste the code the browser shows back into the terminal. The terminal then prints the
+OAuth token, which starts with `sk-ant-oat01-`. Copy that into `CLAUDE_1_OAUTH_TOKEN`; the
+engineer passes it to Claude Code as `CLAUDE_CODE_OAUTH_TOKEN`. The OAuth token lasts one
+year and Claude Code does not save it anywhere, so keep it in your secret store.
 
 **`codex-1`: `CODEX_1_PLAN_LOGIN`.** Make a sign-in that only this engineer will use, in
 a folder of its own, so it is not the sign-in on your laptop:
@@ -148,7 +150,7 @@ What to expect:
   waits for the first to finish. A direct request while it is working is answered with
   "codex-1 is busy". `claude-1` is not limited.
 - **More engineers.** Add `create_claude_engineer(2)` or `create_codex_engineer(2)` in
-  `app/main.py` for `claude-2` and `codex-2`. They read `CLAUDE_2_PLAN_TOKEN` and
+  `app/main.py` for `claude-2` and `codex-2`. They read `CLAUDE_2_OAUTH_TOKEN` and
   `CODEX_2_PLAN_LOGIN`. Give each its own sign-in; never share one between two engineers.
 
 ## Make this platform yours
