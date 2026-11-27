@@ -14,6 +14,7 @@ from agno.os.authz import PLATFORM, READ, RUN, Authorization, Role, UserDirector
 # from agents.engineers import create_claude_engineer
 # from agents.engineers import create_codex_engineer
 from app.company import goals
+from app.github import github_instructions, github_read_tools
 from app.interfaces import attach_interfaces, mcp_auth
 from app.registry import registry, shared_knowledge, shared_learning
 from app.settings import super_agent_model
@@ -54,8 +55,10 @@ agent_os = AgentOS(
         learning=shared_learning,
         # A working conversation runs long; five turns of history loses its start.
         num_history_runs=20,
-        # Tells Super Agent which requests are the merge-ready workflow's job, when it is registered.
-        instructions=merge_ready_instructions(workflows),
+        # Read-only GitHub functions, when GITHUB_READ_TOKEN or GH_TOKEN is set.
+        tools=github_read_tools(),
+        # What Super Agent is told about the merge-ready workflow and about reading GitHub, when it has them.
+        instructions="\n\n".join(filter(None, [merge_ready_instructions(workflows), github_instructions()])) or None,
     ),
     company=CompanyConfig(
         goals=goals,
