@@ -117,7 +117,8 @@ OAuth token, which starts with `sk-ant-oat01-`. Copy that into `CLAUDE_1_OAUTH_T
 engineer passes it to Claude Code as `CLAUDE_CODE_OAUTH_TOKEN`. The OAuth token lasts one
 year and Claude Code does not save it anywhere, so keep it in your secret store.
 
-**`codex-1`: `CODEX_1_PLAN_LOGIN`.** Make a sign-in that only this engineer will use, in
+**`codex-1`: `CODEX_1_AUTH_JSON`.** This is the ChatGPT sign-in (`auth.json`), the way to
+put Codex on a ChatGPT plan today. Make a sign-in that only this engineer will use, in
 a folder of its own, so it is not the sign-in on your laptop:
 
 ```sh
@@ -127,7 +128,7 @@ CODEX_HOME=~/.codex-1 codex login
 ```
 
 Sign in with the account whose ChatGPT plan the engineer should use. Put the contents of
-`~/.codex-1/auth.json` into `CODEX_1_PLAN_LOGIN`, on one line. In `.env`, wrap it in
+`~/.codex-1/auth.json` into `CODEX_1_AUTH_JSON`, on one line. In `.env`, wrap it in
 single quotes. Then delete `~/.codex-1`, and do not use that sign-in anywhere else:
 Codex replaces the tokens in it as it works, and the copy that is left behind stops
 working. The platform keeps the current copy, encrypted, in its database, so the setting
@@ -151,7 +152,7 @@ What to expect:
   "codex-1 is busy". `claude-1` is not limited.
 - **More engineers.** Add `create_claude_engineer(2)` or `create_codex_engineer(2)` in
   `app/main.py` for `claude-2` and `codex-2`. They read `CLAUDE_2_OAUTH_TOKEN` and
-  `CODEX_2_PLAN_LOGIN`. Give each its own sign-in; never share one between two engineers.
+  `CODEX_2_AUTH_JSON`. Give each its own sign-in; never share one between two engineers.
 
 ## Make this platform yours
 
