@@ -8,7 +8,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "Agno", email = "hello@agno.com" }]
 
 dependencies = [
-  "agno[anthropic,cel,claude,codex,csv,docx,excel,mcp,openai,os,pdf,pgvector,psycopg,reportlab,slack,website,agentcore-sandbox] @ git+https://github.com/agno-agi/agno.git@5620b635fe74aa3521bc3631a9dce93c3f01c50a#subdirectory=libs/agno",
+  "agno[anthropic,cel,claude,codex,csv,docx,excel,github,mcp,openai,os,pdf,pgvector,psycopg,reportlab,slack,website,agentcore-sandbox] @ git+https://github.com/agno-agi/agno.git@5620b635fe74aa3521bc3631a9dce93c3f01c50a#subdirectory=libs/agno",
   "parallel-web",
   "python-dotenv",
 ]
@@ -21,7 +21,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["agents*", "app*", "db*", "evals*", "teams*"]
+include = ["agents*", "app*", "db*", "evals*", "teams*", "workflows*"]
 namespaces = false
 
 [tool.ruff]

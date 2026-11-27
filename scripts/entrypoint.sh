@@ -43,8 +43,6 @@ case "${1:-}" in
     *)
         # `$*` for the echo, `"$@"` for the exec — the echo wants one display string,
         # and only "$@" keeps an argument that contains spaces a single argument.
-        # Apply pending database migrations first. The API starts either way.
-        python /app/scripts/migrate.py || echo -e "    ${DIM}Migration did not finish; continuing.${NC}"
         echo -e "    ${DIM}> $*${NC}"
         echo ""
         exec "$@"

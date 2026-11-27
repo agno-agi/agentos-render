@@ -70,6 +70,19 @@ This template includes a weekly maintenance Routine that reviews the platform fo
 relevant Agno updates, security issues, and quality problems. It is **disabled by
 default**. Enable it from the Company page to receive proposals for review.
 
+### Super Agent reads GitHub
+
+Set `GITHUB_READ_TOKEN` (or `GH_TOKEN`) and Super Agent can read GitHub itself: a pull
+request, its diff and checks, files and code search. Ask it:
+
+> What does https://github.com/YOUR-ORG/YOUR-REPO/pull/123 change, and is it safe to merge?
+
+It is given functions that read only: it cannot push, comment or open anything. It reads
+whatever the token can read, for every person who can chat with it, so scope the token to
+the repositories you mean. A fine-grained token with **Contents**, **Pull requests**,
+**Commit statuses** and **Checks** set to **Read-only** is enough. Without a token the
+platform starts as before and Super Agent says it has no GitHub access.
+
 ## Skills
 
 This repo includes skills for building and managing your agent platform. Ask your
@@ -97,6 +110,25 @@ Once enabled, ask Super Agent:
 Without a sandbox, engineers run on the API host with its file and credential access.
 [Sandboxes](docs/harnesses.md#sandboxes-and-checkpoints) provide isolated execution
 and checkpoint recovery.
+
+### Get a pull request to merge-ready
+
+With both engineers enabled and running in [sandboxes](docs/harnesses.md#sandboxes-and-checkpoints),
+the platform has a workflow, **PR to merge-ready**. Ask Super Agent:
+
+> Get this PR to merge-ready: https://github.com/YOUR-ORG/YOUR-REPO/pull/123
+
+It runs in the background and Super Agent reports when it is done. Each round, `claude-1`
+and `codex-1` review the pull request at the same time without seeing each other's
+review. A triage agent keeps only the real problems a user would hit and drops nitpicks.
+If nothing is kept, the pull request is merge-ready. Otherwise `claude-1` fixes the kept
+points in its sandbox and the next round reviews the result. It stops after three rounds.
+
+The report gives the result first, then what triage kept and dropped in each round and
+why, the fix as a diff, and both reviews in full. The engineers are told never to push or
+comment, so the fix stays in the sandbox: apply the diff to the branch yourself. It works
+on pull requests of the repository set as `REPOSITORY` in `app/sandbox.py`. The steps are
+in `workflows/merge_ready.py`; change them there.
 
 ### Run the engineers on your plans
 

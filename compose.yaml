@@ -30,7 +30,7 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - .:/app
-      # Local Docker sandboxes (docs/harnesses.md): the API starts them through the host's Docker.
+      # Uncomment to use docker sandboxes (see: docs/harnesses.md).
       - /var/run/docker.sock:/var/run/docker.sock
     env_file:
       - path: .env
