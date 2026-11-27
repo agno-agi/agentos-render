@@ -26,6 +26,12 @@ WORKDIR /workspace
 RUN groupadd --gid 1000 sandbox \
     && useradd --uid 1000 --gid 1000 --home-dir /runtime --no-create-home sandbox
 
+# A sandbox's files are held in memory and count toward its memory limit, so nothing is
+# installed at run time: the checks' tools are in the image, and the marker tells
+# scripts/venv_setup.sh there is nothing to set up.
+RUN uv pip install --system mypy ruff \
+    && touch /etc/agentos-sandbox
+
 EXPOSE 8080
 ENTRYPOINT ["python", "-I", "-m", "agno.sandbox.agentcore.server", "serve"]
 CMD []
