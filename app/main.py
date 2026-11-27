@@ -12,7 +12,7 @@ from agno.os.authz import PLATFORM, READ, RUN, Authorization, Role, UserDirector
 
 # from agents.engineers import create_claude_engineer
 # from agents.engineers import create_codex_engineer
-from app.company import products
+from app.company import goals
 from app.interfaces import attach_interfaces, mcp_auth
 from app.registry import registry, shared_knowledge, shared_learning
 from app.settings import super_agent_model
@@ -44,7 +44,7 @@ agent_os = AgentOS(
         learning=shared_learning,
     ),
     company=CompanyConfig(
-        products=products,
+        goals=goals,
         model=super_agent_model(),
     ),
     queue=QueueConfig(durable=True, db=db),

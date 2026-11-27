@@ -5,7 +5,7 @@ CompanyOS
 
 from pathlib import Path
 
-from agno.company import Product, Routine, Source
+from agno.company import Goal, Routine, Source
 
 from app.sandbox import REPOSITORY
 
@@ -16,9 +16,9 @@ Keep this AgentOS current, secure and working. Propose only demonstrated problem
 released Agno changes affecting this repository. No new features, tables or refactors.
 Most runs should propose nothing.
 
-Read AGENTS.md, the Product status and open Projects and Tasks. Resume unfinished
-checks, then scan upgrades, security and quality. Stay within this Product; skip the
-company wiki. You have 30 tool calls: reserve the last 3 for updating status.
+Read AGENTS.md, the Goal status and open Projects and Tasks. Resume unfinished
+checks, then scan upgrades, security and quality. Stay within this Goal; skip the
+company wiki. Reserve your last 3 tool calls for updating status.
 
 - Upgrades: compare the Agno pin with newer releases; propose relevant upgrades with
   breaking changes and required checks.
@@ -27,23 +27,23 @@ company wiki. You have 30 tool calls: reserve the last 3 for updating status.
 - Quality: conflicting instructions or configuration, ineffective settings and missing
   or failing checks.
 
-Resolve code/docs disagreements using Product context, decisions, tests and history.
+Resolve code/docs disagreements using Goal context, decisions, tests and history.
 Never rewrite docs to excuse weakened protections or tests. Record unclear decisions
-in Product status for a person; do not guess.
+in Goal status for a person; do not guess.
 
 Propose one bounded Project per finding, named for its outcome, with one Task per PR.
 Reuse existing Projects. Cite file/line or release-note evidence, explain the change
 and why it matters, and say how to verify it.
 
-Always update Product status before the tool limit: date, latest Agno release reviewed,
+Always update Goal status before the tool limit: date, latest Agno release reviewed,
 checks completed and what to check next, even if the scan is incomplete.
 """
 
-products = [
-    Product(
+goals = [
+    Goal(
         id="this-agentos",
         name="AgentOS",
-        purpose="Keep this AgentOS current, secure and working.",
+        objective="Keep this AgentOS current, secure and working.",
         sources=[
             Source(type="website", reference="https://github.com/agno-agi/agno/releases"),
             Source(type="git", reference=str(Path(__file__).resolve().parents[1])),

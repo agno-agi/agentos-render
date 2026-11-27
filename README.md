@@ -61,9 +61,9 @@ For ongoing work, ask it to create a Project:
 
 > Propose a Project to build a customer support agent. Break it into Tasks for my review.
 
-The **Company** page keeps track of Products, Projects, Tasks, and scheduled Routines.
+The **Company** page keeps track of Goals, Projects, Tasks, and scheduled Routines.
 You can approve work, assign it, review results, and request changes there or through
-Super Agent. Products describe ongoing responsibilities; Projects and Tasks organize
+Super Agent. Goals describe ongoing responsibilities; Projects and Tasks organize
 specific work; Routines run on a schedule.
 
 This template includes a weekly maintenance Routine that reviews the platform for
