@@ -7,6 +7,7 @@ from os import getenv
 from pathlib import Path
 from typing import Any
 
+from agno.compaction import Compaction
 from agno.job_queue import QueueConfig
 from agno.os import AgentOS, CompanyConfig, OSManager
 from agno.os.authz import PLATFORM, READ, RUN, Authorization, Role, UserDirectory
@@ -54,6 +55,9 @@ agent_os = AgentOS(
         # Read-only GitHub functions, when GITHUB_READ_TOKEN or GH_TOKEN is set.
         tools=github_read_tools(),
         instructions=github_instructions(),
+        # OpenAI holds the conversation; a conversation over 100,000 tokens is folded into a summary,
+        # and one the model refuses as too long is folded and sent again.
+        compaction=Compaction(compact_at_tokens=100_000, on_context_overflow=True),
     ),
     company=CompanyConfig(
         goals=goals,

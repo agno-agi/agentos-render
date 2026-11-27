@@ -10,7 +10,11 @@ from agno.sandbox.docker import DockerSandbox
 
 SANDBOX_ENABLED = True
 # Set your repository and branch before enabling sandboxes.
-REPOSITORY: Repository | None = Repository(url="https://github.com/agno-agi/agentos-render", branch="template-demo")
+REPOSITORY: Repository | None = Repository(
+    url="https://github.com/agno-agi/agentos-render",
+    # Test build only: the branch the sandboxes check out can be set for the test stack.
+    branch=getenv("SANDBOX_REPOSITORY_BRANCH", "template-demo"),
+)
 LOCAL_CHECKPOINTS = Path(__file__).resolve().parents[1] / "tmp" / "checkpoints"
 
 
@@ -37,7 +41,8 @@ def sandbox_provider() -> Sandbox | None:
 
 def docker_sandbox(env: Mapping[str, str] | None = None) -> DockerSandbox:
     return DockerSandbox(
-        image="agno-sandbox:local",
+        # Test build only: the test stack runs its own image tag.
+        image=getenv("SANDBOX_IMAGE", "agno-sandbox:local"),
         network="isolated",
         workspace_mb=2048,
         checkpoints=FileCheckpointStore(LOCAL_CHECKPOINTS),

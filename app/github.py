@@ -48,13 +48,24 @@ def github_token() -> str | None:
 def github_read_tools() -> list[Any]:
     """The read-only GitHub functions, or nothing when no token is set."""
     token = github_token()
-    if not token:
+    anonymous = not token and getenv("GITHUB_READ_ANONYMOUS", "").lower() in ("1", "true")
+    if not token and not anonymous:
         return []
     try:
         from agno.tools.github import GithubTools
     except ImportError as error:
         log_warning(f"GitHub access for Super Agent is off: {error}")
         return []
+    if anonymous:
+        # Test build only: read public repositories with no token (GitHub allows 60 requests an hour).
+        from github import Github
+
+        class AnonymousGithubTools(GithubTools):
+            def authenticate(self) -> Any:
+                return Github()
+
+        available = [name for name in READ_FUNCTIONS if hasattr(GithubTools, name)]
+        return [AnonymousGithubTools(include_tools=available)]
     # Older Agno versions lack some of these functions; give Super Agent the ones this version has.
     available = [name for name in READ_FUNCTIONS if hasattr(GithubTools, name)]
     return [GithubTools(access_token=token, include_tools=available)]
