@@ -56,7 +56,7 @@ In the Render API service's **Environment** settings, configure:
 | `AGENTOS_URL` | Public HTTPS service URL, without a trailing slash; used by scheduling and MCP OAuth. |
 | `JWT_VERIFICATION_KEY` | Complete public PEM, with real line breaks and no surrounding quotes. |
 | `RUNTIME_ENV` | `prd`, set together with the verification key to enable production authorization. |
-| Model and integration credentials | Values required by the configured agents, such as `ANTHROPIC_API_KEY` for Claude Engineer. |
+| Model and integration credentials | Values required by the configured agents, such as `CLAUDE_1_PLAN_TOKEN` or `ANTHROPIC_API_KEY` for the `claude-1` engineer. |
 
 Have the user enter secrets directly in Render. Preserve existing working settings,
 including `JWT_JWKS_FILE` when used for verification. Choose **Save, rebuild, and deploy**,

@@ -92,11 +92,64 @@ enable them and configure credentials and sandboxes.
 
 Once enabled, ask Super Agent:
 
-> Ask Codex Engineer to review this project and suggest improvements. Don't change any files yet.
+> Ask codex-1 to review this project and suggest improvements. Don't change any files yet.
 
 Without a sandbox, engineers run on the API host with its file and credential access.
 [Sandboxes](docs/harnesses.md#sandboxes-and-checkpoints) provide isolated execution
 and checkpoint recovery.
+
+### Run the engineers on your plans
+
+The engineers are `claude-1` and `codex-1`. Each is one worker with one sign-in of its
+own. Give an engineer a plan credential and its work is billed to that plan, not to an
+API key. Set the credentials in `.env` locally, or in your API host's environment
+settings, and restart.
+
+**`claude-1`: `CLAUDE_1_PLAN_TOKEN`.** On a computer with a browser, run:
+
+```sh
+claude setup-token
+```
+
+Approve it with the account whose Claude plan the engineer should use. Copy the token it
+prints into `CLAUDE_1_PLAN_TOKEN`. The token lasts one year and Claude Code does not save
+it anywhere, so keep it in your secret store.
+
+**`codex-1`: `CODEX_1_PLAN_LOGIN`.** Make a sign-in that only this engineer will use, in
+a folder of its own, so it is not the sign-in on your laptop:
+
+```sh
+mkdir -p ~/.codex-1
+printf 'cli_auth_credentials_store = "file"\n' > ~/.codex-1/config.toml
+CODEX_HOME=~/.codex-1 codex login
+```
+
+Sign in with the account whose ChatGPT plan the engineer should use. Put the contents of
+`~/.codex-1/auth.json` into `CODEX_1_PLAN_LOGIN`, on one line. In `.env`, wrap it in
+single quotes. Then delete `~/.codex-1`, and do not use that sign-in anywhere else:
+Codex replaces the tokens in it as it works, and the copy that is left behind stops
+working. The platform keeps the current copy, encrypted, in its database, so the setting
+only has to be right once. If `codex-1` ever fails to sign in, make a new sign-in the
+same way and replace the setting.
+
+Treat both values like passwords. Never commit them or paste them into a chat.
+
+What to expect:
+
+- **A plan credential and an API key are both set.** The plan is used. An engineer with a
+  plan credential is never given `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`, on the API host
+  or in a sandbox, so its work cannot be billed to the key. Your other agents still use
+  the keys.
+- **Only an API key is set.** The engineer uses the key, billed at API prices.
+- **The plan credential is missing, expired or refused.** The engineer's run fails and
+  says so. It does not fall back to the API key. A setting that is present but empty
+  counts as missing.
+- **`codex-1` on a plan does one piece of work at a time.** A second Task or queued run
+  waits for the first to finish. A direct request while it is working is answered with
+  "codex-1 is busy". `claude-1` is not limited.
+- **More engineers.** Add `create_claude_engineer(2)` or `create_codex_engineer(2)` in
+  `app/main.py` for `claude-2` and `codex-2`. They read `CLAUDE_2_PLAN_TOKEN` and
+  `CODEX_2_PLAN_LOGIN`. Give each its own sign-in; never share one between two engineers.
 
 ## Make this platform yours
 

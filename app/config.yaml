@@ -5,13 +5,13 @@ manifest:
       - "Ask me about my company and what I'm working on."
       - "Propose one improvement to this AgentOS as a Project."
       - "Build an agent that turns meeting notes into action items."
-  claude-engineer:
+  claude-1:
     description: "Claude Code, running on this repository."
     quick_prompts:
       - "How do I build a new agent?"
       - "What's the difference between an agent and a workflow."
       - "What does this repository do? Answer in five lines."
-  codex-engineer:
+  codex-1:
     description: "Codex, running on this repository."
     quick_prompts:
       - "How do I build a new agent?"
