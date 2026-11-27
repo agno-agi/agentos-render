@@ -62,7 +62,9 @@ def github_read_tools() -> list[Any]:
 
         class AnonymousGithubTools(GithubTools):
             def authenticate(self) -> Any:
-                return Github()
+                # No retries: when GitHub's hourly limit is used up the call returns the error at once,
+                # instead of sleeping inside a chat turn until the hour ends.
+                return Github(retry=0, timeout=20)
 
         available = [name for name in READ_FUNCTIONS if hasattr(GithubTools, name)]
         return [AnonymousGithubTools(include_tools=available)]
