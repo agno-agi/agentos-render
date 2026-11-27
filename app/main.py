@@ -18,7 +18,7 @@ from app.interfaces import attach_interfaces, mcp_auth
 from app.registry import registry, shared_knowledge, shared_learning
 from app.settings import super_agent_model
 from db import get_postgres_db
-from workflows.merge_ready import merge_ready_workflows
+from workflows.merge_ready import merge_ready_instructions, merge_ready_workflows
 
 runtime_env = getenv("RUNTIME_ENV", "prd")
 agentos_url = getenv("AGENTOS_URL", "http://127.0.0.1:8000")
@@ -34,6 +34,9 @@ agents: list[Any] = [
     # create_claude_engineer(),
     # create_codex_engineer(),
 ]
+
+# "PR to merge-ready": registered when both engineers above are enabled and run in sandboxes.
+workflows = merge_ready_workflows(agents)
 
 agent_os = AgentOS(
     db=db,
@@ -51,6 +54,8 @@ agent_os = AgentOS(
         learning=shared_learning,
         # A working conversation runs long; five turns of history loses its start.
         num_history_runs=20,
+        # Tells Super Agent which requests are the merge-ready workflow's job, when it is registered.
+        instructions=merge_ready_instructions(workflows),
     ),
     company=CompanyConfig(
         goals=goals,
@@ -59,8 +64,7 @@ agent_os = AgentOS(
     queue=QueueConfig(durable=True, db=db),
     knowledge=[shared_knowledge],
     agents=agents,
-    # "PR to merge-ready": registered when both engineers above are enabled and run in sandboxes.
-    workflows=merge_ready_workflows(agents) or None,
+    workflows=workflows or None,
     registry=registry,
     config=str(agentos_root / "app" / "config.yaml"),
 )

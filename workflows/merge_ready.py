@@ -381,8 +381,10 @@ def create_merge_ready_workflow(claude: ClaudeAgent, codex: CodexAgent) -> Workf
         id="pr-to-merge-ready",
         name="PR to merge-ready",
         description=(
-            "Give it a pull request URL of this repository. Two engineers review it, triage keeps the real problems, "
-            "one engineer fixes them; at most three rounds. Returns a report. Never pushes or comments."
+            "Gets a pull request of this repository to merge-ready. Run it, in the background, whenever a person asks "
+            "to get a pull request ready to merge or to review and fix one: give it the pull request URL. Two "
+            "engineers review it, triage keeps the real problems, one engineer fixes them in a sandbox; at most "
+            "three rounds. Returns a report. Never pushes or comments, so it needs no confirmation."
         ),
         db=get_postgres_db(),
         session_state={"repository_url": claude.repository.url},
@@ -412,6 +414,29 @@ def create_merge_ready_workflow(claude: ClaudeAgent, codex: CodexAgent) -> Workf
             function_step("Report", report),
         ],
     )
+
+
+# What Super Agent is told when the workflow is registered. Without it, Super Agent files a request to get
+# a pull request to merge-ready as a Task for another agent, and the two-engineer review may never run.
+SUPER_AGENT_INSTRUCTIONS = """\
+Getting a pull request to merge-ready:
+- When a person asks to get a pull request to merge-ready, ready to merge or mergeable, or to have it
+  reviewed and its real problems fixed, that is the job of the workflow pr-to-merge-ready. Start it with
+  start_background_run (component_type "workflow", component_id "pr-to-merge-ready") and the pull request
+  URL as the message. It is a run, not a Task: do not add a Task for it and do not hand it to another agent.
+- Start it without asking first. It reviews with two engineers in sandboxes, never pushes and never
+  comments, and any fix stays in a sandbox, so no rule about pushing or publishing holds it back.
+- Say that it started and that it takes several minutes. When it has ended, read its report with
+  check_background_run and give the result line, the number of rounds, what triage kept and whether there
+  is a fix to apply. The fix is a diff in the report, not on GitHub: say so.
+- A question about a pull request, such as what it changes or whether it is safe to merge, is not this
+  job: answer it yourself.
+"""
+
+
+def merge_ready_instructions(workflows: list[Any]) -> str | None:
+    """What Super Agent is told about the workflow, or nothing when it is not registered."""
+    return SUPER_AGENT_INSTRUCTIONS if workflows else None
 
 
 def merge_ready_workflows(agents: list[Any]) -> list[Any]:
