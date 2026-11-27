@@ -24,8 +24,8 @@ db = get_postgres_db()
 
 # A new user is a member: they read and run your agents, teams and workflows.
 # Move a user to platform in user management to give them Super Agent.
-member = Role("member", scopes=READ + RUN)
-platform = Role("platform", scopes=READ + RUN + PLATFORM)
+member = Role("member", scopes=[*READ, *RUN])
+platform = Role("platform", scopes=[*READ, *RUN, *PLATFORM])
 
 agent_os = AgentOS(
     db=db,
