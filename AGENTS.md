@@ -56,6 +56,9 @@ docker compose up -d --build   # API on http://localhost:8000, no JWT in develop
 ./scripts/validate.sh          # ruff and mypy; CI runs the same script
 ```
 
+In a sandbox, skip the `venv_setup.sh` line: the image already has every dependency, `ruff`, `pytest` and
+`mypy`, and a sandbox's files count toward its memory limit. Run `format.sh` and `validate.sh` directly.
+
 Dependencies are declared in `pyproject.toml`. After changing them, run
 `./scripts/generate_requirements.sh` and rebuild both Dockerfile targets. Do not add `uv.lock`.
 
@@ -78,14 +81,16 @@ Dependencies are declared in `pyproject.toml`. After changing them, run
   so change saved records through the UI or API, not only in code.
 - Leave Routine executors unset to use Agno's default. Explicit executors must be registered
   application agents, teams or workflows.
-- Assign sandboxed coding Tasks explicitly to Claude Engineer or Codex Engineer.
+- Assign sandboxed coding Tasks explicitly to `claude-1` or `codex-1`.
 
 ## Coding agents and sandboxes
 
 Setup is in [docs/harnesses.md](docs/harnesses.md). When changing this code:
 
-- Claude Engineer and Codex Engineer are declared in `agents/engineers.py` and stay off until
-  their factories are enabled in `app/main.py`. Keep their IDs.
+- The engineers `claude-1` and `codex-1` are declared in `agents/engineers.py` and stay off until
+  their factories are enabled in `app/main.py`. Keep their IDs. Each is one worker with one
+  sign-in: `CLAUDE_1_OAUTH_TOKEN` and `CODEX_1_AUTH_JSON` (or `CODEX_1_ACCESS_TOKEN`) put them on plans, and an engineer on
+  a plan must never be given the API key. `codex-1` on a plan runs one piece of work at a time.
 - Without a sandbox they run in the project root on the API host. With `SANDBOX_ENABLED = True`
   in `app/sandbox.py` they run in a sandbox with their own checkout of `REPOSITORY`, which
   must be set.
