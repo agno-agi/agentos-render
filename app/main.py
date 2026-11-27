@@ -49,6 +49,8 @@ agent_os = AgentOS(
         root=agentos_root,
         model=super_agent_model(),
         learning=shared_learning,
+        # A working conversation runs long; five turns of history loses its start.
+        num_history_runs=20,
     ),
     company=CompanyConfig(
         goals=goals,
