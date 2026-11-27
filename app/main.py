@@ -5,6 +5,7 @@ AgentOS Entrypoint
 
 from os import getenv
 from pathlib import Path
+from typing import Any
 
 from agno.job_queue import QueueConfig
 from agno.os import AgentOS, CompanyConfig, OSManager
@@ -16,6 +17,7 @@ from app.interfaces import attach_interfaces, mcp_auth
 from app.registry import registry, shared_knowledge, shared_learning
 from app.settings import super_agent_model
 from db import get_postgres_db
+from workflows.merge_ready import merge_ready_workflows
 
 runtime_env = getenv("RUNTIME_ENV", "prd")
 agentos_url = getenv("AGENTOS_URL", "http://127.0.0.1:8000")
@@ -26,6 +28,11 @@ db = get_postgres_db()
 # Move a user to platform in user management to give them Super Agent.
 member = Role("member", scopes=[*READ, *RUN])
 platform = Role("platform", scopes=[*READ, *RUN, *PLATFORM])
+
+agents: list[Any] = [
+    create_claude_engineer(),
+    create_codex_engineer(),
+]
 
 agent_os = AgentOS(
     db=db,
@@ -50,10 +57,9 @@ agent_os = AgentOS(
     ),
     queue=QueueConfig(durable=True, db=db),
     knowledge=[shared_knowledge],
-    agents=[
-        create_claude_engineer(),
-        create_codex_engineer(),
-    ],
+    agents=agents,
+    # "PR to merge-ready": registered when both engineers above are enabled and run in sandboxes.
+    workflows=merge_ready_workflows(agents) or None,
     registry=registry,
     config=str(agentos_root / "app" / "config.yaml"),
 )
