@@ -70,6 +70,19 @@ This template includes a weekly maintenance Routine that reviews the platform fo
 relevant Agno updates, security issues, and quality problems. It is **disabled by
 default**. Enable it from the Company page to receive proposals for review.
 
+### Super Agent reads GitHub
+
+Set `GITHUB_READ_TOKEN` (or `GH_TOKEN`) and Super Agent can read GitHub itself: a pull
+request, its diff and checks, files and code search. Ask it:
+
+> What does https://github.com/YOUR-ORG/YOUR-REPO/pull/123 change, and is it safe to merge?
+
+It is given functions that read only: it cannot push, comment or open anything. It reads
+whatever the token can read, for every person who can chat with it, so scope the token to
+the repositories you mean. A fine-grained token with **Contents**, **Pull requests**,
+**Commit statuses** and **Checks** set to **Read-only** is enough. Without a token the
+platform starts as before and Super Agent says it has no GitHub access.
+
 ## Skills
 
 This repo includes skills for building and managing your agent platform. Ask your

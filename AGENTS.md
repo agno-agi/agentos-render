@@ -37,6 +37,7 @@ Read the matching skill in `.agents/skills/` before starting; `.claude/skills` l
 | `app/registry.py` | What Studio can build with, plus web tools, shared knowledge, learning and notes. |
 | `app/settings.py` | Model factories. |
 | `app/interfaces.py` | MCP tools and OAuth; optional Slack. |
+| `app/github.py` | Read-only GitHub functions for Super Agent, given only when a GitHub token is set. Never add a function that writes. |
 | `app/sandbox.py` | Sandbox switch, provider, repository and checkpoints. |
 | `agents/` | Application agents, including the Claude and Codex coding agents. |
 | `db/` | The shared PostgreSQL database and knowledge creation. |

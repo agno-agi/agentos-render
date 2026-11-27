@@ -13,6 +13,7 @@ from agno.os.authz import PLATFORM, READ, RUN, Authorization, Role, UserDirector
 # from agents.engineers import create_claude_engineer
 # from agents.engineers import create_codex_engineer
 from app.company import goals
+from app.github import github_instructions, github_read_tools
 from app.interfaces import attach_interfaces, mcp_auth
 from app.registry import registry, shared_knowledge, shared_learning
 from app.settings import super_agent_model
@@ -42,6 +43,9 @@ agent_os = AgentOS(
         root=agentos_root,
         model=super_agent_model(),
         learning=shared_learning,
+        # Read-only GitHub functions, when GITHUB_READ_TOKEN or GH_TOKEN is set.
+        tools=github_read_tools(),
+        instructions=github_instructions(),
     ),
     company=CompanyConfig(
         goals=goals,
