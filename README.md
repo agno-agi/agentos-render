@@ -178,6 +178,12 @@ Your work now goes to your repository; `upstream` keeps the template available f
 updates. If you use sandboxes, also set your repository URL and branch in the
 [harness configuration](docs/harnesses.md#sandboxes-and-checkpoints).
 
+Engineers push with `GH_TOKEN`. Every engineer run uses this one token, so a push carries
+the token's rights, not the rights of the person who asked. Use a
+[fine-grained token](docs/harnesses.md#publish-changes-to-github) limited to this one
+repository that can push branches and open pull requests, with no admin rights, and
+protect `main` so nothing lands without a review.
+
 ## Deploy to Render
 
 Ask your coding agent to follow
