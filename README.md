@@ -135,7 +135,17 @@ working. The platform keeps the current copy, encrypted, in its database, so the
 only has to be right once. If `codex-1` ever fails to sign in, make a new sign-in the
 same way and replace the setting.
 
-Treat both values like passwords. Never commit them or paste them into a chat.
+**`codex-1` on ChatGPT Enterprise: `CODEX_1_ACCESS_TOKEN`.** A ChatGPT Enterprise
+workspace can issue Codex access tokens. If yours does, use one instead of the sign-in:
+on the workspace's **Access tokens** page, create a token with the **Codex** scope and an
+expiry, and put it in `CODEX_1_ACCESS_TOKEN`. The engineer passes it to Codex as
+`CODEX_ACCESS_TOKEN`. Codex does not replace this token as it works, so nothing is stored
+and `codex-1` is not limited to one piece of work at a time. When it expires, create a
+new one and replace the setting. Set `CODEX_1_AUTH_JSON` or `CODEX_1_ACCESS_TOKEN`, not
+both: with both set the engineer is refused at startup. This path has not been run
+against a real Enterprise workspace.
+
+Treat these values like passwords. Never commit them or paste them into a chat.
 
 What to expect:
 
@@ -147,7 +157,7 @@ What to expect:
 - **The plan credential is missing, expired or refused.** The engineer's run fails and
   says so. It does not fall back to the API key. A setting that is present but empty
   counts as missing.
-- **`codex-1` on a plan does one piece of work at a time.** A second Task or queued run
+- **`codex-1` on a ChatGPT sign-in does one piece of work at a time.** A second Task or queued run
   waits for the first to finish. A direct request while it is working is answered with
   "codex-1 is busy". `claude-1` is not limited.
 - **More engineers.** Add `create_claude_engineer(2)` or `create_codex_engineer(2)` in

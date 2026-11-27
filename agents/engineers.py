@@ -5,6 +5,7 @@ codex-2. Give one a plan credential and it runs on that plan and is never given 
 
     CLAUDE_<n>_OAUTH_TOKEN  the OAuth token that `claude setup-token` prints
     CODEX_<n>_AUTH_JSON     the ChatGPT sign-in: the contents of the auth.json that `codex login` writes
+    CODEX_<n>_ACCESS_TOKEN  a Codex access token from a ChatGPT Enterprise workspace (instead of the sign-in)
 
 Without one, the engineer uses ANTHROPIC_API_KEY or OPENAI_API_KEY. See README.md.
 """
@@ -53,7 +54,8 @@ def create_claude_engineer(number: int = 1) -> ClaudeAgent:
 
 
 def create_codex_engineer(number: int = 1) -> CodexAgent:
-    # On a ChatGPT sign-in (auth.json) this engineer runs one piece of work at a time.
+    # On a ChatGPT sign-in (auth.json) this engineer runs one piece of work at a time; on an
+    # access token it is not limited. Setting both is refused when the engineer is built.
     return CodexAgent(
         id=f"codex-{number}",
         name=f"Codex {number}",
@@ -65,4 +67,5 @@ def create_codex_engineer(number: int = 1) -> CodexAgent:
         sandbox_mode="workspace-write",
         approval_mode="auto_review",
         **plan_credential("auth_json", f"CODEX_{number}_AUTH_JSON"),
+        **plan_credential("access_token", f"CODEX_{number}_ACCESS_TOKEN"),
     )
