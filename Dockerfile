@@ -29,7 +29,7 @@ RUN groupadd --gid 1000 sandbox \
 # A sandbox's files are held in memory and count toward its memory limit, so nothing is
 # installed at run time: the checks' tools are in the image, and the marker tells
 # scripts/venv_setup.sh there is nothing to set up.
-RUN uv pip install --system mypy ruff \
+RUN uv pip install --system mypy ruff pytest \
     && touch /etc/agentos-sandbox
 
 EXPOSE 8080

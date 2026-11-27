@@ -56,7 +56,7 @@ docker compose up -d --build   # API on http://localhost:8000, no JWT in develop
 ./scripts/validate.sh          # ruff and mypy; CI runs the same script
 ```
 
-In a sandbox, skip the `venv_setup.sh` line: the image already has every dependency, `ruff` and
+In a sandbox, skip the `venv_setup.sh` line: the image already has every dependency, `ruff`, `pytest` and
 `mypy`, and a sandbox's files count toward its memory limit. Run `format.sh` and `validate.sh` directly.
 
 Dependencies are declared in `pyproject.toml`. After changing them, run
