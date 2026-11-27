@@ -10,7 +10,7 @@ from agno.company import Goal, Routine, Source
 from app.sandbox import REPOSITORY
 
 # Recommended: enable an engineer in app/main.py, then add a line to these instructions
-# naming it as the executor for code changes, for example: "Use codex-engineer for code changes."
+# naming it as the executor for code changes, for example: "Use codex-1 for code changes."
 MAINTENANCE = """\
 Keep this AgentOS current, secure and working. Propose only demonstrated problems or
 released Agno changes affecting this repository. No new features, tables or refactors.
