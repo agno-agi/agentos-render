@@ -3,7 +3,7 @@ manifest:
     description: "Super Agent runs your agents, teams and workflows, and keeps track of the work."
     quick_prompts:
       - "What can you do here?"
-      - "Ask about my company, then set up a Goal."
+      - "What goals do we have, and what's in progress?"
       - "Build an agent that turns meeting notes into action items."
   claude-1:
     description: "Claude Code, working on this repository."
