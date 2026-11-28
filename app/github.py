@@ -9,7 +9,7 @@ as before.
 from os import getenv
 from typing import Any
 
-from agno.utils.log import log_warning
+from agno.tools.github import GithubTools
 
 # Every function here reads. A function that writes must never be added to this list.
 READ_FUNCTIONS = (
@@ -48,18 +48,9 @@ def github_token() -> str | None:
 def github_read_tools() -> list[Any]:
     """The read-only GitHub functions, or nothing when no token is set."""
     token = github_token()
-    if not token:
-        return []
-    try:
-        from agno.tools.github import GithubTools
-    except ImportError as error:
-        log_warning(f"GitHub access for Super Agent is off: {error}")
-        return []
-    # Older Agno versions lack some of these functions; give Super Agent the ones this version has.
-    available = [name for name in READ_FUNCTIONS if hasattr(GithubTools, name)]
-    return [GithubTools(access_token=token, include_tools=available)]
+    return [GithubTools(access_token=token, include_tools=list(READ_FUNCTIONS))] if token else []
 
 
 def github_instructions() -> str | None:
     """What Super Agent is told about reading GitHub, or nothing when it has no access."""
-    return INSTRUCTIONS if github_read_tools() else None
+    return INSTRUCTIONS if github_token() else None
