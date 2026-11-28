@@ -26,8 +26,8 @@ agentos_url = getenv("AGENTOS_URL", "http://127.0.0.1:8000")
 agentos_root = Path(__file__).resolve().parent.parent
 db = get_postgres_db()
 
-# A new user is a member: they read and run your agents, teams and workflows.
-# Move a user to platform in user management to give them Super Agent.
+# Every user starts as a member with read and run permissions.
+# Give a user the platform role (in user management) to give them Super Agent.
 member = Role("member", scopes=[*READ, *RUN])
 platform = Role("platform", scopes=[*READ, *RUN, *PLATFORM])
 
@@ -53,9 +53,7 @@ agent_os = AgentOS(
         root=agentos_root,
         model=super_agent_model(),
         learning=shared_learning,
-        # A working conversation runs long; five turns of history loses its start.
-        num_history_runs=20,
-        # A long conversation is summarized once it passes 100,000 tokens, and the originals stay searchable.
+        # A long conversation is summarized once it passes 100,000 tokens.
         # A request the model refuses as too long is summarized and sent again.
         compaction=Compaction(compact_at_tokens=100_000, on_context_overflow=True),
         # Read-only GitHub functions, when GITHUB_READ_TOKEN or GH_TOKEN is set.
