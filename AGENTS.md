@@ -93,7 +93,8 @@ steps in this order and report each command with what it answered.
 6. **Start the app on the new version** against the same database, as in step 2 with the
    `PYTHONPATH`. Check `GET /health` and `GET /company/goals`. If the answer says to apply pending
    migrations, `POST /databases/all/migrate` and ask again: it must now answer 200 with the Goal the
-   old version saved, with no restart. If `OPENAI_API_KEY` is set, send Super Agent one message:
+   old version saved, with no restart. Run `./scripts/mcp_check.sh`. If `OPENAI_API_KEY` is set,
+   send Super Agent one message:
    `curl -X POST localhost:8000/teams/superagent/runs -F message=Hello -F stream=false`.
 7. **Stop the app and the database** (`pg_ctl -D /workspace/pg stop`). Commit the pin,
    `requirements.txt` and your fixes, nothing else.
