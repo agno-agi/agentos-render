@@ -7,7 +7,6 @@ from os import getenv
 from pathlib import Path
 from typing import Any
 
-from agno.compaction import Compaction
 from agno.job_queue import QueueConfig
 from agno.os import AgentOS, CompanyConfig, OSManager
 from agno.os.authz import PLATFORM, READ, RUN, Authorization, Role, UserDirectory
@@ -53,9 +52,6 @@ agent_os = AgentOS(
         root=agentos_root,
         model=super_agent_model(),
         learning=shared_learning,
-        # A long conversation is summarized once it passes 100,000 tokens.
-        # A request the model refuses as too long is summarized and sent again.
-        compaction=Compaction(compact_at_tokens=100_000, on_context_overflow=True),
         # Read-only GitHub functions, when GITHUB_READ_TOKEN or GH_TOKEN is set.
         tools=github_read_tools(),
         # What Super Agent is told about the merge-ready workflow and about reading GitHub, when it has them.
