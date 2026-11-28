@@ -39,8 +39,8 @@ RUN apt-get update \
     && echo "create_main_cluster = false" >> /etc/postgresql-common/createcluster.conf \
     && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
     && apt-get install -y --no-install-recommends postgresql-18 postgresql-18-pgvector \
+    && ln -s /usr/lib/postgresql/18/bin/initdb /usr/lib/postgresql/18/bin/pg_ctl /usr/local/bin/ \
     && rm -rf /var/lib/apt/lists/*
-ENV PATH=/usr/lib/postgresql/18/bin:$PATH
 
 EXPOSE 8080
 ENTRYPOINT ["python", "-I", "-m", "agno.sandbox.agentcore.server", "serve"]
