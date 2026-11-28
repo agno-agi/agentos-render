@@ -17,7 +17,3 @@ manifest:
       - "What does this repository do? Answer in five lines."
       - "Find something in the README that is out of date and fix it. Show me the diff."
       - "Run the format and validate scripts and tell me what fails."
-  pr-to-merge-ready:
-    description: "Gets a pull request to merge-ready: two engineers review it, triage keeps the real problems, one fixes them in a sandbox. Never pushes."
-    quick_prompts:
-      - "Get this PR to merge-ready: <pull request URL>"
