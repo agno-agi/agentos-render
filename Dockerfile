@@ -32,6 +32,16 @@ RUN groupadd --gid 1000 sandbox \
 RUN uv pip install --system mypy ruff pytest \
     && touch /etc/agentos-sandbox
 
+# PostgreSQL with pgvector, the version compose.yaml and render.yaml run, so an engineer can test an
+# Agno upgrade against a database (AGENTS.md, "Upgrading Agno"). Nothing starts it; no cluster is created.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-common \
+    && echo "create_main_cluster = false" >> /etc/postgresql-common/createcluster.conf \
+    && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
+    && apt-get install -y --no-install-recommends postgresql-18 postgresql-18-pgvector \
+    && ln -s /usr/lib/postgresql/18/bin/initdb /usr/lib/postgresql/18/bin/pg_ctl /usr/local/bin/ \
+    && rm -rf /var/lib/apt/lists/*
+
 EXPOSE 8080
 ENTRYPOINT ["python", "-I", "-m", "agno.sandbox.agentcore.server", "serve"]
 CMD []
