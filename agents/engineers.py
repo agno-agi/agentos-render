@@ -59,7 +59,10 @@ def create_codex_engineer(number: int = 1) -> CodexAgent:
         cwd=cwd,
         sandbox=sandbox,
         repository=repository,
-        sandbox_mode="workspace-write",
+        # Codex wraps each command in a sandbox of its own, which cannot start inside a sandbox
+        # container. A sandboxed engineer is confined by its sandbox; on the API host Codex's own
+        # sandbox is the only protection, so it stays.
+        sandbox_mode="workspace-write" if sandbox is None else "full-access",
         approval_mode="auto_review",
         **credential("auth_json", f"CODEX_{number}_AUTH_JSON"),
         **credential("access_token", f"CODEX_{number}_ACCESS_TOKEN"),

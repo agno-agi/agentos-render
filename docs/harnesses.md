@@ -27,6 +27,8 @@ Try:
 > Explain this project and suggest three improvements to its agents. Don't change any files yet.
 
 [agents/engineers.py](../agents/engineers.py) defines their models and harness options.
+On the API host, Codex keeps its own command sandbox (`workspace-write`). In a sandbox it runs
+with `full-access`: the sandbox is the boundary, and Codex's own cannot start inside one.
 To disable an agent, comment out its import and factory call and redeploy.
 
 ## Sandboxes and checkpoints
@@ -354,7 +356,7 @@ def create_repository_agents(slug: str, url: str, branch: str = "main"):
             db=db,
             sandbox=sandbox,
             repository=repository,
-            sandbox_mode="workspace-write",
+            sandbox_mode="full-access",
             approval_mode="auto_review",
         ),
     ]
