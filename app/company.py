@@ -39,7 +39,7 @@ checks completed and what to check next, even if the scan is incomplete.
 
 goals = [
     Goal(
-        id="agentos-maintenance",
+        id="this-agentos",
         name="AgentOS maintenance",
         objective="Keep this AgentOS current, secure and working.",
         sources=[
