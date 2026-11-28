@@ -1,22 +1,22 @@
 manifest:
   superagent:
-    description: "Super-agent coordinates your agents to deliver outcomes."
+    description: "Super Agent runs your agents, teams and workflows, and keeps track of the work."
     quick_prompts:
-      - "Ask me about my company and what I'm working on."
-      - "Propose one improvement to this AgentOS as a Project."
-      - "Build an agent that turns meeting notes into action items."
+      - "What can you do here? List the agents, teams and workflows you can use."
+      - "Ask me what my company does and what I'm working on, then set up a Goal and a first Project."
+      - "Build an agent that turns meeting notes into action items, then run it on a sample."
   claude-1:
-    description: "Claude Code, running on this repository."
+    description: "Claude Code, working on this repository."
     quick_prompts:
-      - "How do I build a new agent?"
-      - "What's the difference between an agent and a workflow."
       - "What does this repository do? Answer in five lines."
+      - "Add an agent that summarizes a web page, following AGENTS.md. Show me the diff."
+      - "Review app/main.py and tell me the three things most likely to break."
   codex-1:
-    description: "Codex, running on this repository."
+    description: "Codex, working on this repository."
     quick_prompts:
-      - "How do I build a new agent?"
-      - "What's the difference between an agent and a workflow."
       - "What does this repository do? Answer in five lines."
+      - "Find something in the README that is out of date and fix it. Show me the diff."
+      - "Run the format and validate scripts and tell me what fails."
   pr-to-merge-ready:
     description: "Gets a pull request to merge-ready: two engineers review it, triage keeps the real problems, one fixes them in a sandbox. Never pushes."
     quick_prompts:
