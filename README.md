@@ -111,6 +111,25 @@ Without a sandbox, engineers run on the API host with its file and credential ac
 [Sandboxes](docs/harnesses.md#sandboxes-and-checkpoints) provide isolated execution
 and checkpoint recovery.
 
+### Get a pull request to merge-ready
+
+With both engineers enabled and running in [sandboxes](docs/harnesses.md#sandboxes-and-checkpoints),
+the platform has a workflow, **PR to merge-ready**. Ask Super Agent:
+
+> Get this PR to merge-ready: https://github.com/YOUR-ORG/YOUR-REPO/pull/123
+
+It runs in the background and Super Agent reports when it is done. Each round, `claude-1`
+and `codex-1` review the pull request at the same time without seeing each other's
+review. A triage agent keeps only the real problems a user would hit and drops nitpicks.
+If nothing is kept, the pull request is merge-ready. Otherwise `claude-1` fixes the kept
+points in its sandbox and the next round reviews the result. It stops after three rounds.
+
+The report gives the result first, then what triage kept and dropped in each round and
+why, the fix as a diff, and both reviews in full. The engineers are told never to push or
+comment, so the fix stays in the sandbox: apply the diff to the branch yourself. It works
+on pull requests of the repository set as `REPOSITORY` in `app/sandbox.py`. The steps are
+in `workflows/merge_ready.py`; change them there.
+
 ### Run the engineers on your plans
 
 The engineers are `claude-1` and `codex-1`. Each is one worker with one sign-in of its
