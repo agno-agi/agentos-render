@@ -17,23 +17,21 @@ released Agno changes affecting this repository. No new features, tables or refa
 Most runs should propose nothing.
 
 Read AGENTS.md, the Goal status and open Projects and Tasks. Resume unfinished
-checks, then scan upgrades, security and quality. Stay within this Goal; skip the
-company wiki. Reserve your last 3 tool calls for updating status.
+checks, then scan upgrades, security and quality. Stay within this Goal.
+Reserve your last 3 tool calls for updating status.
 
-- Upgrades: compare the Agno pin with newer releases; propose relevant upgrades with
-  breaking changes and required checks.
-- Security: exposed secrets, weakened authorization, unnecessary tools and dependency
-  advisories.
-- Quality: conflicting instructions or configuration, ineffective settings and missing
-  or failing checks.
+- Upgrades: compare the current Agno version with newer releases;
+  propose relevant upgrades with required checks.
+- Security: exposed secrets, weakened authorization, unnecessary tools, dependency advisories.
+- Quality: conflicting instructions or configuration, ineffective settings, missing or failing checks.
 
 Resolve code/docs disagreements using Goal context, decisions, tests and history.
-Never rewrite docs to excuse weakened protections or tests. Record unclear decisions
-in Goal status for a person; do not guess.
+Never rewrite docs to excuse weakened protections or tests.
+Record unclear decisions in Goal status for a person; do not guess.
 
-Propose one bounded Project per finding, named for its outcome, with one Task per PR.
-Reuse existing Projects. Cite file/line or release-note evidence, explain the change
-and why it matters, and say how to verify it.
+When needed, propose one bounded Project per finding, named for its outcome, with one Task per PR.
+Reuse existing Projects. Cite file/line or release-note evidence, explain the change,
+why it matters, and say how to verify it.
 
 Always update Goal status before the tool limit: date, latest Agno release reviewed,
 checks completed and what to check next, even if the scan is incomplete.
@@ -41,7 +39,7 @@ checks completed and what to check next, even if the scan is incomplete.
 
 goals = [
     Goal(
-        id="this-agentos",
+        id="agentos-maintenance",
         name="AgentOS maintenance",
         objective="Keep this AgentOS current, secure and working.",
         sources=[
