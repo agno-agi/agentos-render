@@ -2,18 +2,18 @@ manifest:
   superagent:
     description: "Super Agent runs your agents, teams and workflows, and keeps track of the work."
     quick_prompts:
-      - "What can you do here? List the agents, teams and workflows you can use."
-      - "Ask me what my company does and what I'm working on, then set up a Goal and a first Project."
-      - "Build an agent that turns meeting notes into action items, then run it on a sample."
+      - "What can you do here?"
+      - "Ask about my company, then set up a Goal."
+      - "Build an agent that turns meeting notes into action items."
   claude-1:
     description: "Claude Code, working on this repository."
     quick_prompts:
       - "What does this repository do? Answer in five lines."
-      - "Add an agent that summarizes a web page, following AGENTS.md. Show me the diff."
-      - "Review app/main.py and tell me the three things most likely to break."
+      - "Add an agent that summarizes a web page."
+      - "Review app/main.py and list three likely problems."
   codex-1:
     description: "Codex, working on this repository."
     quick_prompts:
       - "What does this repository do? Answer in five lines."
-      - "Find something in the README that is out of date and fix it. Show me the diff."
-      - "Run the format and validate scripts and tell me what fails."
+      - "Find one outdated line in the README and fix it."
+      - "Run the format and validate scripts. What fails?"
