@@ -62,6 +62,48 @@ In a sandbox, skip the `venv_setup.sh` line: the image already has every depende
 Dependencies are declared in `pyproject.toml`. After changing them, run
 `./scripts/generate_requirements.sh` and rebuild both Dockerfile targets. Do not add `uv.lock`.
 
+## Upgrading Agno
+
+A passing `validate.sh` does not show that an upgrade works. AgentOS has to start on the new version
+against a database the old version made, and that database may need a migration. In a sandbox the
+image holds the Agno this branch pins and PostgreSQL with pgvector; nothing is running. Do these
+steps in this order and report each command with what it answered.
+
+1. **Start a database**, outside the checkout. The defaults in `db/url.py` reach it with no settings.
+   ```sh
+   initdb -D /workspace/pg -U ai --auth=trust
+   pg_ctl -D /workspace/pg -o "-k /tmp" -l /workspace/pg.log -w start && createdb -h localhost -U ai ai
+   ```
+2. **Let the current version create its tables, before you change anything.** Run
+   `RUNTIME_ENV=dev uvicorn app.main:app --port 8000`, wait for `GET /health`, then stop it. This is
+   the database a deployment has when the new version first starts. A new version started on an
+   empty database creates its own tables, and no migration is tested.
+3. **Change the pin** in `pyproject.toml`, then
+   `mkdir -p /workspace/tmp && TMPDIR=/workspace/tmp ./scripts/generate_requirements.sh agno`.
+4. **Install only what changed**, beside the image's packages. The image is read-only and a second
+   full environment does not fit in memory.
+   ```sh
+   git diff -U0 requirements.txt | sed -n 's/^+\([A-Za-z]\)/\1/p' > /workspace/tmp/changed.txt
+   TMPDIR=/workspace/tmp uv pip install --no-cache --no-deps --target /workspace/upgrade -r /workspace/tmp/changed.txt
+   ```
+   Start every later command with `PYTHONPATH=/workspace/upgrade`; without it Python uses the old version.
+5. **Run `PYTHONPATH=/workspace/upgrade ./scripts/validate.sh`** and fix what the new version breaks
+   in this repository. mypy takes about 1 GB, so run it while the app is stopped.
+6. **Start the app on the new version** against the same database, as in step 2 with the
+   `PYTHONPATH`. Check `GET /health` and `GET /company/goals`. If the answer says to apply pending
+   migrations, `POST /databases/all/migrate` and ask again: it must now answer 200 with the Goal the
+   old version saved, with no restart. If `OPENAI_API_KEY` is set, send Super Agent one message:
+   `curl -X POST localhost:8000/teams/superagent/runs -F message=Hello -F stream=false`.
+7. **Stop the app and the database** (`pg_ctl -D /workspace/pg stop`). Commit the pin,
+   `requirements.txt` and your fixes, nothing else.
+
+A sandbox has 2 GB of memory and its files count toward it. `/tmp` holds 128 MB and the home
+directory 256 MB, and filling either ends the session, so keep anything large under `/workspace`
+as above, and pass `TMPDIR=/workspace/tmp` and `--no-cache` to any other `uv`, `pytest` or `git clone`.
+
+This shows the new version starts, migrates and answers on an empty copy of today's tables. It does
+not show the deploy or your real data; say so in the pull request.
+
 ## Agents and storage
 
 - Follow the agent shape in `create-agent`. Register code agents in `app/main.py` and describe
