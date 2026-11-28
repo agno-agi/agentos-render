@@ -40,7 +40,6 @@ Read the matching skill in `.agents/skills/` before starting; `.claude/skills` l
 | `app/github.py` | Read-only GitHub functions for Super Agent, given only when a GitHub token is set. Never add a function that writes. |
 | `app/sandbox.py` | Sandbox switch, provider, repository and checkpoints. |
 | `agents/` | Application agents, including the Claude and Codex coding agents. |
-| `workflows/` | Application workflows. `merge_ready.py` is "PR to merge-ready", registered only when both engineers are enabled and sandboxed. |
 | `db/` | The shared PostgreSQL database and knowledge creation. |
 | `evals/` | Eval cases and the CLI entrypoint. |
 | `scripts/` | Setup, validation, image build and the AWS sandbox helper. |
