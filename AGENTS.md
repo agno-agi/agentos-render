@@ -94,14 +94,16 @@ steps in this order and report each command with what it answered.
 6. **Start the app on the new version** against the same database, as in step 2 with the
    `PYTHONPATH`. Check `GET /health` and `GET /company/goals`. If the answer says to apply pending
    migrations, `POST /databases/all/migrate` and ask again: it must now answer 200 with the Goal the
-   old version saved, with no restart. If `OPENAI_API_KEY` is set, send Super Agent one message:
+   old version saved, with no restart. Run `./scripts/mcp_check.sh`. If `OPENAI_API_KEY` is set,
+   send Super Agent one message:
    `curl -X POST localhost:8000/teams/superagent/runs -F message=Hello -F stream=false`.
 7. **Stop the app and the database** (`pg_ctl -D /workspace/pg stop`). Commit the pin,
    `requirements.txt` and your fixes, nothing else.
 
 A sandbox has 2 GB of memory and its files count toward it. `/tmp` holds 128 MB and the home
 directory 256 MB, and filling either ends the session, so keep anything large under `/workspace`
-as above, and pass `TMPDIR=/workspace/tmp` and `--no-cache` to any other `uv`, `pytest` or `git clone`.
+as above: set `TMPDIR=/workspace/tmp` for any other `uv`, `pytest` or `git clone`, give `uv`
+`--no-cache`, and do not build a second environment (`uv venv`, `uv run --with-requirements`).
 
 This shows the new version starts, migrates and answers on an empty copy of today's tables. It does
 not show the deploy or your real data; say so in the pull request.

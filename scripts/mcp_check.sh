@@ -46,6 +46,10 @@ runner+=(agentos-api python -u)
 if [[ "${MCP_CHECK_HOST:-0}" == 1 ]]; then
     runner=(uv run --no-project --env-file .env --with-requirements requirements.txt python -u)
 fi
+# A sandbox has no Docker and no room for a second environment; its image holds the client's packages.
+if [[ -f /etc/agentos-sandbox ]]; then
+    runner=(python -u)
+fi
 
 echo ""
 echo -e '\033[38;5;208m▸\033[0m \033[1mMCP Check\033[0m'
