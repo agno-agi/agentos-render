@@ -1,6 +1,6 @@
 # Run coding agents on AgentOS
 
-Your platform includes **Claude Engineer** (Claude Code) and **Codex Engineer** agents.
+Your platform includes two coding engineers: **`claude-1`** (Claude Code) and **`codex-1`** (Codex).
 Enable coding agents to explore code, build features, run checks, and open pull
 requests once you configure GitHub access.
 
@@ -13,8 +13,11 @@ and checkpoint recovery.
 The included agents are disabled by default. For a public deployment, complete JWT
 setup before enabling them.
 
-1. Add `ANTHROPIC_API_KEY` for Claude or `OPENAI_API_KEY` for Codex to `.env` locally
-   or your hosted environment settings.
+1. Give the engineer a sign-in, in `.env` locally or your hosted environment settings.
+   To run on your plans, set `CLAUDE_1_OAUTH_TOKEN` for `claude-1`, or `CODEX_1_AUTH_JSON`
+   (or `CODEX_1_ACCESS_TOKEN` on ChatGPT Enterprise) for `codex-1`; [the README](../README.md#run-the-engineers-on-your-plans) shows how to
+   make each one. To run on API keys instead, set `ANTHROPIC_API_KEY` for Claude or
+   `OPENAI_API_KEY` for Codex. An engineer with a plan credential is never given the API key.
 2. In [app/main.py](../app/main.py), uncomment the matching import from
    `agents.engineers` and factory call in the `agents` list. Keep your other agents.
 3. Run `./scripts/format.sh`, rebuild and deploy, then open the agent in AgentOS.
@@ -53,8 +56,9 @@ Complete the backend setup below before deploying this change. Compose selects
 
 ### Local Docker sandbox
 
-Configure `.env` using the [local setup instructions](../README.md#run-locally).
-From the repository root, build the sandbox image and start the platform:
+Configure `.env` using the [local setup instructions](../README.md#or-run-it-yourself).
+Uncomment the `/var/run/docker.sock` mount under `agentos-api.volumes` in
+`compose.yaml`. From the repository root, build the sandbox image and start the platform:
 
 ```sh
 docker build --target sandbox --load -t agno-sandbox:local .
@@ -66,11 +70,13 @@ The first command builds and loads the Dockerfile's `sandbox` stage. The API run
 Compose and starts separate containers from that image for coding sessions.
 Rebuild the sandbox image when its dependencies or Dockerfile change.
 
-Compose gives the API access to your Docker daemon through its socket. Use this for
+The enabled mount gives the API access to your Docker daemon through its socket. Use this for
 trusted local development; coding sandboxes receive no socket. Checkpoints persist
-in the project's `tmp/checkpoints` folder while those files remain.
+in the project's `tmp/checkpoints` folder while those files remain. Comment the mount
+out again when disabling Docker sandboxes and run `docker compose up -d agentos-api`.
 
-Model credentials are forwarded automatically. For private repositories and publishing,
+Each engineer's sign-in reaches its sandbox automatically: the plan credential when it has
+one, otherwise the API key. For private repositories and publishing,
 configure [GitHub access](#publish-changes-to-github).
 
 ### AWS AgentCore sandbox
@@ -177,8 +183,8 @@ In your API host's environment settings (**Environment** on Render), add:
 | `AGENTCORE_CHECKPOINT_BUCKET` | The printed checkpoint bucket. |
 | `AGENTCORE_CHECKPOINT_PREFIX` | The printed checkpoint prefix. |
 
-Keep production JWT authorization, database settings, and your agents' model keys.
-Agno forwards model credentials to the sandbox. For IAM user keys, remove stale
+Keep production JWT authorization, database settings, and your agents' model keys and
+plan credentials. Agno gives each engineer's sandbox that engineer's sign-in. For IAM user keys, remove stale
 `AWS_PROFILE` or `AWS_SESSION_TOKEN` settings from the hosted API.
 
 Confirm sandboxes and the repository are configured in `app/sandbox.py`, and the
@@ -339,7 +345,7 @@ def create_repository_agents(slug: str, url: str, branch: str = "main"):
             sandbox=sandbox,
             repository=repository,
             system_prompt={"type": "preset", "preset": "claude_code"},
-            permission_mode="acceptEdits",
+            permission_mode="auto",
         ),
         CodexAgent(
             id=f"{slug}-codex",
@@ -349,6 +355,7 @@ def create_repository_agents(slug: str, url: str, branch: str = "main"):
             sandbox=sandbox,
             repository=repository,
             sandbox_mode="workspace-write",
+            approval_mode="auto_review",
         ),
     ]
 ```

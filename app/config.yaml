@@ -1,27 +1,19 @@
 manifest:
-  os-manager-internal:
-    description: "Build agents, check platform health, and coordinate work across this AgentOS."
+  superagent:
+    description: "Super Agent builds, runs and manages your agent platform."
     quick_prompts:
-      - "Show me the available agents and explain when to use each one."
-      - "Check platform health and explain any issues that need my attention."
-      - "Create and publish an agent that turns pasted meeting notes into decisions, action items, and open questions. Use the default model and no tools."
-      - "Summarize the Projects and Tasks for AgentOS, highlighting blockers and decisions awaiting review."
-  company-manager-internal:
-    description: "Review Sources, plan work across Products and Projects, and propose improvements for human review."
+      - "Tell me about yourself."
+      - "Ask about my company, let's build our first project."
+      - "Build an agent that turns meeting notes into action items."
+  claude-1:
+    description: "Claude Code, working on this repository."
     quick_prompts:
-      - "Summarize the latest maintenance review for AgentOS and any proposed work. If no review has run, say so."
-      - "Review the configured Sources for AgentOS. Explain relevant changes and their impact without creating work."
-      - "Propose up to three improvements for AgentOS with evidence, expected impact, and acceptance criteria. Check for duplicates first; leave proposals for review without accepting or executing them."
-      - "Review existing Projects and Tasks for AgentOS. Identify overlaps, missing evidence, and unclear acceptance criteria without changing them."
-  claude-engineer:
-    description: "Explain, review, and improve repository code using Claude."
+      - "What does this repository do? Answer in five lines."
+      - "Add an agent that summarizes a web page."
+      - "Review app/main.py and list three likely problems."
+  codex-1:
+    description: "Codex, working on this repository."
     quick_prompts:
-      - "Explain how this repository starts AgentOS and connects its agents, database, and sandboxes. Point me to the relevant files."
-      - "Review the repository for concrete bugs and setup problems. Prioritize findings with file references; do not change files."
-      - "Run the documented local checks and fix the first reproducible failure with the smallest change. Report what you changed and verified."
-  codex-engineer:
-    description: "Investigate bugs, implement focused changes, and run repository checks using Codex."
-    quick_prompts:
-      - "Inspect the repository and summarize its setup, validation, and test commands without changing files."
-      - "Review the development scripts for broken assumptions and unnecessary complexity. Recommend focused fixes without editing files."
-      - "Run the documented local checks and fix the first reproducible failure with the smallest change. Report what you changed and verified."
+      - "What does this repository do? Answer in five lines."
+      - "Find one outdated line in the README and fix it."
+      - "Run the format and validate scripts. What fails?"

@@ -35,6 +35,15 @@ echo -e "    ${DIM}Virtual Environment Setup${NC}"
 echo ""
 
 # Preflight
+# The sandbox image already holds every dependency, ruff and mypy. Installing them again
+# would fill the sandbox's memory, so there is nothing to do there.
+if [[ -f /etc/agentos-sandbox ]]; then
+    echo "    Sandbox: dependencies, ruff and mypy are already installed. Nothing to set up."
+    echo "    Run ./scripts/format.sh and ./scripts/validate.sh directly."
+    echo ""
+    exit 0
+fi
+
 if [[ -n "${VIRTUAL_ENV:-}" ]]; then
     echo "    Deactivate your current venv first."
     exit 1

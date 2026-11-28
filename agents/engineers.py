@@ -1,6 +1,13 @@
-"""Claude and Codex agents for engineering tasks."""
+"""Claude and Codex engineers
+=============================
 
+Each engineer uses its own subscription and credentials.
+Start with claude-1, codex-1, add claude-2, codex-2 when needed.
+"""
+
+from os import getenv
 from pathlib import Path
+from typing import Any
 
 from agno.agents.claude import ClaudeAgent
 from agno.agents.codex import CodexAgent
@@ -16,10 +23,20 @@ repository = None if sandbox is None else REPOSITORY
 cwd = str(Path(__file__).resolve().parents[1]) if sandbox is None else None
 
 
-def create_claude_engineer() -> ClaudeAgent:
+def credential(parameter: str, setting: str) -> dict[str, Any]:
+    """The engineer's subscription credentials.
+
+    A setting that is present but empty is passed on, so the run fails and says so
+    instead of quietly using the API key.
+    """
+    value = getenv(setting)
+    return {} if value is None else {parameter: value}
+
+
+def create_claude_engineer(number: int = 1) -> ClaudeAgent:
     return ClaudeAgent(
-        id="claude-engineer",
-        name="Claude Engineer",
+        id=f"claude-{number}",
+        name=f"Claude {number}",
         model="claude-opus-5-5",
         db=db,
         cwd=cwd,
@@ -27,13 +44,16 @@ def create_claude_engineer() -> ClaudeAgent:
         repository=repository,
         system_prompt={"type": "preset", "preset": "claude_code"},
         permission_mode="auto",
+        **credential("oauth_token", f"CLAUDE_{number}_OAUTH_TOKEN"),
     )
 
 
-def create_codex_engineer() -> CodexAgent:
+def create_codex_engineer(number: int = 1) -> CodexAgent:
+    # On a ChatGPT sign-in (auth.json) this engineer can only run one at a time.
+    # Use an access token for concurrent sessions.
     return CodexAgent(
-        id="codex-engineer",
-        name="Codex Engineer",
+        id=f"codex-{number}",
+        name=f"Codex {number}",
         model="gpt-6.1-sol",
         db=db,
         cwd=cwd,
@@ -41,4 +61,6 @@ def create_codex_engineer() -> CodexAgent:
         repository=repository,
         sandbox_mode="workspace-write",
         approval_mode="auto_review",
+        **credential("auth_json", f"CODEX_{number}_AUTH_JSON"),
+        **credential("access_token", f"CODEX_{number}_ACCESS_TOKEN"),
     )
