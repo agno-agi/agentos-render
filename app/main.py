@@ -19,6 +19,7 @@ from app.interfaces import attach_interfaces, mcp_auth
 from app.registry import registry, shared_knowledge, shared_learning
 from app.settings import super_agent_model
 from db import get_postgres_db
+from workflows.merge_ready import merge_ready_instructions, merge_ready_workflows
 
 runtime_env = getenv("RUNTIME_ENV", "prd")
 agentos_url = getenv("AGENTOS_URL", "http://127.0.0.1:8000")
@@ -34,6 +35,9 @@ agents: list[Any] = [
     create_claude_engineer(),
     create_codex_engineer(),
 ]
+
+# "PR to merge-ready": registered when both engineers above are enabled and run in sandboxes.
+workflows = merge_ready_workflows(agents)
 
 agent_os = AgentOS(
     db=db,
@@ -56,7 +60,8 @@ agent_os = AgentOS(
         compaction=Compaction(compact_at_tokens=100_000, on_context_overflow=True),
         # Read-only GitHub functions, when GITHUB_READ_TOKEN or GH_TOKEN is set.
         tools=github_read_tools(),
-        instructions=github_instructions(),
+        # What Super Agent is told about the merge-ready workflow and about reading GitHub, when it has them.
+        instructions="\n\n".join(filter(None, [merge_ready_instructions(workflows), github_instructions()])) or None,
     ),
     company=CompanyConfig(
         goals=goals,
@@ -65,6 +70,7 @@ agent_os = AgentOS(
     queue=QueueConfig(durable=True, db=db),
     knowledge=[shared_knowledge],
     agents=agents,
+    workflows=workflows or None,
     registry=registry,
     config=str(agentos_root / "app" / "config.yaml"),
 )
